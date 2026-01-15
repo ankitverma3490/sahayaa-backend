@@ -1,0 +1,498 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Models\Job;
+use App\Models\QuitJob;
+use App\Models\JobApplication;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use App\Models\LeaveType;
+use App\Models\LeaveRequest;
+use App\Models\User;
+
+class JobApplicationController extends Controller
+{
+
+    // public function approvedJob(Request $request)
+    // {
+
+    //     // find user approved job application
+    //     $application = JobApplication::where('user_id',Auth::guard('api')->user()->id)
+    //         ->where('application_status', 'accepted')
+    //         ->with('job.creator')
+    //         ->first();
+
+    //     if (!$application) {
+    //         return response()->json([
+    //             "message" => "No approved job found",
+    //             "data" => null
+    //         ], 404);
+    //     }
+
+    //     $job = $application->job;
+    //     $employer = $job->creator;
+
+    //     // accepted date (use created_at or a specific column if exists)
+    //     $acceptedDate = $application->updated_at ?? now();
+
+    //     // next pay date (7 days after acceptance)
+    //     $nextPayDate = Carbon::parse($acceptedDate)->addDays(7)->format('F d, Y');
+
+    //     // STATIC KEYS LIKE IMAGE
+    //     $response = [
+
+    //         "employer" => $employer->name ?? "Unknown Employer",
+    //         "role" => $job->title ?? "Job Role",
+    //         "joined_date" => Carbon::parse($acceptedDate)->format('F d, Y'),
+
+    //         "salary_summary" => [
+    //             "current_monthly_salary" => $job->compensation ?? 0,
+    //             "next_pay_date" => $nextPayDate,
+    //         ],
+
+    //         "attendance_summary" => [
+    //             "present_days" => 20,
+    //             "late_arrivals" => 2,
+    //             "absent_days" => 0
+    //         ],
+
+    //         "leave_balance" => [
+    //             "annual" => 15,
+    //             "sick" => 7,
+    //             "casual" => 3
+    //         ],
+
+    //         "job_details" => [
+    //             "job_id" => $job->id,
+    //             "application_id" => $application->id,
+    //             "application_status" => "accepted",
+    //             "city" => $job->city ?? "",
+    //             "state" => $job->state ?? "",
+    //             "street_address" => $job->street_address ?? "",
+    //             "commitment_type" => $job->commitment_type ?? "",
+    //             "compensation_type" => $job->compensation_type ?? "",
+    //         ]
+    //     ];
+
+    //     return response()->json([
+    //         "message"   => "Approved job fetched successfully",
+    //         "data"      => $response
+    //     ]);
+    // }
+
+    public function approvedJob(Request $request)
+{
+    $applications = JobApplication::where('user_id', Auth::guard('api')->user()->id)
+        ->where('application_status', 'accepted')
+        ->with('job.creator')
+        ->get(); // <-- GET MULTIPLE
+
+    if ($applications->isEmpty()) {
+        return response()->json([
+            "message" => "No approved job found",
+            "data" => []
+        ], 404);
+    }
+
+    $response = [];
+
+    foreach ($applications as $application) {
+
+        $job = $application->job ? $application->job->toArray() : [];
+        $employer = $application->job && $application->job->creator
+            ? $application->job->creator->toArray()
+            : [];
+
+        $acceptedDate = $application->updated_at ?? now();
+        $nextPayDate = \Carbon\Carbon::parse($acceptedDate)->addDays(7)->format('F d, Y');
+
+        $response[] = [
+            "employer" => $employer['name'] ?? "Unknown Employer",
+            "role" => $job['title'] ?? "Job Role",
+            "joined_date" => \Carbon\Carbon::parse($acceptedDate)->format('F d, Y'),
+
+            "salary_summary" => [
+                "current_monthly_salary" => $job['compensation'] ?? 0,
+                "next_pay_date" => $nextPayDate,
+            ],
+
+            "attendance_summary" => [
+                "present_days" => 20,
+                "late_arrivals" => 2,
+                "absent_days" => 0
+            ],
+
+            "leave_balance" => [
+                "annual" => 15,
+                "sick" => 7,
+                "casual" => 3
+            ],
+
+            "job_details" => [
+                "job_id" => $job['id'] ?? null,
+                "application_id" => $application->id,
+                "application_status" => "accepted",
+                "city" => $job['city'] ?? "",
+                "state" => $job['state'] ?? "",
+                "street_address" => $job['street_address'] ?? "",
+                "commitment_type" => $job['commitment_type'] ?? "",
+                "compensation_type" => $job['compensation_type'] ?? "",
+            ]
+        ];
+    }
+
+    return response()->json([
+        "message" => "Approved jobs fetched successfully",
+        "data" => $response
+    ]);
+}
+
+
+    public function index(Request $request): JsonResponse
+    {
+        $user = Auth::guard('api')->user();
+        
+       // if ($user->isAdmin()) {
+            $applications = JobApplication::with(['job', 'user'])
+                         ->orderBy('created_at', 'desc')
+                         ->get();
+        // } else {
+        //     $applications = $user->jobApplications()
+        //                  ->with(['job'])
+        //                  ->orderBy('created_at', 'desc')
+        //                  ->get();
+        // }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $applications,
+            'message' => 'Applications retrieved successfully'
+        ]);
+    }
+
+   public function store(Request $request): JsonResponse
+{
+    $validator = Validator::make($request->all(), [
+        'job_id' => 'required|exists:jobs,id',
+        'cover_letter' => 'required|string|min:10|max:5000',
+        'expected_salary' => 'nullable|numeric|min:0|max:9999999.99',
+        'available_from' => 'required|date|after_or_equal:today',
+        'is_advance' => 'nullable|boolean',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        // Get authenticated user
+        $user = Auth::guard('api')->user();
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+
+        $jobId = $request->job_id;
+
+        // Check if job exists and is open
+        $job = Job::find($jobId);
+        if (!$job) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Job not found'
+            ], 404);
+        }
+
+        if ($job->status !== 'open') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This job is not currently accepting applications'
+            ], 400);
+        }
+
+        // Check for existing application
+        $existingApplication = JobApplication::where('job_id', $jobId)
+                                           ->where('user_id', $user->id)
+                                           ->first();
+
+        if ($existingApplication) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You have already applied for this job'
+            ], 400);
+        }
+
+        // Create application
+        $application = JobApplication::create([
+            'job_id' => $jobId,
+            'user_id' => $user->id,
+            'cover_letter' => $request->cover_letter,
+            'expected_salary' => $request->expected_salary,
+            'available_from' => $request->available_from,
+            'is_advance' => $request->boolean('is_advance'),
+            'application_status' => 'pending',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $application->load('job'),
+            'message' => 'Application submitted successfully'
+        ], 201);
+
+    } catch (\Exception $e) {
+        \Log::error('Job application error: ' . $e->getMessage());
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to submit application. Please try again.'
+        ], 500);
+    }
+}
+
+    public function updateApplicationStatus(Request $request, $id): JsonResponse
+    {
+       
+        $validator = Validator::make($request->all(), [
+            'application_status' => 'required|in:pending,reviewed,accepted,rejected'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $application = JobApplication::find($id);
+
+        if (!$application) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Application not found'
+            ], 404);
+        }
+
+        $application->update(['application_status' => $request->application_status]);
+       if ($request->application_status == "accepted") {
+    $user = User::find($application->user_id);
+
+    $user->update([
+        'is_staff_added' => 1,
+        'added_by' => Auth::guard('api')->user()->id
+    ]);
+}
+
+if ($request->application_status == "rejected") {
+    $user = User::find($application->user_id);
+
+    $user->update([
+        'is_staff_added' => 0,
+        'added_by' => null
+    ]);
+}
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $application,
+            'message' => 'Application status updated successfully'
+        ]);
+    }
+
+    public function getJobApplications($jobId): JsonResponse
+    {
+      
+        $applications = JobApplication::with('user')
+                         ->where('job_id', $jobId)
+                         ->orderBy('created_at', 'desc')
+                         ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $applications,
+            'message' => 'Job applications retrieved successfully'
+        ]);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $application = JobApplication::find($id);
+
+        if (!$application) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Application not found'
+            ], 404);
+        }
+      
+        $application->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Application deleted successfully'
+        ]);
+    }
+
+    public function requestQuitJob(Request $request)
+    {
+        $request->validate([
+            "job_id" => "required|exists:jobs,id",
+            "end_date" => "required|date",
+            "reason" => "required|string"
+        ]);
+
+        $userId =  Auth::guard('api')->user()->id;
+
+        $quit = QuitJob::create([
+            "job_id" => $request->job_id,
+            "user_id" => $userId,
+            "end_date" => $request->end_date,
+            "reason" => $request->reason,
+            "status" => "pending"
+        ]);
+
+        return response()->json([
+            "message" => "Quit request submitted successfully",
+            "data" => $quit
+        ], 201);
+    }
+
+
+    public function applyLeave(Request $request)
+{
+    $request->validate([
+        "leave_type_id" => "required|exists:leave_types,id",
+        "start_date" => "required|date",
+        "end_date" => "required|date",
+        "reason" => "required|string",
+        "supporting_document" => "nullable|file|mimes:jpg,jpeg,png,pdf|max:2048"
+    ]);
+
+    $user = Auth::guard('api')->user();
+
+    $filePath = null;
+
+if ($request->hasFile('supporting_document')) {
+            $directory = "uploads/leave_documents";
+            if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
+            $image = $request->file('supporting_document');
+            $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path($directory), $fileName);
+            $path = $directory . '/' . $fileName;
+            if ($user->image && file_exists(public_path($user->image))) unlink(public_path($user->image));
+            $filePath = $path;
+        }
+    $leave = LeaveRequest::create([
+        "user_id" => $user->id,
+        'job_id' => $request->job_id,
+        "leave_type_id" => $request->leave_type_id,
+        "start_date" => $request->start_date,
+        "end_date" => $request->end_date,
+        "reason" => $request->reason,
+        "status" => "pending",
+        "supporting_document" => $filePath
+    ]);
+
+    return response()->json([
+        "status" => true,
+        "message" => "Leave request submitted successfully",
+        "data" => $leave
+    ], 201);
+}
+
+
+
+ public function leaveList(Request $request)
+{
+    // 1. Logged in API user ID
+    $userId = Auth::guard('api')->user()->id;
+    // 2. Get all job IDs created by this user
+    $jobIds = Job::where('created_by', $userId)->pluck('id');
+
+    // 3. Get Leave Requests where job_id is in user's jobs
+    $leaveRequests = LeaveRequest::with(['user', 'leaveType'])
+        ->whereIn('job_id', $jobIds)
+        ->orderBy('id', 'desc')
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Leave requests fetched successfully',
+        'data' => $leaveRequests
+    ], 200);
+}
+    /**
+     * Approve Leave Request
+     */
+    public function approve($id)
+    {
+        $leave = LeaveRequest::find($id);
+
+        if (!$leave) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Leave request not found'
+            ], 404);
+        }
+
+        $leave->status = 'approved';
+        $leave->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Leave request approved successfully',
+            'data' => $leave
+        ], 200);
+    }
+
+    /**
+     * Reject Leave Request
+     */
+    public function reject($id)
+    {
+        $leave = LeaveRequest::find($id);
+
+        if (!$leave) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Leave request not found'
+            ], 404);
+        }
+
+        $leave->status = 'rejected';
+        $leave->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Leave request rejected successfully',
+            'data' => $leave
+        ], 200);
+    }
+
+
+
+public function leaveTypeList()
+{
+    $types = LeaveType::all();
+
+    return response()->json([
+        "status" => true,
+        "message" => "Leave type list fetched successfully",
+        "data" => $types
+    ], 200);
+}
+
+
+
+}

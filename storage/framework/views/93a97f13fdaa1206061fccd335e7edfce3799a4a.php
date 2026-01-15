@@ -1,0 +1,1 @@
+<?php /**PATH /home/ayva/web/ayva.stage04.obdemo.com/public_html/resources/views/admin/elements/quick_links.blade.php ENDPATH**/ ?>

@@ -1,0 +1,3105 @@
+
+
+Request:
+{"message":{"notification":{"title":"Your Order Has Been Shipped! #ODR0173","body":"Your items have been carefully shipped and will arrive shortly."},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"order_number":"ODR0173","product_id":238,"product_varient_id":494,"type":"order_shipped"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "Invalid value at 'message.data[1].value' (TYPE_STRING), 238\nInvalid value at 'message.data[2].value' (TYPE_STRING), 494",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.BadRequest",
+        "fieldViolations": [
+          {
+            "field": "message.data[1].value",
+            "description": "Invalid value at 'message.data[1].value' (TYPE_STRING), 238"
+          },
+          {
+            "field": "message.data[2].value",
+            "description": "Invalid value at 'message.data[2].value' (TYPE_STRING), 494"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Delivered #ODR0173","body":"Your order was delivered today. We hope you enjoy your purchase!"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"order_number":"ODR0173","product_id":238,"product_varient_id":494,"type":"order_delivered"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "Invalid value at 'message.data[1].value' (TYPE_STRING), 238\nInvalid value at 'message.data[2].value' (TYPE_STRING), 494",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.BadRequest",
+        "fieldViolations": [
+          {
+            "field": "message.data[1].value",
+            "description": "Invalid value at 'message.data[1].value' (TYPE_STRING), 238"
+          },
+          {
+            "field": "message.data[2].value",
+            "description": "Invalid value at 'message.data[2].value' (TYPE_STRING), 494"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733834473629049%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order #ODR0180has been Accpected","body":"Order has been accepted"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"order_number":"ODR0180","product_id":"241","product_varient_id":"500","type":"order_confirm"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733834632411563%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Your Order #ODR0180 has been packed","body":"We\u2019ve packed your order #ODR0180and it\u2019s now ready to be shipped!"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"order_number":"ODR0180","product_id":"241","product_varient_id":"500","type":"order_packed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733835331007711%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddStart to following you","body":"Tushar SdsddStart to following you"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733835896426551%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddStart to following you","body":"Tushar SdsddStart to following you"},"token":"3df4ba7acea385bc","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddStart to following you","body":"Tushar SdsddStart to following you"},"token":"3df4ba7acea385bc","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddStart to following you","body":"Tushar SdsddStart to following you"},"token":"d2P4kwMsTWuFG_1q9CGLmP:APA91bEV8gTV6CfKLh1K1jaIjYuM9NjhIGn8-37L_5RGnBXgA0wLOCCTp0-lxJhKNCaUC_T62Bgt8aDjkgYEodZlmsT1l10q2fNuo7oUf5SiIzxLiZND1dY","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddSeni takip etmeye ba\u015fla","body":"Tushar SdsddSeni takip etmeye ba\u015fla"},"token":"9be3776e446dfab0","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Use TestStart to following you","body":"Use TestStart to following you"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"user_id":"15","user_name":"Use Test","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733836303793420%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Dev SharmaStart to following you","body":"Dev SharmaStart to following you"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"user_id":"49","user_name":"Dev Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733836383375357%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasStart to following you","body":"Shree22 NivasStart to following you"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733836406594713%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tarun SharmaStart to following you","body":"Tarun SharmaStart to following you"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"user_id":"39","user_name":"Tarun Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733836427588088%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvStart to following you","body":"Tush SrvStart to following you"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733836458991077%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Your Order Has Been Shipped! #ODR0180","body":"Your items have been carefully shipped and will arrive shortly."},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"order_number":"ODR0180","product_id":"241","product_varient_id":"500","type":"shipped"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733837015973445%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddStart to following you","body":"Tushar SdsddStart to following you"},"token":"d2P4kwMsTWuFG_1q9CGLmP:APA91bEV8gTV6CfKLh1K1jaIjYuM9NjhIGn8-37L_5RGnBXgA0wLOCCTp0-lxJhKNCaUC_T62Bgt8aDjkgYEodZlmsT1l10q2fNuo7oUf5SiIzxLiZND1dY","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvSeni takip etmeye ba\u015fla","body":"Tush SrvSeni takip etmeye ba\u015fla"},"token":"c564ec0492f28918","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvSeni takip etmeye ba\u015fla","body":"Tush SrvSeni takip etmeye ba\u015fla"},"token":"c564ec0492f28918","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvSeni takip etmeye ba\u015fla","body":"Tush SrvSeni takip etmeye ba\u015fla"},"token":"c564ec0492f28918","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Tushar Sdsddadd to favorite"},"token":"d2P4kwMsTWuFG_1q9CGLmP:APA91bEV8gTV6CfKLh1K1jaIjYuM9NjhIGn8-37L_5RGnBXgA0wLOCCTp0-lxJhKNCaUC_T62Bgt8aDjkgYEodZlmsT1l10q2fNuo7oUf5SiIzxLiZND1dY","data":{"productId":"241","userId":"30","productWishlistId":"{\"user_id\":30,\"product_id\":\"241\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-10T13:39:46.000000Z\",\"created_at\":\"2024-12-10T13:39:46.000000Z\",\"id\":944}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvSeni takip etmeye ba\u015fla","body":"Tush SrvSeni takip etmeye ba\u015fla"},"token":"c564ec0492f28918","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasSeni takip etmeye ba\u015fla","body":"Shree22 NivasSeni takip etmeye ba\u015fla"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733894060270438"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tarun SharmaSeni takip etmeye ba\u015fla","body":"Tarun SharmaSeni takip etmeye ba\u015fla"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"39","user_name":"Tarun Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733894082642038"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Dev SharmaSeni takip etmeye ba\u015fla","body":"Dev SharmaSeni takip etmeye ba\u015fla"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"49","user_name":"Dev Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733894118313956"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Dev SharmaStart to following you","body":"Dev SharmaStart to following you"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"49","user_name":"Dev Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733894169778780%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvStart to following you","body":"Tush SrvStart to following you"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733894194065494%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvSeni takip etmeye ba\u015fla","body":"Tush SrvSeni takip etmeye ba\u015fla"},"token":"cFpMVfyPmkDanDvksWlNU3:APA91bH26nnM6HQs3YSeVFNwNtoelbF-60_Fg9n88VZm6KMmDH7X72QhgkdY4hyXsxa6TdlRDNCcxR3Wl1yLEMgOD9zvSwvFZ7uCdUMXuyl87Nc8EDkyY28","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733894199523091"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvStart to following you","body":"Tush SrvStart to following you"},"token":"fdc83dabaa879713","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tushar SdsddStart to following you","body":"Tushar SdsddStart to following you"},"token":"fGtAVU-XThqSirTud0K-Vp:APA91bEIgVYxXWi9Wn09PJHytRYGmIwRylLHFiDMg7f8VxfckF4Aey6bNDybK2QmKYDpxrZny4Fkbr_zkvayq4nsUFFVwGIbozu_VnFXhIHljRg2Qda41UY","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733894373414685%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0181","body":"Order has been placed successfully"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"order_number":"ODR0181","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733899440810260%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Shree22 Nivassend you a new enquiry"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"enquiry_id":"18","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733899683635825"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Shree22 Nivassend you a new enquiry"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"enquiry_id":"21","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733903830055589"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Jone DeoSeni takip etmeye ba\u015fla","body":"Jone DeoSeni takip etmeye ba\u015fla"},"token":"9be3776e446dfab0","data":{"user_id":"20","user_name":"Jone Deo","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasStart to following you","body":"Shree22 NivasStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733907777649453"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasSeni takip etmeye ba\u015fla","body":"Shree22 NivasSeni takip etmeye ba\u015fla"},"token":"9be3776e446dfab0","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasStart to following you","body":"Shree22 NivasStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733907838613562"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasStart to following you","body":"Shree22 NivasStart to following you"},"token":"cUpsU_ePw0U0llKkBPS9Hv:APA91bEK22d3NlIDpIdeTh-Oh4FZ7llvIN_PMXNO76_GsKQu5tWAjWnlISl5e9Rw7yryFdosHay2V80C7_dKLuOOmPiBlyztQw7zFLx_iXwZjcpw5zca91g","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733907926957669"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Shree22 Nivassend you a new enquiry"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"enquiry_id":"1","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733908793371435"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasStart to following you","body":"Shree22 NivasStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909666102690"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Dev SharmaStart to following you","body":"Dev SharmaStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"49","user_name":"Dev Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909695908249"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tarun SharmaStart to following you","body":"Tarun SharmaStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"39","user_name":"Tarun Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909720681928"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Tush SrvStart to following you","body":"Tush SrvStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"33","user_name":"Tush Srv","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909775441787"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"LOKESH SHARMAStart to following you","body":"LOKESH SHARMAStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909802572459"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Pwn SharmaStart to following you","body":"Pwn SharmaStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"21","user_name":"Pwn Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909823227793"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Jone DeoStart to following you","body":"Jone DeoStart to following you"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"20","user_name":"Jone Deo","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733909839705462%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Jone DeoStart to following you","body":"Jone DeoStart to following you"},"token":"fdc83dabaa879713","data":{"user_id":"20","user_name":"Jone Deo","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Jone DeoSeni takip etmeye ba\u015fla","body":"Jone DeoSeni takip etmeye ba\u015fla"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"20","user_name":"Jone Deo","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909846309154"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Jone DeoStart to following you","body":"Jone DeoStart to following you"},"token":"d5wVHMB1W01Ojr_ZemoOdw:APA91bH2qWoBK-V6logjpELAJg3T0qmQlP016hO2jL6fFJz_mx8lJ_7AkGO27a9cM5Y2VApzMhI9f9ItdpcqWO1jowiUm983GyG5xOTqolTkuTgs5Ke3ed8","data":{"user_id":"20","user_name":"Jone Deo","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909849529269"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Jone DeoStart to following you","body":"Jone DeoStart to following you"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"20","user_name":"Jone Deo","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733909915589676%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Shree22 NivasStart to following you","body":"Shree22 NivasStart to following you"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"40","user_name":"Shree22 Nivas","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733909928738108"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"enquiry_id":"2","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733911250693729%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"enquiry_id":"3","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733914046814793%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"enquiry_id":"7","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733914558483879%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"LOKESH SHARMAStart to following you","body":"LOKESH SHARMAStart to following you"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733914849975884%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"LOKESH SHARMASeni takip etmeye ba\u015fla","body":"LOKESH SHARMASeni takip etmeye ba\u015fla"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733916217970512"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"LOKESH SHARMAStart to following you","body":"LOKESH SHARMAStart to following you"},"token":"fdc83dabaa879713","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"LOKESH SHARMAStart to following you","body":"LOKESH SHARMAStart to following you"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733916250448037%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"LOKESH SHARMASeni takip etmeye ba\u015fla","body":"LOKESH SHARMASeni takip etmeye ba\u015fla"},"token":"9be3776e446dfab0","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"cAtOTTcBQuGChqM87J2NNA:APA91bHy5apkcHkCI2m_AjERvxwth8rmhI2AG-cPaaXyp7K1-NbAXO8MwLsfH1UiBg1OgUTVpISZafHmUGq5GtgrDg5Yqp2q7Y1HguSXaHnHf5z3nSMEAPc","data":{"enquiry_id":"1","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733916439087744%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"cAtOTTcBQuGChqM87J2NNA:APA91bHy5apkcHkCI2m_AjERvxwth8rmhI2AG-cPaaXyp7K1-NbAXO8MwLsfH1UiBg1OgUTVpISZafHmUGq5GtgrDg5Yqp2q7Y1HguSXaHnHf5z3nSMEAPc","data":{"enquiry_id":"1","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733916804928408%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"cAtOTTcBQuGChqM87J2NNA:APA91bHy5apkcHkCI2m_AjERvxwth8rmhI2AG-cPaaXyp7K1-NbAXO8MwLsfH1UiBg1OgUTVpISZafHmUGq5GtgrDg5Yqp2q7Y1HguSXaHnHf5z3nSMEAPc","data":{"enquiry_id":"1","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733917121881363%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"cAtOTTcBQuGChqM87J2NNA:APA91bHy5apkcHkCI2m_AjERvxwth8rmhI2AG-cPaaXyp7K1-NbAXO8MwLsfH1UiBg1OgUTVpISZafHmUGq5GtgrDg5Yqp2q7Y1HguSXaHnHf5z3nSMEAPc","data":{"enquiry_id":"2","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733917223518890%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"LOKESH SHARMAsend you a new enquiry"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"enquiry_id":"3","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733920295056468"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"fdc83dabaa879713","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733921368420932%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"fdc83dabaa879713","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Takip etmek","body":"LOKESH SHARMA art\u0131k senin takip\u00e7in"},"token":"9be3776e446dfab0","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"fdc83dabaa879713","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Takip etmek","body":"LOKESH SHARMA art\u0131k senin takip\u00e7in"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733921467279999"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"dyBTVMzwQRyQmNCRbmUN4b:APA91bFTRk_NUmiwS-QFpTl8zXIuIu6jIy0GZKQJUPnw_mBFRoSXuz52ZJxI5o6rnfHZljH6AZde8jc1nbmMVn4VI1EZGxYeNMf01V_Fk3blb_cHQ5x1L00","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733921470096957%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733921478784104"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0182","body":"Order has been placed successfully"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"order_number":"ODR0182","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733923879972324%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Takip etmek","body":"Tushar Sdsdd art\u0131k senin takip\u00e7in"},"token":"9be3776e446dfab0","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Tushar Sdsdd is now your follower"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733982116257101%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Tushar Sdsdd is now your follower"},"token":"fdc83dabaa879713","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Takip etmek","body":"Tushar Sdsdd art\u0131k senin takip\u00e7in"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733982119595757"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Tushar Sdsdd is now your follower"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733982120575419%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Tushar Sdsddsend you a new enquiry"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"enquiry_id":"4","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733982307061423%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733983569091862%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733984106159684%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1733984214538648%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cWYXf49Rck4_l6ML5nyJ31:APA91bHAi5ZbSzVsDVQoEEDs1qLjItLStciy57B-3TqkhMcboyf8bHq6hhaSc9jXrVUYm21FNSLti2nYvyFDecGI7bqXL6wJMBgwKIIrwVTkhzzPYmuwvVQ","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733984294673380"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cWYXf49Rck4_l6ML5nyJ31:APA91bHAi5ZbSzVsDVQoEEDs1qLjItLStciy57B-3TqkhMcboyf8bHq6hhaSc9jXrVUYm21FNSLti2nYvyFDecGI7bqXL6wJMBgwKIIrwVTkhzzPYmuwvVQ","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733984298394598"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cWYXf49Rck4_l6ML5nyJ31:APA91bHAi5ZbSzVsDVQoEEDs1qLjItLStciy57B-3TqkhMcboyf8bHq6hhaSc9jXrVUYm21FNSLti2nYvyFDecGI7bqXL6wJMBgwKIIrwVTkhzzPYmuwvVQ","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733984343549336"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0180","body":"Order has been placed successfully"},"token":"cWYXf49Rck4_l6ML5nyJ31:APA91bHAi5ZbSzVsDVQoEEDs1qLjItLStciy57B-3TqkhMcboyf8bHq6hhaSc9jXrVUYm21FNSLti2nYvyFDecGI7bqXL6wJMBgwKIIrwVTkhzzPYmuwvVQ","data":{"order_number":"ODR0180","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733984491203664"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Tushar Sdsddsend you a new enquiry"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"enquiry_id":"5","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733996231333543"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0181","body":"Order has been placed successfully"},"token":"cWYXf49Rck4_l6ML5nyJ31:APA91bHAi5ZbSzVsDVQoEEDs1qLjItLStciy57B-3TqkhMcboyf8bHq6hhaSc9jXrVUYm21FNSLti2nYvyFDecGI7bqXL6wJMBgwKIIrwVTkhzzPYmuwvVQ","data":{"order_number":"ODR0181","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1733997583482804"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0182","body":"Order has been placed successfully"},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0182","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734075829078342"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0183","body":"Order has been placed successfully"},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0183","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734075965985036"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Confirmed","body":"The status of your order has been updated to \"confirmed\"."},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0183","product_id":"244","product_varient_id":"503","type":"confirmed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734075986154092"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Packed","body":"The status of your order has been updated to \"packed\"."},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0183","product_id":"244","product_varient_id":"503","type":"packed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734076021724489"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Shipped","body":"The status of your order has been updated to \"shipped\"."},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0183","product_id":"244","product_varient_id":"503","type":"shipped"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734076037447546"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Delivered","body":"The status of your order has been updated to \"delivered\"."},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0183","product_id":"244","product_varient_id":"503","type":"delivered"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734076167670557"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Shree22 Nivassend you a new enquiry"},"token":"fHhspAOviEf-ljcTugZFGu:APA91bFYwuHwRtl3FW83Zgj5Pq90_Jwg_I6oElAAUMLOVU824IUq3zwT-T4wuqFEIstTDppXf1BZw6SuMrbcDQz6MCkFA82F2ppXOvPNjpvjQdvqfTgKxK8","data":{"enquiry_id":"6","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734076329811405"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Shree22 Nivassend you a new enquiry"},"token":"fHhspAOviEf-ljcTugZFGu:APA91bFYwuHwRtl3FW83Zgj5Pq90_Jwg_I6oElAAUMLOVU824IUq3zwT-T4wuqFEIstTDppXf1BZw6SuMrbcDQz6MCkFA82F2ppXOvPNjpvjQdvqfTgKxK8","data":{"enquiry_id":"1","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734080823147825"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0184","body":"Order has been placed successfully"},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"order_number":"ODR0184","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734081899776790"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0185","body":"Order has been placed successfully"},"token":"cVfZ5s7FQh2R2CEqLjDcN3:APA91bHZyxD6XtvqatC17l7PNlOYzpZqVNDcDojKJBXAzXJyAuKC31p24IyXEjt6VCeV08jYvhPLJVWrw0vXlE13TFMcwLCcoAOkLBD2YFv5vDXCDLW4JPw","data":{"order_number":"ODR0185","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734327114896365%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0185","body":"New Order Received"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"order_number":"ODR0185","product_id":"238","variant_id":"494","type":"order_received"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734327115228135"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0186","body":"Order has been placed successfully"},"token":"e2ndssM-zUOyuzBRxXGipi:APA91bHp1GgM3NyaZ3Gd9MiNVmdE-DLOtE4uBwD4vlqr3uTimFETr3ZEFlI6dQj98Xx6IKUPxKWhZ59lvxTst0ePHEyDAx21gKETgXXz1QOhWZCs0p6Uxo0","data":{"order_number":"ODR0186","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734327423037181"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0186","body":"New Order Received"},"token":"c54yIkuV00DEu7J3NND11v:APA91bFCQrouScgjAHOs-l9fb7nywsNaJkG7JItpNqiOgTn7IBMa6etHLK04TgvtMyUTXEYkXv8k8-eiqf-my3L9RzoG5UqdlabxnDJARqYit_keOChNmZw","data":{"order_number":"ODR0186","product_id":"238","variant_id":"494","type":"order_received"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734327423578081"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0187","body":"Order has been placed successfully"},"token":"d1KR3-1AQnqLgzESnY61Ls:APA91bGL3KqG-fOtl4OdZmQ1tjRnPx70x1UZsQ41wMdiFd9Np1mpIxeMjbwSckk5c1Zu1JR5zTqYxq8GViP0WHhenK8F5sM_DC9OMMxzrjiei-gd2OosQLo","data":{"order_number":"ODR0187","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734329844993615%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0187","body":"New Order Received"},"token":"e2ndssM-zUOyuzBRxXGipi:APA91bHp1GgM3NyaZ3Gd9MiNVmdE-DLOtE4uBwD4vlqr3uTimFETr3ZEFlI6dQj98Xx6IKUPxKWhZ59lvxTst0ePHEyDAx21gKETgXXz1QOhWZCs0p6Uxo0","data":{"order_number":"ODR0187","product_id":"245","variant_id":"504","type":"order_received"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734329845204143"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Confirmed","body":"The status of your order has been updated to \"confirmed\"."},"token":"d1KR3-1AQnqLgzESnY61Ls:APA91bGL3KqG-fOtl4OdZmQ1tjRnPx70x1UZsQ41wMdiFd9Np1mpIxeMjbwSckk5c1Zu1JR5zTqYxq8GViP0WHhenK8F5sM_DC9OMMxzrjiei-gd2OosQLo","data":{"order_number":"ODR0187","product_id":"245","product_varient_id":"504","type":"confirmed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734329881361932%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Packed","body":"The status of your order has been updated to \"packed\"."},"token":"d1KR3-1AQnqLgzESnY61Ls:APA91bGL3KqG-fOtl4OdZmQ1tjRnPx70x1UZsQ41wMdiFd9Np1mpIxeMjbwSckk5c1Zu1JR5zTqYxq8GViP0WHhenK8F5sM_DC9OMMxzrjiei-gd2OosQLo","data":{"order_number":"ODR0187","product_id":"245","product_varient_id":"504","type":"packed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734329904225236%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Shipped","body":"The status of your order has been updated to \"shipped\"."},"token":"d1KR3-1AQnqLgzESnY61Ls:APA91bGL3KqG-fOtl4OdZmQ1tjRnPx70x1UZsQ41wMdiFd9Np1mpIxeMjbwSckk5c1Zu1JR5zTqYxq8GViP0WHhenK8F5sM_DC9OMMxzrjiei-gd2OosQLo","data":{"order_number":"ODR0187","product_id":"245","product_varient_id":"504","type":"shipped"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734329907831620%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Delivered","body":"The status of your order has been updated to \"delivered\"."},"token":"d1KR3-1AQnqLgzESnY61Ls:APA91bGL3KqG-fOtl4OdZmQ1tjRnPx70x1UZsQ41wMdiFd9Np1mpIxeMjbwSckk5c1Zu1JR5zTqYxq8GViP0WHhenK8F5sM_DC9OMMxzrjiei-gd2OosQLo","data":{"order_number":"ODR0187","product_id":"245","product_varient_id":"504","type":"delivered"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734329912144516%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Jone Deosend you a new enquiry"},"token":"e2ndssM-zUOyuzBRxXGipi:APA91bHp1GgM3NyaZ3Gd9MiNVmdE-DLOtE4uBwD4vlqr3uTimFETr3ZEFlI6dQj98Xx6IKUPxKWhZ59lvxTst0ePHEyDAx21gKETgXXz1QOhWZCs0p6Uxo0","data":{"enquiry_id":"2","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1734331615114105"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"eqIgiAqwRoiBFY80W49gKL:APA91bHzYeZ8d2sF-GhcJIm60dXfjxV619GmsW26yUzASQ-k19auSeJz7DTxNdCufBRcB32RjfIh5rRBb1C-16dV_yzCAYDfwkiBsXPmOeexzUe0ge2dkLE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-16T07:58:51.000000Z\",\"created_at\":\"2024-12-16T07:58:51.000000Z\",\"id\":946}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734335932444994%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"eqIgiAqwRoiBFY80W49gKL:APA91bHzYeZ8d2sF-GhcJIm60dXfjxV619GmsW26yUzASQ-k19auSeJz7DTxNdCufBRcB32RjfIh5rRBb1C-16dV_yzCAYDfwkiBsXPmOeexzUe0ge2dkLE","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734335988122089%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"eqIgiAqwRoiBFY80W49gKL:APA91bHzYeZ8d2sF-GhcJIm60dXfjxV619GmsW26yUzASQ-k19auSeJz7DTxNdCufBRcB32RjfIh5rRBb1C-16dV_yzCAYDfwkiBsXPmOeexzUe0ge2dkLE","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734336026557035%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"eqIgiAqwRoiBFY80W49gKL:APA91bHzYeZ8d2sF-GhcJIm60dXfjxV619GmsW26yUzASQ-k19auSeJz7DTxNdCufBRcB32RjfIh5rRBb1C-16dV_yzCAYDfwkiBsXPmOeexzUe0ge2dkLE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-16T08:02:15.000000Z\",\"created_at\":\"2024-12-16T08:02:15.000000Z\",\"id\":948}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734336135645704%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0188","body":"Order has been placed successfully"},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0188","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734347471796078%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0188","body":"New Order Received"},"token":"eqIgiAqwRoiBFY80W49gKL:APA91bHzYeZ8d2sF-GhcJIm60dXfjxV619GmsW26yUzASQ-k19auSeJz7DTxNdCufBRcB32RjfIh5rRBb1C-16dV_yzCAYDfwkiBsXPmOeexzUe0ge2dkLE","data":{"order_number":"ODR0188","product_id":"238","variant_id":"494","type":"order_received"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0189","body":"Order has been placed successfully"},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0189","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734347473515574%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0189","body":"New Order Received"},"token":"eqIgiAqwRoiBFY80W49gKL:APA91bHzYeZ8d2sF-GhcJIm60dXfjxV619GmsW26yUzASQ-k19auSeJz7DTxNdCufBRcB32RjfIh5rRBb1C-16dV_yzCAYDfwkiBsXPmOeexzUe0ge2dkLE","data":{"order_number":"ODR0189","product_id":"238","variant_id":"494","type":"order_received"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"LOKESH SHARMAsend you a new enquiry"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"enquiry_id":"3","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734347643233473%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0190","body":"Order has been placed successfully"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"order_number":"ODR0190","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734348140751687%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0190","body":"New Order Received"},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0190","product_id":"245","variant_id":"504","type":"order_received"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734348141256297%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Jone Deoadd to favorite"},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"productId":"245","userId":"20","productWishlistId":"{\"user_id\":20,\"product_id\":\"245\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-16T11:25:50.000000Z\",\"created_at\":\"2024-12-16T11:25:50.000000Z\",\"id\":950}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734348351113180%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Confirmed","body":"The status of your order has been updated to \"confirmed\"."},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0189","product_id":"238","product_varient_id":"494","type":"confirmed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734349002328823%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Packed","body":"The status of your order has been updated to \"packed\"."},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0189","product_id":"238","product_varient_id":"494","type":"packed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734349011134972%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Shipped","body":"The status of your order has been updated to \"shipped\"."},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0189","product_id":"238","product_varient_id":"494","type":"shipped"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734349017442945%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Delivered","body":"The status of your order has been updated to \"delivered\"."},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"order_number":"ODR0189","product_id":"238","product_varient_id":"494","type":"delivered"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734349023461660%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Confirmed","body":"The status of your order has been updated to \"confirmed\"."},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"order_number":"ODR0190","product_id":"245","product_varient_id":"504","type":"confirmed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734349241481739%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Dev Sharmaadd to favorite"},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"productId":"245","userId":"49","productWishlistId":"{\"user_id\":49,\"product_id\":\"245\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T09:42:29.000000Z\",\"created_at\":\"2024-12-18T09:42:29.000000Z\",\"id\":953}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734514949941594%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Dev Sharmasend you a new enquiry"},"token":"eUnIpRL8QKStskSIl9Lq4h:APA91bE1VDPWRD7GezGp8wNMPc1UNGIp0MF6-gV1eh5Up_sqo6BvKt6AgCSt3qbLoH_dJtV-kgffhNoORQ2Y1WN11vAkinNZqhocQ1hFidgtS2BKXnZVXXo","data":{"enquiry_id":"4","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734515885263680%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T10:07:30.000000Z\",\"created_at\":\"2024-12-18T10:07:30.000000Z\",\"id\":954}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734516450735916%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T10:19:20.000000Z\",\"created_at\":\"2024-12-18T10:19:20.000000Z\",\"id\":955}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734517161200981%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T11:56:59.000000Z\",\"created_at\":\"2024-12-18T11:56:59.000000Z\",\"id\":956}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734523019534409%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734523697282271%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T12:16:18.000000Z\",\"created_at\":\"2024-12-18T12:16:18.000000Z\",\"id\":957}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734524178877677%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Dev Sharmaadd to favorite"},"token":"c3-jOECpScKrPYLqyQp011:APA91bFdmm1od2bwSS6SP260bMe-2kymrK1rDMLgl1OvqHIozvBkRAaAT52haMo3HTPY9L70cl53bnUNkJCo9cMl9kB3BIHIRGmmG8NNf3-_lbr0E6a8cXI","data":{"productId":"244","userId":"49","productWishlistId":"{\"user_id\":49,\"product_id\":\"244\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T14:16:36.000000Z\",\"created_at\":\"2024-12-18T14:16:36.000000Z\",\"id\":958}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734531397169481%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Dev Sharmaadd to favorite"},"token":"c3-jOECpScKrPYLqyQp011:APA91bFdmm1od2bwSS6SP260bMe-2kymrK1rDMLgl1OvqHIozvBkRAaAT52haMo3HTPY9L70cl53bnUNkJCo9cMl9kB3BIHIRGmmG8NNf3-_lbr0E6a8cXI","data":{"productId":"243","userId":"49","productWishlistId":"{\"user_id\":49,\"product_id\":\"243\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T14:16:42.000000Z\",\"created_at\":\"2024-12-18T14:16:42.000000Z\",\"id\":959}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734531403065694%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Dev Sharmaadd to favorite"},"token":"c3-jOECpScKrPYLqyQp011:APA91bFdmm1od2bwSS6SP260bMe-2kymrK1rDMLgl1OvqHIozvBkRAaAT52haMo3HTPY9L70cl53bnUNkJCo9cMl9kB3BIHIRGmmG8NNf3-_lbr0E6a8cXI","data":{"productId":"242","userId":"49","productWishlistId":"{\"user_id\":49,\"product_id\":\"242\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T14:16:46.000000Z\",\"created_at\":\"2024-12-18T14:16:46.000000Z\",\"id\":960}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734531406998970%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Dev Sharmaadd to favorite"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"productId":"238","userId":"49","productWishlistId":"{\"user_id\":49,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-18T14:16:50.000000Z\",\"created_at\":\"2024-12-18T14:16:50.000000Z\",\"id\":961}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734531410548245%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Tushar Sdsddsend you a new enquiry"},"token":"etxWwP8iRE-yEwUADwbAfO:APA91bHyRdp0NLIwl53QL76MoRCCNn01Mo6ALTjaGgRSKJQF1433O-jhi5cD3zdjmLs7WEjBYKqV5n-O4mzSwm2ECC1iqblSDjPq262QdiHdoCvBhnYjIfA","data":{"enquiry_id":"5","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734535849446805%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"LOKESH SHARMAsend you a new enquiry"},"token":"fbVMLC0LQe-x_Hc0gPhE9C:APA91bEp_ekTFOybiBJ9ghN0gMEWwJU2NRhwj-fg_kH3_Qhulmraecapw2qhDIlG9D0pcLWml8CLudOCkuW6b8Ag6K8Y0lrvLpWmDZdY2hEhMO52sUwnxhs","data":{"enquiry_id":"8","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Dev Sharmasend you a new enquiry"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"enquiry_id":"9","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734594472740748%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Dev Sharma send you a new enquiry"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"enquiry_id":"10","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734594661603651%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Tarun Sharma send you a new enquiry"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"enquiry_id":"11","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734594792741175%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Tushar Sdsdd send you a new enquiry"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"enquiry_id":"12","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734597906986281%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Dev Sharma is now your follower"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"user_id":"49","user_name":"Dev Sharma","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734601480504218%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0191","body":"Order has been placed successfully"},"token":"f131dBDES7Gi11NACgNp-_:APA91bHxHfT_9t_O9cuwSHBPRjYYhiVDoySWIoecF47fpzPhUaQEKMoytt6vka11JnVDtJ7CqKpG-BZle_3hBUzgljNsqTVkhgS8svb8WQh1BiastrvIjSI","data":{"order_number":"ODR0191","type":"order_place"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1734954142237396%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0191","body":"New Order Received"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"order_number":"ODR0191","product_id":"244","variant_id":"503","type":"order_received"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Tushar Sdsdd is now your follower"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Tushar Sdsdd is now your follower"},"token":"dYbnUugiykY8nkUmP0Pm88:APA91bG_G5sAh-Oq9AvV9kjmUTmPEa7Detjx9LEAPsFk7A7Kb6cg4fOmmOorZl2VBQB3mShxmA2tBByk5y0i6snFyqFT2MeI8k92QbOL9kdU83cGObtjpf0","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1735039145138265"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"Tushar Sdsdd is now your follower"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"user_id":"30","user_name":"Tushar Sdsdd","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Tushar Sdsddadd to favorite"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"productId":"245","userId":"30","productWishlistId":"{\"user_id\":30,\"product_id\":\"245\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-24T11:20:00.000000Z\",\"created_at\":\"2024-12-24T11:20:00.000000Z\",\"id\":968}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Enquiry Received","body":"Shree22 Nivas send you a new enquiry"},"token":"dFrBBa-QTZuzhQCdH3M43E:APA91bHmMqejWOTo0EmQ5LulWA3IzjhT2qHrXtCtynYlM0PJk4MPpxUJ20QPTm1UOrmjm-2k_d7LzljeG7U2UFGGoSZdJV60lDriEsC6TctyM7roa3EO1AA","data":{"enquiry_id":"13","type":"new_enquiry_recevied"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Confirmed","body":"The status of your order has been updated to \"confirmed\"."},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"order_number":"ODR0191","product_id":"244","product_varient_id":"503","type":"confirmed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735040612619693%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Packed","body":"The status of your order has been updated to \"packed\"."},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"order_number":"ODR0191","product_id":"244","product_varient_id":"503","type":"packed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735040619201219%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order Status: Shipped","body":"The status of your order has been updated to \"shipped\"."},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"order_number":"ODR0191","product_id":"244","product_varient_id":"503","type":"shipped"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735040634260565%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"ABDULLAH Y\u0130\u011e\u0130Tadd to favorite"},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"productId":"244","userId":"51","productWishlistId":"{\"user_id\":51,\"product_id\":\"244\",\"action_type\":\"favorite\",\"updated_at\":\"2024-12-26T20:02:46.000000Z\",\"created_at\":\"2024-12-26T20:02:46.000000Z\",\"id\":973}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735243366247516%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735243400313062%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735243404087135%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735243407815402%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Order #ODR0188has been Accpected","body":"Order has been accepted"},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"order_number":"ODR0188","product_id":"238","product_varient_id":"494","type":"confirmed"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1735539090932909%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"f37iaxRTQzSOydUmzZ5msL:APA91bGAAZj0X_d57MvERudt8oTSGy7v6tE2Cs2WPyqlRrGq6n9zvfI82zIiZPxFaZCWpUQzy0wCmBu-l68u06NZ1hSEbSsCZ6MoCh55S1rfRdmJJmgVvxY","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"LOKESH SHARMA is now your follower"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"user_id":"22","user_name":"LOKESH SHARMA","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":975}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780984502666%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":977}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780984521644%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":976}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780984522152%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":979}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780984755018%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":978}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":981}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780984779245%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":980}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780984776752%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":982}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":984}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985122812%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":983}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985106091%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:44.000000Z\",\"created_at\":\"2025-01-13T15:09:44.000000Z\",\"id\":985}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985160087%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":988}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985392204%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":987}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985399939%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":989}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985404205%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":986}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":990}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":992}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985657779%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":991}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985667216%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":993}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985677654%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":995}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985897266%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":994}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":997}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985911992%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":996}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780985926785%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":998}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":1001}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986166637%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":999}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986156695%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:45.000000Z\",\"created_at\":\"2025-01-13T15:09:45.000000Z\",\"id\":1000}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986183703%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1002}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1004}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986395148%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1003}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986405424%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1005}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986411844%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1006}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1008}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986647215%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1009}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986658750%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1007}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986639465%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1011}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986860431%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1010}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1012}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986892158%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1013}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780986915473%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1014}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1016}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987145829%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1015}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987138017%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:46.000000Z\",\"created_at\":\"2025-01-13T15:09:46.000000Z\",\"id\":1017}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987165160%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1019}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987376166%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1018}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1020}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987398582%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1021}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987402570%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"f4CZAemWQueJbJmzA1yiui:APA91bFX_1YAwcjVBWiW1qmkYiBfkDKqfKOv2DnrKstFiNQSUKySFpTtlAQYRjtDZ1WeF2MRL_t0-An7-j7uJHhs0mf8mQKjZaCA5QnYHmCPJs1y1RRY0bE","data":{"productId":"238","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"238\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1022}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"248","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"248\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1024}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987703886%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1023}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987695297%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"LOKESH SHARMAadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"247","userId":"22","productWishlistId":"{\"user_id\":22,\"product_id\":\"247\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T15:09:47.000000Z\",\"created_at\":\"2025-01-13T15:09:47.000000Z\",\"id\":1025}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736780987744702%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Tushar Sdsddadd to favorite"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"productId":"250","userId":"30","productWishlistId":"{\"user_id\":30,\"product_id\":\"250\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-13T17:21:58.000000Z\",\"created_at\":\"2025-01-13T17:21:58.000000Z\",\"id\":1026}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1736788919073656%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"dj-5kBcWTOqk7rrufMjw3V:APA91bGubrQLBORHqPalPFZU1qCUJZnNjO1_KK6RXoSxN-CnM04Pcw5tqplfzZe4uhTsRqYI7d3l65QVoxlSZ7oXARiAoAbjVQgdsfNgnfCp-mT1T6ivmFI","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1737353566334864%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"Tushar Sdsddadd to favorite"},"token":"eOhvuuHASK-OZkyQ36m9NT:APA91bG1nfVYLDoiqRryxfJLnIElNzkd7DmdXcZASOCwmtIjqGtvJeqp6ab14TMyfkLrJnj1pa4ix2uod--jS4fZ_dgM4SMDFV8CXfE0S_xBvrZNH9hZ_Dk","data":{"productId":"257","userId":"30","productWishlistId":"{\"user_id\":30,\"product_id\":\"257\",\"action_type\":\"favorite\",\"updated_at\":\"2025-01-30T10:41:18.000000Z\",\"created_at\":\"2025-01-30T10:41:18.000000Z\",\"id\":1033}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1738233678781615%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"eOhvuuHASK-OZkyQ36m9NT:APA91bG1nfVYLDoiqRryxfJLnIElNzkd7DmdXcZASOCwmtIjqGtvJeqp6ab14TMyfkLrJnj1pa4ix2uod--jS4fZ_dgM4SMDFV8CXfE0S_xBvrZNH9hZ_Dk","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1738239623770989%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"c1jAtCsGyEZipcrqx94iHn:APA91bEIZDP_I2bJ_vuXPFFgfaR8uNwwWLbCwq_5BuIUgeFKxSVozeREPlu6sdnzUUrc9RtXwGKwYUA00IJs9sfofmKxvk0f44C09_NS8t2p55idr0mQsuU","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1738239636455911"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"c1jAtCsGyEZipcrqx94iHn:APA91bEIZDP_I2bJ_vuXPFFgfaR8uNwwWLbCwq_5BuIUgeFKxSVozeREPlu6sdnzUUrc9RtXwGKwYUA00IJs9sfofmKxvk0f44C09_NS8t2p55idr0mQsuU","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1738239638584047"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"eOhvuuHASK-OZkyQ36m9NT:APA91bG1nfVYLDoiqRryxfJLnIElNzkd7DmdXcZASOCwmtIjqGtvJeqp6ab14TMyfkLrJnj1pa4ix2uod--jS4fZ_dgM4SMDFV8CXfE0S_xBvrZNH9hZ_Dk","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1738239640895893%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"d0_CdKuYf0gTkqjt2ri5hV:APA91bFCLzty2HU09jJSY10pZm2xb9MALlLmAPDsz5cIWMdjE5r30ijPUMxKBUAxry_71O8-THO7_oHi-yds5oCMEFqIl5ryXWud1_lm7AuyF56_IEtGt5A","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1738673755004832"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"fwFzF0A3Tk2a0djY8vWUXP:APA91bHm3XkstSaVlVumw_TlVIttr0b9UetPzlBJp6X7rWa6M56uuhLBAE0486LrlPn33e4r6m52JFhdPBY0LZ83XvMql_ycFLazjSsZvB9iV7kWomkiexM","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1738673879123841%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Yeni  Sipari\u015f #ODR0192","body":"Sipari\u015f ba\u015far\u0131yla verildi"},"token":"1D9866EB-955B-45E8-8ED6-4420D80C383A","data":{"order_number":"ODR0192","type":"order_place"}}}
+
+Response:
+{
+  "error": {
+    "code": 400,
+    "message": "The registration token is not a valid FCM registration token",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "INVALID_ARGUMENT"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"New Order #ODR0192","body":"New Order Received"},"token":"fwFzF0A3Tk2a0djY8vWUXP:APA91bHm3XkstSaVlVumw_TlVIttr0b9UetPzlBJp6X7rWa6M56uuhLBAE0486LrlPn33e4r6m52JFhdPBY0LZ83XvMql_ycFLazjSsZvB9iV7kWomkiexM","data":{"order_number":"ODR0192","product_id":"253","variant_id":"510","type":"order_received"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1738673989274500%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"fwFzF0A3Tk2a0djY8vWUXP:APA91bHm3XkstSaVlVumw_TlVIttr0b9UetPzlBJp6X7rWa6M56uuhLBAE0486LrlPn33e4r6m52JFhdPBY0LZ83XvMql_ycFLazjSsZvB9iV7kWomkiexM","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1739438665873619%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"fwFzF0A3Tk2a0djY8vWUXP:APA91bHm3XkstSaVlVumw_TlVIttr0b9UetPzlBJp6X7rWa6M56uuhLBAE0486LrlPn33e4r6m52JFhdPBY0LZ83XvMql_ycFLazjSsZvB9iV7kWomkiexM","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1739596611578678%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"fwFzF0A3Tk2a0djY8vWUXP:APA91bHm3XkstSaVlVumw_TlVIttr0b9UetPzlBJp6X7rWa6M56uuhLBAE0486LrlPn33e4r6m52JFhdPBY0LZ83XvMql_ycFLazjSsZvB9iV7kWomkiexM","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/0:1739596615996292%09fe05e109fe05e1"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":"Add to favorite","body":"ABDULLAH Y\u0130\u011e\u0130Tadd to favorite"},"token":"d0_CdKuYf0gTkqjt2ri5hV:APA91bFCLzty2HU09jJSY10pZm2xb9MALlLmAPDsz5cIWMdjE5r30ijPUMxKBUAxry_71O8-THO7_oHi-yds5oCMEFqIl5ryXWud1_lm7AuyF56_IEtGt5A","data":{"productId":"244","userId":"51","productWishlistId":"{\"user_id\":51,\"product_id\":\"244\",\"action_type\":\"favorite\",\"updated_at\":\"2025-02-18T10:05:08.000000Z\",\"created_at\":\"2025-02-18T10:05:08.000000Z\",\"id\":1035}","type":"add_to_favorite"}}}
+
+Response:
+{
+  "name": "projects/ayva-fc350/messages/1739873109212232"
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"d0_CdKuYf0gTkqjt2ri5hV:APA91bFCLzty2HU09jJSY10pZm2xb9MALlLmAPDsz5cIWMdjE5r30ijPUMxKBUAxry_71O8-THO7_oHi-yds5oCMEFqIl5ryXWud1_lm7AuyF56_IEtGt5A","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      },
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.ApnsError",
+        "statusCode": 410,
+        "reason": "Unregistered"
+      }
+    ]
+  }
+}
+
+
+
+
+Request:
+{"message":{"notification":{"title":" Follow","body":"ABDULLAH Y\u0130\u011e\u0130T is now your follower"},"token":"d0_CdKuYf0gTkqjt2ri5hV:APA91bFCLzty2HU09jJSY10pZm2xb9MALlLmAPDsz5cIWMdjE5r30ijPUMxKBUAxry_71O8-THO7_oHi-yds5oCMEFqIl5ryXWud1_lm7AuyF56_IEtGt5A","data":{"user_id":"51","user_name":"ABDULLAH Y\u0130\u011e\u0130T","type":"start_following"}}}
+
+Response:
+{
+  "error": {
+    "code": 404,
+    "message": "Requested entity was not found.",
+    "status": "NOT_FOUND",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError",
+        "errorCode": "UNREGISTERED"
+      }
+    ]
+  }
+}
+
+

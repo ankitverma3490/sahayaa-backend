@@ -1,0 +1,2 @@
+<iframe src="<?php echo e($iframeUrl); ?>" frameborder="0" style="width: 100%; height: 600px;"></iframe>
+<?php /**PATH /home/ayva/web/ayva.stage04.obdemo.com/public_html/resources/views/payment/iframe.blade.php ENDPATH**/ ?>

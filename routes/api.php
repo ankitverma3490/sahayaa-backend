@@ -35,6 +35,10 @@ use App\Http\Controllers\Api\AttendanceController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+Route::get('/', function () {
+    return response()->json(['message' => 'API is working successfully', 'status' => 200]);
+});
+
 Route::post('customer/login', [UserController::class, 'loginCustomer']);
 Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 

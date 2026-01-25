@@ -101,7 +101,7 @@ Route::prefix('housersold/attendance')->group(function () {
     Route::post('/', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::get('/{id}', [AttendanceController::class, 'show'])->name('attendance.show');
     Route::put('/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
-    Route::patch('/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
+    Route::patch('/{id}', [AttendanceController::class, 'update'])->name('attendance.update.patch');
     Route::delete('/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 });
 Route::prefix('/admin')->group(function () {

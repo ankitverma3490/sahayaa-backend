@@ -16,10 +16,11 @@ namespace Symfony\Component\VarExporter\Internal;
  *
  * @internal
  */
-class Values
+class NamedClosure
 {
     public function __construct(
-        public readonly array $values,
+        public readonly array $callable,
+        public readonly ?\ReflectionMethod $method = null,
     ) {
     }
 }

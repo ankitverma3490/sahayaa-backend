@@ -665,37 +665,41 @@ public function verifyOtp(Request $request)
     // Check if OTP matches the static code (123456)
     if ((string)$request->otp === (string)$user->verification_code) {
         
-        // Check if OTP is expired (10 minutes validity)
-        // $expirationTime = 10; // minutes
-        // if (now()->diffInMinutes($user->verification_code_sent_time) > $expirationTime) {
-        //     return response()->json(['error' => 'Verification code has expired'], 422);
-        // }
+        // Expiration check disabled...
 
-        $user->update([
-            'is_verified' => 1,
-            'verification_code' => null,
-            'verification_code_sent_time' => null,
-            'updated_at' => now(),
-        ]);
+        try {
+            return \DB::transaction(function () use ($user) {
+                $user->update([
+                    'is_verified' => 1,
+                    'verification_code' => null,
+                    'verification_code_sent_time' => null,
+                    'updated_at' => now(),
+                ]);
 
-        // Create Passport token
-        $token = $user->createToken('AuthToken')->accessToken;
+                // Create Passport token
+                $token = $user->createToken('AuthToken')->accessToken;
 
-        // Login user into api guard
-        Auth::guard('api')->setUser($user);
+                // Login user into api guard
+                Auth::guard('api')->setUser($user);
 
-        return response()->json([
-            'message' => 'Logged in successfully',
-            'user' => $user,
-            'token' => $token
-        ]);
+                return response()->json([
+                    'message' => 'Logged in successfully',
+                    'user' => $user,
+                    'token' => $token
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Login Failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     return response()->json([
         'error' => 'Invalid verification code',
         'debug_sent' => $request->otp,
         'debug_stored' => $user->verification_code,
-        // 'debug_match' => ((string)$request->otp === (string)$user->verification_code) ? 'YES' : 'NO'
     ], 422);
 }
 

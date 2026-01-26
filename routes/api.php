@@ -39,6 +39,16 @@ Route::get('/', function () {
     return response()->json(['message' => 'API is working successfully', 'status' => 200]);
 });
 
+// TEMPORARY FIX: Run this to generate keys on Railway
+Route::get('/fix-passport', function () {
+    try {
+        Artisan::call('passport:install --force');
+        return 'Passport keys generated successfully: <br><pre>' . Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
+
 Route::post('customer/login', [UserController::class, 'loginCustomer']);
 Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 

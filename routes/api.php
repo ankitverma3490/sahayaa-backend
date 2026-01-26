@@ -42,6 +42,8 @@ Route::get('/', function () {
 // TEMPORARY FIX: Run this to generate keys on Railway
 Route::get('/fix-passport', function () {
     try {
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
         Artisan::call('passport:install --force');
         return 'Passport keys generated successfully: <br><pre>' . Artisan::output() . '</pre>';
     } catch (\Exception $e) {

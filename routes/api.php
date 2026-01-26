@@ -41,13 +41,32 @@ Route::get('/', function () {
 
 // TEMPORARY FIX: Run this to generate keys on Railway
 Route::get('/fix-passport', function () {
+    $output = "Starting diagnostics...<br>";
     try {
+        if (!class_exists(\Laravel\Passport\PassportServiceProvider::class)) {
+             return "CRITICAL ERROR: \Laravel\Passport\PassportServiceProvider class does not exist. The package 'laravel/passport' is seemingly not installed in the vendor directory on this server.";
+        }
+
+        // Manually register to ensure commands are loaded
+        app()->register(\Laravel\Passport\PassportServiceProvider::class);
+        $output .= "PassportServiceProvider registered manually.<br>";
+
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
-        Artisan::call('passport:install --force');
-        return 'Passport keys generated successfully: <br><pre>' . Artisan::output() . '</pre>';
+        $output .= "Config and Cache cleared.<br>";
+
+        // Check if command exists now
+        $commands = Artisan::all();
+        if (!array_key_exists('passport:install', $commands)) {
+             $output .= "WARNING: 'passport:install' still not found in Artisan command list.<br>";
+        }
+
+        Artisan::call('passport:install', ['--force' => true]);
+        return $output . 'SUCCESS! Passport keys generated: <br><pre>' . Artisan::output() . '</pre>';
+
     } catch (\Exception $e) {
-        return 'Error: ' . $e->getMessage();
+        return $output . 'EXCEPTION: ' . $e->getMessage() . 
+               '<br><br>Stack Trace: <pre>' . $e->getTraceAsString() . '</pre>';
     }
 });
 

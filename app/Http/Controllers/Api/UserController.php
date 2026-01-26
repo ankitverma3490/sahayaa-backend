@@ -691,7 +691,12 @@ public function verifyOtp(Request $request)
         ]);
     }
 
-    return response()->json(['error' => 'Invalid verification code'], 422);
+    return response()->json([
+        'error' => 'Invalid verification code',
+        'debug_sent' => $request->otp,
+        'debug_stored' => $user->verification_code,
+        // 'debug_match' => ((string)$request->otp === (string)$user->verification_code) ? 'YES' : 'NO'
+    ], 422);
 }
 
 

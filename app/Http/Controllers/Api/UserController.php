@@ -666,10 +666,10 @@ public function verifyOtp(Request $request)
     if ((string)$request->otp === (string)$user->verification_code) {
         
         // Check if OTP is expired (10 minutes validity)
-        $expirationTime = 10; // minutes
-        if (now()->diffInMinutes($user->verification_code_sent_time) > $expirationTime) {
-            return response()->json(['error' => 'Verification code has expired'], 422);
-        }
+        // $expirationTime = 10; // minutes
+        // if (now()->diffInMinutes($user->verification_code_sent_time) > $expirationTime) {
+        //     return response()->json(['error' => 'Verification code has expired'], 422);
+        // }
 
         $user->update([
             'is_verified' => 1,

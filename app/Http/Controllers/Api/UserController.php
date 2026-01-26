@@ -1465,7 +1465,7 @@ public function updateProfileCustomer(Request $request)
 
         // ✅ Update user profile
         if ($isEdit != 1) {
-            $data['steps'] = 2;
+            $data['step'] = 2;
         }
         $user->update($data);
 
@@ -1660,7 +1660,7 @@ public function completeBusinessProfile(Request $request)
             'exact_location' => $request->exact_location,
             'business_website' => $request->business_website,
             'gstin_number' => $request->gstin_number,
-            'steps' => '2',
+            'step' => '2',
             'lat' => $request->lat,
             'long' => $request->long,
         ];
@@ -1789,7 +1789,7 @@ public function setBusinessAvailability(Request $request)
             'working_days' => $request->working_days,
             'daily_start_time' => $request->daily_start_time,
             'daily_end_time' => $request->daily_end_time,
-            'steps' => '3'
+            'step' => '3'
         ]);
 
         return response()->json([
@@ -2030,7 +2030,7 @@ public function socialLoginCallback(Request $request)
 				'address',
 				'gender',
 				'dob',
-                'steps',
+                'step',
 				'is_approved',
 				'is_verified',
 				'is_active',
@@ -4353,7 +4353,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 'is_staff_added' => $existingUser->is_staff_added,
                 'is_active' => $existingUser->is_active,
                 'is_verified' => $existingUser->is_verified,
-                'steps' => $existingUser->steps
+                'step' => $existingUser->step
             ]
         ]);
 // dd($existingUser);

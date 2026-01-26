@@ -293,7 +293,7 @@ public function signUpCustomer(Request $request)
     // Check if phone number already exists
     $user = User::where('phone_number', $request->phone_number)->where('is_deleted',0)->first();
 
-    if (in_array($to, $devNumbers)) {
+    if (true) { // Force static OTP for all users (SMS Disabled)
         $verificationCode = 123456;
 
         if ($user) {
@@ -810,63 +810,20 @@ public function resendOtp(Request $request)
         // add your other test numbers here
     ];
 
-    if (in_array($to, $devNumbers)) {
-        // --- Dev/test static OTP ---
-        $verificationCode = 123456;
-    } else {
-        // --- Real number random OTP ---
-        $verificationCode = rand(100000, 999999);
-    }
+    // Use fixed code 123456 for ALL numbers for now
+    $verificationCode = 123456;
 
     // Update user with new code
     $user->update([
-        'verification_code' => "123456",
+        'verification_code' => $verificationCode,
         'verification_code_sent_time' => now(),
         'updated_at' => now()
     ]);
 
-    if (in_array($to, $devNumbers)) {
-        // Save SMS log for dev/test
-        // \App\Models\SmsLog::create([
-        //     'user_id' => $user->id,
-        //     'to' => $to,
-        //     'from' => env('TWILIO_PHONE_NUMBER'),
-        //     'message' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. This is a dev/test number.",
-        //     'status' => 'sent',
-        //     'sid' => null,
-        //     'sent_at' => now(),
-        // ]);
-    } else {
-        // --- Send via Twilio ---
-        // $sid = env('TWILIO_SID');
-        // $token = env('TWILIO_AUTH_TOKEN');
-        // $from = env('TWILIO_PHONE_NUMBER');
-
-        // try {
-        //     $url = "https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json";
-
-        //     $response = \Http::withBasicAuth($sid, $token)->asForm()->post($url, [
-        //         'From' => $from,
-        //         'To' => $to,
-        //         'Body' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. Please enter this OTP in the app or website. Expires in 10 minutes."
-        //     ]);
-
-        //     $data = $response->json();
-
-        //     // Save SMS log
-        //     \App\Models\SmsLog::create([
-        //         'user_id' => $user->id,
-        //         'to' => $to,
-        //         'from' => $from,
-        //         'message' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. Please enter this OTP in the app or website. Expires in 10 minutes.",
-        //         'status' => $data['status'] ?? 'failed',
-        //         'sid' => $data['sid'] ?? null,
-        //         'sent_at' => now(),
-        //     ]);
-        // } catch (\Exception $e) {
-        // //    \Log::error('Resend OTP SMS failed: ' . $e->getMessage());
-        // }
-    }
+    // SMS Sending Logic (Commented Out)
+    /*
+    // ...
+    */
 
     return response()->json([
         'message' => 'Verification code resent to your Phone Number',

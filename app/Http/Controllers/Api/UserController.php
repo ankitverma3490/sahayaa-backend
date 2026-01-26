@@ -304,7 +304,7 @@ public function signUpCustomer(Request $request)
         } else {
             $verificationCode = rand(100000, 999999);
             $user = User::create([
-                'name'                          => $request->name,
+                'name'                          => $request->name ?? 'User',
                 'email'                         => $request->email,
                 'phone_number'                  => $request->phone_number,
                 'location'                      => $request->location,

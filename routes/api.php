@@ -41,31 +41,51 @@ Route::get('/', function () {
 
 // TEMPORARY FIX: Run this to generate keys on Railway
 Route::get('/fix-passport', function () {
-    $output = "Starting diagnostics...<br>";
+    $output = "Starting Diagnostics...<br>";
     try {
-        if (!class_exists(\Laravel\Passport\PassportServiceProvider::class)) {
-             return "CRITICAL ERROR: \Laravel\Passport\PassportServiceProvider class does not exist. The package 'laravel/passport' is seemingly not installed in the vendor directory on this server.";
-        }
+        // 1. Run Migrations just in case
+        Artisan::call('migrate', ['--force' => true]);
+        $output .= "Migrations checked/run: " . Artisan::output() . "<br>";
 
-        // Manually register to ensure commands are loaded
-        app()->register(\Laravel\Passport\PassportServiceProvider::class);
-        $output .= "PassportServiceProvider registered manually.<br>";
-
+        // 2. Clear Cache
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
-        $output .= "Config and Cache cleared.<br>";
+        $output .= "Cache cleared.<br>";
 
-        // Check if command exists now
-        $commands = Artisan::all();
-        if (!array_key_exists('passport:install', $commands)) {
-             $output .= "WARNING: 'passport:install' still not found in Artisan command list.<br>";
+        // 3. Try Artisan Install
+        try {
+            Artisan::call('passport:install', ['--force' => true]);
+            $output .= "Passport Install attempted: " . Artisan::output() . "<br>";
+        } catch (\Exception $e) {
+            $output .= "Artisan passport:install failed: " . $e->getMessage() . ". Attempting manual creation...<br>";
+            
+            // 4. Manual Key Generation
+            Artisan::call('passport:keys', ['--force' => true]);
+            $output .= "Passport Keys generated.<br>";
+
+            // 5. Manual Client Creation via Repository
+            if (class_exists(\Laravel\Passport\ClientRepository::class)) {
+                $clients = new \Laravel\Passport\ClientRepository();
+                
+                // Check if personal client already exists
+                $existing = \DB::table('oauth_clients')->where('personal_access_client', 1)->first();
+                if (!$existing) {
+                    $client = $clients->createPersonalAccessClient(
+                        null, 'Sahayya Personal Access Client', 'http://localhost'
+                    );
+                    $output .= "Manual Personal Access Client Created: ID " . $client->id . "<br>";
+                } else {
+                    $output .= "Personal Access Client already exists.<br>";
+                }
+            } else {
+                $output .= "ERROR: ClientRepository class not found. Is Passport installed?<br>";
+            }
         }
 
-        Artisan::call('passport:install', ['--force' => true]);
-        return $output . 'SUCCESS! Passport keys generated: <br><pre>' . Artisan::output() . '</pre>';
+        return $output . "<br><b>DIAGNOSTICS COMPLETE. Try Signup again.</b>";
 
     } catch (\Exception $e) {
-        return $output . 'EXCEPTION: ' . $e->getMessage() . 
+        return $output . 'CRITICAL EXCEPTION: ' . $e->getMessage() . 
                '<br><br>Stack Trace: <pre>' . $e->getTraceAsString() . '</pre>';
     }
 });

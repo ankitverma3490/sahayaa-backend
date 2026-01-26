@@ -161,6 +161,8 @@ Route::post('/google', [UserController::class, 'socialLoginCallback']);
 
 
 Route::group(['middleware' => 'auth:api'], function() {
+    Route::post('/logout', [UserController::class, 'logout']);
+
     Route::get('/settings/notification', [SettingController::class, 'handleNotification']);
     Route::post('/settings/notification', [SettingController::class, 'handleNotification']);
 

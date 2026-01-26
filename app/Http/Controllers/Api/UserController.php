@@ -308,6 +308,9 @@ public function signUpCustomer(Request $request)
                 'email'                         => $request->email,
                 'phone_number'                  => $request->phone_number,
                 'location'                      => $request->location,
+                'lat'                           => $request->lat,
+                'long'                          => $request->long,
+                'user_role_id'                  => 2,
                 'verification_code'             => "123456",
                 'verification_code_sent_time'   => now(),
                 'country_code'                  => $request->country_code,
@@ -372,6 +375,9 @@ public function signUpCustomer(Request $request)
                 'email'                         => $request->email,
                 'phone_number'                  => $request->phone_number,
                 'location'                      => $request->location,
+                'lat'                           => $request->lat,
+                'long'                          => $request->long,
+                'user_role_id'                  => 2,
                 'verification_code'             => "123456",
                 'verification_code_sent_time'   => now(),
                 'country_code'                  => $request->country_code,
@@ -556,6 +562,17 @@ public function resetPassword(Request $request)
             'error' => $e->getMessage()
         ], 500);
     }
+}
+
+public function logout(Request $request)
+{
+    if ($request->user()) { 
+        $request->user()->token()->revoke();
+    }
+    return response()->json([
+        'status' => true,
+        'message' => 'Logged out successfully'
+    ], 200);
 }
 
 public function login(Request $request)

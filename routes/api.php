@@ -41,48 +41,90 @@ Route::get('/', function () {
 
 // TEMPORARY FIX: Run this to generate keys on Railway
 Route::get('/fix-passport', function () {
-    $output = "Starting Diagnostics...<br>";
+    $output = "Starting diagnostics...<br>";
     try {
-        // 1. Run Migrations just in case
-        Artisan::call('migrate', ['--force' => true]);
-        $output .= "Migrations checked/run: " . Artisan::output() . "<br>";
+        // 1. Check if vendor directory exists
+        if (!file_exists(base_path('vendor/laravel/passport'))) {
+            return "ERROR: vendor/laravel/passport directory is missing. Please run composer install on the server.";
+        }
+        $output .= "Vendor directory found.<br>";
 
-        // 2. Clear Cache
+        // 2. Clear caches first
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
-        $output .= "Cache cleared.<br>";
+        $output .= "Caches cleared.<br>";
 
-        // 3. Try Artisan Install
-        try {
-            Artisan::call('passport:install', ['--force' => true]);
-            $output .= "Passport Install attempted: " . Artisan::output() . "<br>";
-        } catch (\Exception $e) {
-            $output .= "Artisan passport:install failed: " . $e->getMessage() . ". Attempting manual creation...<br>";
-            
-            // 4. Manual Key Generation
-            Artisan::call('passport:keys', ['--force' => true]);
-            $output .= "Passport Keys generated.<br>";
+        // 3. Check for keys and create them manually if artisan fails
+        $privateKey = storage_path('oauth-private.key');
+        $publicKey = storage_path('oauth-public.key');
 
-            // 5. Manual Client Creation via Repository
-            if (class_exists(\Laravel\Passport\ClientRepository::class)) {
-                $clients = new \Laravel\Passport\ClientRepository();
-                
-                // Check if personal client already exists
-                $existing = \DB::table('oauth_clients')->where('personal_access_client', 1)->first();
-                if (!$existing) {
-                    $client = $clients->createPersonalAccessClient(
-                        null, 'Sahayya Personal Access Client', 'http://localhost'
-                    );
-                    $output .= "Manual Personal Access Client Created: ID " . $client->id . "<br>";
+        if (!file_exists($privateKey) || !file_exists($publicKey)) {
+            try {
+                Artisan::call('passport:keys', ['--force' => true]);
+                $output .= "Passport keys generated via Artisan.<br>";
+            } catch (\Exception $e) {
+                $output .= "Artisan passport:keys failed. Error: " . $e->getMessage() . "<br>";
+                // Basic check for openssl to see if we can generate manually
+                if (function_exists('openssl_pkey_new')) {
+                    $res = openssl_pkey_new([
+                        "private_key_bits" => 4096,
+                        "private_key_type" => OPENSSL_KEYTYPE_RSA,
+                    ]);
+                    openssl_pkey_export($res, $privKey);
+                    $pubKey = openssl_pkey_get_details($res);
+                    $pubKey = $pubKey["key"];
+                    file_put_contents($privateKey, $privKey);
+                    file_put_contents($publicKey, $pubKey);
+                    chmod($privateKey, 0600);
+                    chmod($publicKey, 0600);
+                    $output .= "Passport keys generated MANUALLY via OpenSSL.<br>";
                 } else {
-                    $output .= "Personal Access Client already exists.<br>";
+                    $output .= "ERROR: openssl extension is missing. Cannot generate keys manually.<br>";
                 }
-            } else {
-                $output .= "ERROR: ClientRepository class not found. Is Passport installed?<br>";
             }
+        } else {
+            $output .= "Passport keys already exist.<br>";
         }
 
-        return $output . "<br><b>DIAGNOSTICS COMPLETE. Try Signup again.</b>";
+        // 4. Check for Personal Access Client mapping
+        try {
+            // Check if tables exist
+            if (!Schema::hasTable('oauth_clients')) {
+                Artisan::call('migrate', ['--force' => true]);
+                $output .= "Migrations run.<br>";
+            }
+
+            $client = DB::table('oauth_clients')->where('personal_access_client', 1)->first();
+            if (!$client) {
+                // Manually insert personal access client
+                $clientId = DB::table('oauth_clients')->insertGetId([
+                    'name' => 'Sahayya Personal Access Client',
+                    'secret' => Str::random(40),
+                    'provider' => null,
+                    'redirect' => 'http://localhost',
+                    'personal_access_client' => 1,
+                    'password_client' => 0,
+                    'revoked' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $output .= "Manual Personal Access Client created (ID $clientId).<br>";
+
+                // Insert into oauth_personal_access_clients
+                DB::table('oauth_personal_access_clients')->insert([
+                    'client_id' => $clientId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $output .= "Oauth Personal Access client mapping added.<br>";
+            } else {
+                $output .= "Personal access client already exists (ID $client->id).<br>";
+            }
+        } catch (\Exception $e) {
+            $output .= "Failed to create client: " . $e->getMessage() . "<br>";
+        }
+
+        return $output . "<br><b>SUCCESS! Diagnostics completed. Please try Signup/OTP now.</b>";
 
     } catch (\Exception $e) {
         return $output . 'CRITICAL EXCEPTION: ' . $e->getMessage() . 

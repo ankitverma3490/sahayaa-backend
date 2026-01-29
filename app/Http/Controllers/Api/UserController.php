@@ -1054,6 +1054,17 @@ public function updateProfile(Request $request)
         $user = Auth::guard('api')->user();
         if (!$user) return response()->json(['success' => false, 'message' => 'User not found'], 404);
 
+        if ($request->has('dob') && !empty($request->dob)) {
+            try {
+                // Try to parse DD-MM-YYYY and convert to YYYY-MM-DD for database
+                $dob = $request->dob;
+                if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $dob)) {
+                    $request->merge(['dob' => \Carbon\Carbon::createFromFormat('d-m-Y', $dob)->format('Y-m-d')]);
+                }
+            } catch (\Exception $e) {
+                // Keep original if parsing fails
+            }
+        }
         $isEdit = $request->input('is_edit', 0);
         $validator = Validator::make($request->all(), [
             'first_name' => 'nullable|string|max:255',

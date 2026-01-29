@@ -10,6 +10,8 @@ class UserWorkInfo extends Model
 {
     use HasFactory;
 
+    protected $table = 'user_work_infos';
+
     protected $fillable = [
         'user_id',
         'primary_role',

@@ -1154,6 +1154,11 @@ if($isEdit == 1){
         return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
 
     } catch (\Exception $e) {
+        \Illuminate\Support\Facades\Log::error('Update Profile Fail: ' . $e->getMessage());
+        try {
+             file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Error: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
+        } catch (\Exception $writeErr) {}
+        
         return response()->json(['success' => false, 'message' => 'Failed to update profile', 'error' => $e->getMessage()], 500);
     }
 }

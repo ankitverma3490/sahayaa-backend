@@ -10,6 +10,8 @@ class LastWorkExperience extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'last_work_experiences';
+
     protected $fillable = [
         'user_id',
         'role',

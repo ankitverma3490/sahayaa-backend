@@ -9,6 +9,8 @@ class KycVerification extends Model
 {
     use HasFactory;
 
+    protected $table = 'kyc_verifications';
+
     protected $fillable = [
         'user_id',
         'photo_path',

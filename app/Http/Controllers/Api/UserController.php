@@ -2451,6 +2451,7 @@ $existingUser->save();
             // Aadhaar NOT registered → CREATE NEW USER
             // ==========================================
             $newUser = new User();
+            $newUser->name = 'Staff Member';
             $newUser->aadhar_number = $request->aadhar_number;
             $newUser->aadhar__verify_otp = '123456';
             $newUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);

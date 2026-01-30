@@ -1588,12 +1588,21 @@ public function updateProfileCustomer(Request $request)
 
 
 public function categoryList(Request $request){
-    $category = Category::all();
-            return response()->json([
+    try {
+        $category = Category::all();
+        return response()->json([
             'success' => true,
             'message' => 'Category Fetch successfully',
             'data' => $category
         ], 200);
+    } catch (\Exception $e) {
+        \Log::error('Category List Error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch categories',
+            'error' => $e->getMessage()
+        ], 500);
+    }
 }
 
 

@@ -2424,7 +2424,7 @@ public function saveAadharAndSendOtp(Request $request)
             
             if ($existingUser) {
                   $existingUser->aadhar__verify_otp = '123456';
-            $existingUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+            $existingUser->aadhar__number_otp_expire_at = Carbon::now()->addMinutes(10);
 $existingUser->save();
                 return response()->json([
                     'status' => true,
@@ -2444,7 +2444,7 @@ $existingUser->save();
             $newUser = new User();
             $newUser->aadhar_number = $request->aadhar_number;
             $newUser->aadhar__verify_otp = '123456';
-            $newUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+            $newUser->aadhar__number_otp_expire_at = Carbon::now()->addMinutes(10);
             $newUser->aadhar__verify = false;
             $newUser->is_staff_added = 1; // Mark as staff added
             // $newUser->added_by = $authUser->id; // Set who added this staff
@@ -2479,7 +2479,7 @@ $existingUser->save();
 
             // Resend OTP only
             $user->aadhar__verify_otp = '123456';
-            $user->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+            $user->aadhar__number_otp_expire_at = Carbon::now()->addMinutes(10);
             $user->save();
 
             return response()->json([
@@ -2515,7 +2515,7 @@ $existingUser->save();
         // ==========================================
         $user->aadhar_number      = $request->aadhar_number;
         $user->aadhar__verify_otp = '123456';
-        $user->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+        $user->aadhar__number_otp_expire_at = Carbon::now()->addMinutes(10);
         $user->aadhar__verify     = false;
         $user->aadhar__verify_at  = null;
         $user->save();
@@ -2571,7 +2571,7 @@ $existingUser->save();
             }
             
             // Check if OTP matches
-            if ($user->aadhar_verify_otp !== $request->otp) {
+            if ($user->aadhar__verify_otp !== $request->otp) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid OTP'
@@ -2579,7 +2579,7 @@ $existingUser->save();
             }
             
             // Check if OTP is expired
-            if (Carbon::now()->gt($user->aadhar_number_otp_expire_at)) {
+            if (Carbon::now()->gt($user->aadhar__number_otp_expire_at)) {
                 return response()->json([
                     'status' => false,
                     'message' => 'OTP has expired'
@@ -2587,7 +2587,7 @@ $existingUser->save();
             }
             
             // Check if already verified
-            if ($user->aadhar_verify) {
+            if ($user->aadhar__verify) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Aadhar number is already verified'
@@ -2598,7 +2598,7 @@ $existingUser->save();
             $user->aadhar__verify = true;
             $user->aadhar__verify_at = Carbon::now();
             $user->aadhar__verify_otp = null; // Clear OTP after verification
-            $user->aadhar_number_otp_expire_at = null; // Clear expiry time
+            $user->aadhar__number_otp_expire_at = null; // Clear expiry time
             $user->save();
             
             return response()->json([
@@ -2606,7 +2606,7 @@ $existingUser->save();
                 'message' => 'Aadhar number verified successfully',
                 'data' => [
                     'aadhar_number' => maskAadharNumber($user->aadhar_number),
-                    'verified_at' => $user->aadhar_verify_at->format('Y-m-d H:i:s')
+                    'verified_at' => $user->aadhar__verify_at->format('Y-m-d H:i:s')
                 ]
             ], 200);
             
@@ -2643,7 +2643,7 @@ $existingUser->save();
             }
             
             // Check if already verified
-            if ($user->aadhar_verify) {
+            if ($user->aadhar__verify) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Aadhar number is already verified'
@@ -2651,8 +2651,8 @@ $existingUser->save();
             }
             
             // Generate new OTP
-            $user->aadhar_verify_otp = '123456'; // Fixed OTP for testing
-            $user->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+            $user->aadhar__verify_otp = '123456'; // Fixed OTP for testing
+            $user->aadhar__number_otp_expire_at = Carbon::now()->addMinutes(10);
             $user->save();
             
             // In production, send OTP via SMS/Email here
@@ -2688,9 +2688,9 @@ $existingUser->save();
                 'message' => 'Aadhar status retrieved successfully',
                 'data' => [
                     'aadhar_number' => $user->aadhar_number ?? Null,
-                    'is_verified' => $user->aadhar_verify,
-                    'verified_at' => $user->aadhar_verify_at ? $user->aadhar_verify_at->format('Y-m-d H:i:s') : null,
-                    'has_pending_otp' => !empty($user->aadhar_verify_otp) && Carbon::now()->lt($user->aadhar_number_otp_expire_at)
+                    'is_verified' => $user->aadhar__verify,
+                    'verified_at' => $user->aadhar__verify_at ? $user->aadhar__verify_at->format('Y-m-d H:i:s') : null,
+                    'has_pending_otp' => !empty($user->aadhar__verify_otp) && Carbon::now()->lt($user->aadhar__number_otp_expire_at)
                 ]
             ], 200);
             

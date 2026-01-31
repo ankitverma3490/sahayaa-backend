@@ -3576,7 +3576,7 @@ public function addStaff(Request $request)
             'role_designation' => 'array',
             'joining_date' => 'required|date',
             'salary' => 'required|numeric',
-            'pay_frequency' => 'required|in:weekly,monthly,bi-weekly',
+            'pay_frequency' => 'required|in:weekly,monthly,bi-weekly,daily',
             'working_days' => 'required|array',
             
             // Aadhar details

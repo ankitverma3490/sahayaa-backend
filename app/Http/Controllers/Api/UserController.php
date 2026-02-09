@@ -33,50 +33,50 @@ use App\Models\Designation;
 class UserController extends Controller
 {
 
-public function signUp(Request $request)
-{
-  $validator = Validator::make($request->all(), [
-    'name' => 'string|max:255',
-    'email' => 'nullable|email|unique:users,email',
-    'phone_number' => 'required|string|max:20',
-    'business_name' => 'string|max:255|nullable',
-]);
+    public function signUp(Request $request)
+    {
+    $validator = Validator::make($request->all(), [
+        'name' => 'string|max:255',
+        'email' => 'nullable|email|unique:users,email',
+        'phone_number' => 'required|string|max:20',
+        'business_name' => 'string|max:255|nullable',
+        ]);
 
-if ($validator->fails()) {
-    return response()->json(['errors' => $validator->errors()], 422);
-}
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-// Format phone number to E.164
-$to = '+91' . ltrim($request->phone_number, '0');
+        // Format phone number to E.164
+        $to = '+91' . ltrim($request->phone_number, '0');
 
-// Check if phone number already exists
-$user = User::where('phone_number', $request->phone_number)->where('is_deleted', 0)->first();
+        // Check if phone number already exists
+        $user = User::where('phone_number', $request->phone_number)->where('is_deleted', 0)->first();
 
-// Static OTP for all numbers (for now)
-$verificationCode = '123456';
+        // Static OTP for all numbers (for now)
+        $verificationCode = '123456';
 
-if ($user) {
-    $user->update([
-        'verification_code' => "123456",
-        'verification_code_sent_time' => now(),
-    ]);
-} else {
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'phone_number' => $request->phone_number,
-        'verification_code' => "123456",
-        'verification_code_sent_time' => now(),
-        'user_role_id' => $request->role_id,
-    ]);
-}
+        if ($user) {
+            $user->update([
+                'verification_code' => "123456",
+                'verification_code_sent_time' => now(),
+            ]);
+        } else {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'verification_code' => "123456",
+                'verification_code_sent_time' => now(),
+                'user_role_id' => $request->role_id,
+            ]);
+        }
 
 
-return response()->json([
-    'message' => 'Verification code sent to your Phone Number',
-    'user_id' => $user->id
-]);
-}
+        return response()->json([
+            'message' => 'Verification code sent to your Phone Number',
+            'user_id' => $user->id
+        ]);
+    }
 
   public function saveLastWorkExperience(Request $request)
     {
@@ -209,16 +209,18 @@ fclose($filename);
             'message' => 'User not found. Please sign up first.'
         ], 404);
     }
-
+    
     // Always use fixed code 123456
     $verificationCode = 123456;
-
+    
     // Update verification code and time
     $user->update([
         'verification_code'           => $verificationCode,
         'verification_code_sent_time' => now(),
       //  'country_code'                => $request->country_code,
     ]);
+
+
 
     // --- Send OTP (optional) ---
     // Uncomment if you want to send SMS using Twilio
@@ -645,15 +647,16 @@ public function login(Request $request)
 
 public function verifyOtp(Request $request)
 {
+    
     $validator = Validator::make($request->all(), [
         'user_id' => 'required|exists:users,id',
         'otp' => 'required|digits:6'
     ]);
-
+    
     if ($validator->fails()) {
         return response()->json(['errors' => $validator->errors()], 422);
     }
-
+    
     $user = User::find($request->user_id);
     
     if ($user->is_deleted == 1) {
@@ -661,33 +664,36 @@ public function verifyOtp(Request $request)
             'error' => 'This account has been deleted. Please contact support.'
         ], 403);
     }
-
+    
     // Check if OTP matches the static code (123456)
     if ((string)$request->otp === (string)$user->verification_code) {
         
         // Expiration check disabled...
 
         try {
-            return \DB::transaction(function () use ($user) {
+            
+            // return \DB::transaction(function () use ($user) {
                 $user->update([
                     'is_verified' => 1,
                     'verification_code' => null,
                     'verification_code_sent_time' => null,
                     'updated_at' => now(),
                 ]);
-
+                
+                
                 // Create Passport token
-                $token = $user->createToken('AuthToken')->accessToken;
+                $userData = User::find($request->user_id);
+                $token = $userData->createToken('AuthToken')->plainTextToken;
 
                 // Login user into api guard
-                Auth::guard('api')->setUser($user);
+                // Auth::guard('api')->setUser($user);
 
                 return response()->json([
                     'message' => 'Logged in successfully',
                     'user' => $user,
                     'token' => $token
                 ]);
-            });
+            // });
 
         } catch (\Exception $e) {
             return response()->json([

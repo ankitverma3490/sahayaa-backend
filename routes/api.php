@@ -24,7 +24,8 @@ use App\Http\Controllers\Api\JobApplicationController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\AttendanceController;
-
+// start of new additions
+use App\Http\Controllers\Api\RoleController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -134,17 +135,37 @@ Route::get('/fix-passport', function () {
 
 Route::post('customer/login', [UserController::class, 'loginCustomer']);
 Route::get('/designations-list', [UserController::class, 'designationsIndex']);
+Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
+Route::post('/signup', [UserController::class, 'signUp']);
+Route::post('/verify-otp', [UserController::class, 'verifyOtp']);
+Route::post('/resend-otp', [UserController::class, 'resendOtp']);
+Route::get('/category', [UserController::class, 'categoryList']);
+Route::get('/cms-page', [UserController::class, 'getCmsData']);
+Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
+Route::post('/cms-page-update', [BannerController::class, 'updateBody']);
+Route::post('/google', [UserController::class, 'socialLoginCallback']);
+Route::get('housersold/staff/active-today', [SalaryController::class, 'getTodayActiveStaff']);
+
+Route::get('/analytics', [WalletController::class, 'getAnalytics']);
+Route::post('/refer-submit', [UserController::class, 'referSubmit']);
+
+
+
+Route::post('/supports', [SupportController::class, 'store']);  
+Route::get('/supports', [SupportController::class, 'index']);
+Route::post('/supports/{id}/reply', [SupportController::class, 'reply']);
 
 Route::group(['prefix' => '/customer'], function() {
     Route::get('/dashbord-data', [SalaryController::class, 'getStaffDashboard']);
-Route::get('/approved-job', [JobApplicationController::class, 'approvedJob']);
-Route::post('/quit-job-request', [JobApplicationController::class, 'requestQuitJob']);
+    Route::get('/approved-job', [JobApplicationController::class, 'approvedJob']);
+    Route::post('/quit-job-request', [JobApplicationController::class, 'requestQuitJob']);
 
-Route::post('/leave-apply', [JobApplicationController::class, 'applyLeave']);
-Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
-Route::get('/leave-type-list', [JobApplicationController::class, 'leaveTypeList']);
-Route::post('/leave-reject/{id}', [JobApplicationController::class, 'reject']);
-Route::post('/leave-approve/{id}', [JobApplicationController::class, 'approve']);
+    Route::post('/leave-apply', [JobApplicationController::class, 'applyLeave']);
+    Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
+    Route::get('/leave-type-list', [JobApplicationController::class, 'leaveTypeList']);
+    Route::post('/leave-reject/{id}', [JobApplicationController::class, 'reject']);
+    Route::post('/leave-approve/{id}', [JobApplicationController::class, 'approve']);
     Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
     Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
 
@@ -173,26 +194,24 @@ Route::post('/leave-approve/{id}', [JobApplicationController::class, 'approve'])
     Route::post('/cart-remove/{id}', [ServiceController::class, 'cartWishlist']);
     Route::get('/wishlist', [ServiceController::class, 'wishlistList']);
     Route::get('/promo-codes/{id}', [ServiceController::class, 'promoCodesList']);
-        Route::get('/promo-code/highlighted', [ServiceController::class, 'promoCodesListHighlighted']);
+    Route::get('/promo-code/highlighted', [ServiceController::class, 'promoCodesListHighlighted']);
+    
     Route::prefix('/cart')->group(function () {
-    Route::post('/add', [CartController::class, 'addToCart']);
-    Route::get('/', [CartController::class, 'getCart']);
-    Route::delete('/remove/{id}', [CartController::class, 'removeFromCart']);
-    Route::delete('/clear', [CartController::class, 'clearCart']);
-       });
+        Route::post('/add', [CartController::class, 'addToCart']);
+        Route::get('/', [CartController::class, 'getCart']);
+        Route::delete('/remove/{id}', [CartController::class, 'removeFromCart']);
+        Route::delete('/clear', [CartController::class, 'clearCart']);
+    });
 
 });
-
-Route::get('/subscriptions', [SubscriptionController::class, 'index']);
-Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
 
 
 Route::prefix('housesold/salary')->group(function () {
     Route::get('/staff/{user_id}', [SalaryController::class, 'getStaffSalary']);
     Route::post('/staff/{user_id}', [SalaryController::class, 'updateStaffSalary']);
-        Route::get('/list', [SalaryController::class, 'getRecentPayments']);
+    Route::get('/list', [SalaryController::class, 'getRecentPayments']);
 });
-Route::get('housersold/staff/active-today', [SalaryController::class, 'getTodayActiveStaff']);
+
 Route::prefix('housersold/attendance')->group(function () {
     Route::get('/', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/', [AttendanceController::class, 'store'])->name('attendance.store');
@@ -202,7 +221,7 @@ Route::prefix('housersold/attendance')->group(function () {
     Route::delete('/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 });
 Route::prefix('/admin')->group(function () {
-//Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
+    //Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
 
     Route::post('/members/store', [UserController::class, 'storeNewMember']);
     Route::get('/members/list', [UserController::class, 'memberList']);
@@ -232,25 +251,20 @@ Route::prefix('/admin')->group(function () {
     Route::post('/subscriptions/update/{id}', [SubscriptionController::class, 'update']);
     Route::post('/subscriptions/delete/{id}', [SubscriptionController::class, 'destroy']);
     Route::get('/getTransactions', [BookingController::class, 'getTransactions']);
-Route::prefix('notification-shortcuts')->group(function () {
-    Route::get('/', [NotificationShortcutController::class, 'index']);
-    Route::post('/', [NotificationShortcutController::class, 'store']);
-    Route::get('/{id}', [NotificationShortcutController::class, 'show']);
-    Route::post('/update/{id}', [NotificationShortcutController::class, 'update']);
-    Route::post('/delete/{id}', [NotificationShortcutController::class, 'destroy']);
-    Route::post('/send/{id}', [NotificationShortcutController::class, 'sendShortcutNotification']);
+    Route::prefix('notification-shortcuts')->group(function () {
+        Route::get('/', [NotificationShortcutController::class, 'index']);
+        Route::post('/', [NotificationShortcutController::class, 'store']);
+        Route::get('/{id}', [NotificationShortcutController::class, 'show']);
+        Route::post('/update/{id}', [NotificationShortcutController::class, 'update']);
+        Route::post('/delete/{id}', [NotificationShortcutController::class, 'destroy']);
+        Route::post('/send/{id}', [NotificationShortcutController::class, 'sendShortcutNotification']);
 
-});
+    });
+
+    Route::apiResource('roles', RoleController::class);
 });
 
-Route::post('/signup', [UserController::class, 'signUp']);
-Route::post('/verify-otp', [UserController::class, 'verifyOtp']);
-Route::post('/resend-otp', [UserController::class, 'resendOtp']);
-Route::get('/category', [UserController::class, 'categoryList']);
-Route::get('/cms-page', [UserController::class, 'getCmsData']);
-Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
-Route::post('/cms-page-update', [BannerController::class, 'updateBody']);
-Route::post('/google', [UserController::class, 'socialLoginCallback']);
+
 
 
 Route::group(['middleware' => 'auth:api'], function() {
@@ -262,7 +276,6 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::get('/settings/AutoPresent', [SettingController::class, 'handleAutoPresent']);
     Route::post('/settings/AutoPresent', [SettingController::class, 'handleAutoPresent']);
 
-
     Route::post('/settings/notification/update', [SettingController::class, 'handleNotification']);
     Route::post('/last-work-experience/save', [UserController::class, 'saveLastWorkExperience']);
     Route::post('/category/save', [UserController::class, 'storeOrUpdate']);
@@ -271,7 +284,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/applications', [JobApplicationController::class, 'store']);
     Route::post('/applications/{id}/delete', [JobApplicationController::class, 'destroy']);
     Route::get('/jobs', [JobController::class, 'index']);
-     Route::prefix('staff')->group(function () {
+    Route::prefix('staff')->group(function () {
         Route::post('/add', [UserController::class, 'addStaff']);
         Route::get('/list', [UserController::class, 'getStaffList']);
         Route::get('/{id}', [UserController::class, 'getStaffDetails']);
@@ -297,7 +310,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/profile/update', [UserController::class, 'updateProfile']);
     Route::post('/update/password', [UserController::class, 'resetPassword']);
     Route::post('/delete/user', [UserController::class, 'deleteAcc']);
-        Route::post('/delete/member/{id}', [UserController::class, 'deleteAccUser']);
+    Route::post('/delete/member/{id}', [UserController::class, 'deleteAccUser']);
     Route::get('/random-analytics/overview', [UserController::class, 'overview']);
     Route::post('/update/business-profile/2', [UserController::class, 'completeBusinessProfile']);
     Route::prefix('notifications')->group(function () {
@@ -305,7 +318,8 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::get('/list', [UserController::class, 'notificationList']);
     Route::put('/{id}/read', [UserController::class, 'notificationMarkAsRead']);
 });
-    Route::get('/bookings/list', [BookingController::class, 'vendorBookingList']);
+
+
 Route::prefix('reviews')->group(function () {
     Route::post('/store', [ReviewController::class, 'store']);    // Add Review
     Route::get('/list', [ReviewController::class, 'index']); 
@@ -320,9 +334,10 @@ Route::put('mails/{id}', [MailShortcutController::class, 'update']);
 Route::patch('mails/{id}', [MailShortcutController::class, 'update']);
 Route::delete('mails/{id}', [MailShortcutController::class, 'destroy']);
 Route::post('mails/{id}/send', [MailShortcutController::class, 'sendShortcutMail']);
-    
-    Route::post('/update/business-availability/3', [UserController::class, 'setBusinessAvailability']);
-    Route::prefix('services')->group(function () {
+Route::post('/update/business-availability/3', [UserController::class, 'setBusinessAvailability']);
+Route::get('/bookings/list', [BookingController::class, 'vendorBookingList']);
+
+Route::prefix('services')->group(function () {
     Route::get('/', [ServiceController::class, 'index']);
     Route::post('/', [ServiceController::class, 'store']);
     Route::get('/{service}', [ServiceController::class, 'show']);
@@ -332,9 +347,7 @@ Route::post('mails/{id}/send', [MailShortcutController::class, 'sendShortcutMail
     Route::get('/user/{userId}', [ServiceController::class, 'getByUser']);
 });
 
-Route::post('/supports', [SupportController::class, 'store']);  
-    Route::get('/supports', [SupportController::class, 'index']);
-    Route::post('/supports/{id}/reply', [SupportController::class, 'reply']);
+
 Route::prefix('sub-services')->group(function () {
     Route::get('/', [SubServiceController::class, 'index']);  
     Route::get('/{id}', [SubServiceController::class, 'show']);   
@@ -367,16 +380,17 @@ Route::get('transactions/{transaction}/invoice', [TransactionController::class, 
 Route::prefix('wallet')->group(function () {
     Route::get('/', [WalletController::class, 'index']);
     Route::post('/', [WalletController::class, 'store']); 
-        Route::post('/verify', [WalletController::class, 'verifyAndCreditWallet']); 
+    Route::post('/verify', [WalletController::class, 'verifyAndCreditWallet']); 
 });
-    Route::get('/transaction/list', [BookingController::class, 'vendorTransactionList']);
-    Route::get('/appointment/list', [UserController::class, 'appointmentList']);
-    Route::post('/booking/accepted/{id}', [BookingController::class, 'acceptBooking']);
-    Route::post('/booking/reject/{id}', [BookingController::class, 'rejectBooking']);
-    Route::post('/booking/completed/{id}', [BookingController::class, 'completedBooking']);
 
-    Route::get('analytics/customers', [AnalyticsController::class, 'customerAnalytics']);
-    Route::get('analytics/vendors', [AnalyticsController::class, 'vendorAnalytics']);
+Route::get('/transaction/list', [BookingController::class, 'vendorTransactionList']);
+Route::get('/appointment/list', [UserController::class, 'appointmentList']);
+Route::post('/booking/accepted/{id}', [BookingController::class, 'acceptBooking']);
+Route::post('/booking/reject/{id}', [BookingController::class, 'rejectBooking']);
+Route::post('/booking/completed/{id}', [BookingController::class, 'completedBooking']);
+
+Route::get('analytics/customers', [AnalyticsController::class, 'customerAnalytics']);
+Route::get('analytics/vendors', [AnalyticsController::class, 'vendorAnalytics']);
 
 Route::prefix('subscription')->group(function () {
     Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
@@ -394,7 +408,4 @@ Route::get('faq-support/category/{category}', [FaqSupportController::class, 'get
 Route::get('faq-support-categories', [FaqSupportController::class, 'getCategories']);
 Route::post('faq-support-search', [FaqSupportController::class, 'search']);
 });
-    Route::get('/analytics', [WalletController::class, 'getAnalytics']);
 
-    Route::post('/refer-submit', [UserController::class, 'referSubmit']);
-  

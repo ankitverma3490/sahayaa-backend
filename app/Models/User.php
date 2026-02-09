@@ -262,9 +262,9 @@ class User extends Authenticatable
     }
 
     public function addedByUser()
-{
-    return $this->belongsTo(User::class, 'added_by');
-}
+    {
+        return $this->belongsTo(User::class, 'added_by');
+    }
 
     /**
      * Check if user is customer
@@ -465,5 +465,10 @@ class User extends Authenticatable
         ]);
 
         return $this;
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'id', 'user_role_id');
     }
 }

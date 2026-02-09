@@ -227,4 +227,6 @@ class JobController extends Controller
             'message' => 'Job status updated successfully'
         ]);
     }
+    
+
 }

@@ -49,10 +49,7 @@ Route::middleware(['UserGuestApi', 'ResponseMiddleware'])->group(function () {
     Route::post('initiatePaymentCard', [CartController::class, 'initiatePaymentCard']);
 
     Route::post('paytr/payment/api', [App\Http\Controllers\frontend\PayTRController::class, 'paymentRequestapi']);
-Route::post('paytr/notification/api', [App\Http\Controllers\frontend\PayTRController::class, 'paymentNotificationpi']);
-
-    
-
+    Route::post('paytr/notification/api', [App\Http\Controllers\frontend\PayTRController::class, 'paymentNotificationpi']);
 });
 
 Route::middleware(['UserAuthApi', 'ResponseMiddleware'])->group(function () {

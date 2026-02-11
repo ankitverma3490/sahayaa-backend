@@ -23,9 +23,7 @@ class SubscriptionController extends Controller
         if ($request->has('validity') && !is_null($request->validity)) {
             $query->where('validity', $request->validity);
         }
-
         $subscriptions = $query->get();
-
         return response()->json([
             'status' => true,
             'message' => 'Subscriptions fetched successfully',
@@ -41,8 +39,9 @@ class SubscriptionController extends Controller
             'description'       => 'nullable|string',
             'price'             => 'required|numeric',
             'validity'          => 'required',
-            'type'              => 'required',
+            'type'              => 'required|in:monthly,yearly,quarterly',
             'razorpay_order_id' => 'nullable',
+            'role_id'           => 'required|exists:roles,id',
             'extra'             => 'nullable'
         ]);
 
@@ -65,8 +64,9 @@ class SubscriptionController extends Controller
             'description'       => 'nullable|string',
             'price'             => 'sometimes|numeric',
             'validity'          => 'sometimes',
-            'type'              => 'sometimes',
+            'type'              => 'sometimes|in:monthly,yearly,quarterly',
             'razorpay_order_id' => 'nullable|string',
+            'role_id'           => 'required|exists:roles,id',
             'extra'             => 'nullable|array'
         ]);
 
@@ -83,16 +83,13 @@ class SubscriptionController extends Controller
      public function destroy($id)
     {
         $subscription = Subscription::find($id);
-
         if (!$subscription) {
             return response()->json([
                 'status' => false,
                 'message' => 'Subscription not found'
             ], 404);
         }
-
         $subscription->delete();
-
         return response()->json([
             'status' => true,
             'message' => 'Subscription deleted successfully'

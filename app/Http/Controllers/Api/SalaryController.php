@@ -1131,5 +1131,8 @@ public function getStaffDashboard(Request $request): JsonResponse
             'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
         ], 500);
     }
-}
+    
+    }
+
+    
 }

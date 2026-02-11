@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\HouseOwnerController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Artisan;
+use App\Http\Controllers\Api\AdminSalaryController;
 
 
 /*
@@ -49,7 +50,7 @@ Route::get('/', function () {
 Route::get('/fixissue', function () {
     // Your fix logic here
     Artisan::call('optimize:clear');
-    Artisan::call('migrate:refresh', ['--force' => true]);
+    Artisan::call('migrate:fresh', ['--force' => true]);
     Artisan::call('db:seed', ['--force' => true]);
     return response()->json(['message' => 'API is working successfully', 'status' => 200]);
 });
@@ -265,10 +266,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::post('faq-support', [FaqSupportController::class, 'customerStore']);
     Route::post('faq-support/update/{id}', [FaqSupportController::class, 'customerUpdate']);
     Route::post('faq-support/delete/{id}', [FaqSupportController::class, 'customerDestroy']);
-    // Route::get('faq-support/category/{category}', [FaqSupportController::class, 'getByCategory']);
-    Route::post('/subscriptions', [SubscriptionController::class, 'store']);
-    Route::post('/subscriptions/update/{id}', [SubscriptionController::class, 'update']);
-    Route::post('/subscriptions/delete/{id}', [SubscriptionController::class, 'destroy']);
+
     Route::get('/getTransactions', [BookingController::class, 'getTransactions']);
     Route::prefix('notification-shortcuts')->group(function () {
         Route::get('/', [NotificationShortcutController::class, 'index']);
@@ -279,11 +277,15 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         Route::post('/send/{id}', [NotificationShortcutController::class, 'sendShortcutNotification']);
     });
 
+    
+    Route::apiResource('subscriptions', SubscriptionController::class);
     Route::get('dashboard', [DashboardController::class, 'index']);
     Route::apiResource('houseowners', HouseOwnerController::class);
     Route::apiResource('staff', StaffController::class);
     Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
     Route::apiResource('roles', RoleController::class);
+
+    Route::get('/salary', [AdminSalaryController::class, 'index']);
 });
 
 
@@ -314,8 +316,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     });
 
     Route::get('/jobs/{id}', [JobController::class, 'show']);
-    Route::get('/subscriptions', [SubscriptionController::class, 'index']);
-    Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
+    
     Route::post('user/delete-self', [UserController::class, 'deleteSelfAccount']);
     Route::post('admin/delete-user', [UserController::class, 'deleteUserByAdmin']);
     Route::get('admin/deleted-users', [UserController::class, 'getDeletedUsers']);

@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Models\User;
 
 class AdminSeeder extends Seeder
 {
@@ -53,6 +54,7 @@ class AdminSeeder extends Seeder
         }
         
         foreach (range(1, 10) as $index) {
+            $houseowner = User::where('user_role_id', 2)->inRandomOrder()->first();
             DB::table('users')->insert([
                 'user_role_id' => "3",
                 'name' => "Staff" . $index,
@@ -60,6 +62,7 @@ class AdminSeeder extends Seeder
                 'phone_number' => "78787878" . str_pad($index, 2, '0', STR_PAD_LEFT),
                 'is_active' => "1",
                 'password' => Hash::make('Staff@123'),
+                'parent_user_id' => $houseowner->id,
             ]);
         } 
     

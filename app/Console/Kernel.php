@@ -9,6 +9,7 @@ class Kernel extends ConsoleKernel
 {
      protected $commands = [
         \App\Console\Commands\AutoAttendanceCommand::class,
+        \App\Console\Commands\GenerateMonthlySalary::class
     ];
     /**
      * Define the application's command schedule.
@@ -23,6 +24,13 @@ class Kernel extends ConsoleKernel
             ->dailyAt('7:00')
             ->timezone('Asia/Kolkata') // Adjust to your timezone
             ->appendOutputTo(storage_path('logs/auto-attendance.log'));
+
+        $schedule->command('salary:generate')
+            ->dailyAt('7:00')
+            ->timezone('Asia/Kolkata') // Adjust to your timezone
+            ->appendOutputTo(storage_path('logs/auto-salary.log'));
+
+
     }
 
     /**

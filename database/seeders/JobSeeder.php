@@ -1,0 +1,63 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\Job;
+use App\Models\User;
+use App\Models\JobApplication;
+
+class JobSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        foreach (range(1, 10) as $index) {
+            $user = User::where('user_role_id', 2)->inRandomOrder()->first();
+            Job::create([
+                'title' => 'Full-Time Nanny Required for Two Children ' . $index,
+                'description' => 'Looking for an experienced nanny to care for two children.',
+                'compensation' => 2500.00,
+                'expected_compensation' => 3000.00,
+                'compensation_type' => 'monthly',
+                'street_address' => '123 Main Street',
+                'city' => 'London',
+                'state' => 'Greater London',
+                'zip_code' => 'SW1A 1AA',
+                'commitment_type' => 'full-time',
+                'preferred_hours' => '9-5',
+                'preferred_days' => 'Monday to Friday',
+                'status' => 'active',
+                'childcare_experience' => true,
+                'cooking_required' => true,
+                'driving_license_required' => false,
+                'first_aid_certified' => true,
+                'pet_care_required' => false,
+                'additional_requirements' => 'Must have at least 3 years of experience.',
+                'required_skills' => 'Childcare, Meal Preparation, Communication',
+                'created_by' => $user?->id ?? 1,
+            ]);
+        }
+
+        foreach (range(1, 10) as $index) {
+            $user = User::where('user_role_id', 2)->inRandomOrder()->first();
+            $job = Job::inRandomOrder()->first();
+            $user = User::where('user_role_id', 3)->inRandomOrder()->first();
+
+            JobApplication::create([
+                'job_id' => $job?->id ?? 1,
+                'user_id' => $user?->id ?? 1,
+                'application_status' => 'pending',
+                'cover_letter' => 'I am very interested in this position and have ' . $index . ' years of experience.',
+                'expected_salary' => 2800.00,
+                'available_from' => now()->addDays(7),
+                'is_advance' => $user->id % 2 == 0 ? true : false,
+            ]);
+        }
+    }
+}

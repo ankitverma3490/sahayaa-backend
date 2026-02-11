@@ -36,30 +36,32 @@ class AdminSeeder extends Seeder
             'user_role_id' => "1",
             'name' => "admin",
             'email' => "admin@yopmail.com",
-            'phone_number' => "7878787888",
+            'phone_number' => "9988776655",
             'is_active' => "1",
             'password' => Hash::make('Admin@123'),
         ]);
 
-        DB::table('users')->insert([
-            'user_role_id' => "2",
-            'name' => "householder",
-            'email' => "householder@yopmail.com",
-            'phone_number' => "7878787878",
-            'is_active' => "1",
-            'password' => Hash::make('Householder@123'),
-        ]);
-
-        DB::table('users')->insert([
-            'user_role_id' => "3",
-            'name' => "Staff",
-            'email' => "staff@yopmail.com",
-            'phone_number' => "7878787874",
-            'is_active' => "1",
-            'password' => Hash::make('Staff@123'),
-        ]);
-
-            
+        foreach (range(1, 10) as $index) {
+            DB::table('users')->insert([
+                'user_role_id' => "2",
+                'name' => "householder" . $index,
+                'email' => "householder" . $index . "@yopmail.com",
+                'phone_number' => "78787878" . str_pad($index, 2, '0', STR_PAD_LEFT),
+                'is_active' => "1",
+                'password' => Hash::make('Householder@123'),
+            ]);
+        }
+        
+        foreach (range(1, 10) as $index) {
+            DB::table('users')->insert([
+                'user_role_id' => "3",
+                'name' => "Staff" . $index,
+                'email' => "staff" . $index . "@yopmail.com",
+                'phone_number' => "78787878" . str_pad($index, 2, '0', STR_PAD_LEFT),
+                'is_active' => "1",
+                'password' => Hash::make('Staff@123'),
+            ]);
+        } 
     
     }
 }

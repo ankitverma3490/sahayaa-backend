@@ -30,6 +30,7 @@ use App\Models\Category;
 use Illuminate\Validation\Rule;
 use App\Models\Designation;
 
+
 class UserController extends Controller
 {
 
@@ -5083,6 +5084,54 @@ private function updateExistingStaff(User $existingUser, Request $request)
             'status' => true,
             'data' => $designations
         ]);
+    }
+
+
+
+    public function loginAdmin(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'email'    => 'required|email',
+                'password' => 'required|min:8',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status' => 'error',
+                'msg'    => 'Invalid email or password.'
+            ], 401);
+        }
+        
+        try {
+            $token = $user->createToken('AuthToken')->plainTextToken;
+            return response()->json([
+                'status' => 'success',
+                'msg'    => 'Login successful.',
+                'token'  => $token,
+                'user'   => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'email' => $user->email,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'msg'    => 'Authentication system not configured properly.'
+            ], 500);
+        }
     }
 
 }

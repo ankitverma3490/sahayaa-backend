@@ -44,7 +44,7 @@ class StaffController extends Controller
         if ($request->filled('user_type')) {
             $query->where('status', $request->user_type);
         }
-        $staff = $query->latest()->get();
+        $staff = $query->latest()->paginate(10);
         return response()->json([
             'success' => true,
             'message' => 'Staff retrieved successfully',

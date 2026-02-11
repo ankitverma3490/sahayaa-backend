@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Role;
 
 class HouseOwnerController extends Controller
 {
@@ -34,7 +35,7 @@ class HouseOwnerController extends Controller
             if (!empty($status)) {
                 $query->where('status', $status);
             }
-            $users = $query->latest()->get();
+            $users = $query->latest()->paginate(10);
         } else {
             $users = User::where('id', Auth::id())->get();
         }

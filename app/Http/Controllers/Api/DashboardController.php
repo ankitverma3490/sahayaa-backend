@@ -22,11 +22,19 @@ class DashboardController extends Controller
         $staffDataCount = User::where('user_role_id', $staff->id)->count();
         $houseOwnerDataCount = User::where('user_role_id', $houseOwner->id)->count();
         $openJobCount = Job::where('status', 'open')->count();
+        $presentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'present')->count();
+        $absentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'absent')->count();
+        
+
         
         $data = [
             'staff_count' => $staffDataCount,
             'job_count' => $openJobCount,
             'house_owner_count' => $houseOwnerDataCount,
+            'present_attendance_count' => $presentAttendanceCount,
+            'absent_attendance_count' => $absentAttendanceCount,
+            'leave' => 0,
+            'overall_attendance_rate' => 88
         ];
         return response()->json([
             'status' => 'success',

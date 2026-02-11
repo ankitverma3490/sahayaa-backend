@@ -12,7 +12,7 @@ use App\Http\Controllers\Controller;
 
 class JobController extends Controller
 {
- public function index(Request $request): JsonResponse
+public function index(Request $request): JsonResponse
 {
     $user = Auth::guard('api')->user();
     
@@ -260,6 +260,28 @@ class JobController extends Controller
             'status' => 'success',
             'data' => $job,
             'message' => 'Job status updated successfully'
+        ]);
+    }
+
+    public function joblist(Request $request)
+    {
+        $user = Auth::user();
+        $jobs = Job::orderBy('created_at', 'desc')->paginate(10);
+        
+        if (!$user) {
+            $jobs->each(function ($job) {
+                $job->is_applied = 0;
+            });
+        } else {
+            $jobs->each(function ($job) {
+                $job->is_applied = $job->is_applied > 0 ? 1 : 0;
+            });
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Jobs retrieved successfully',
+            'data' => $jobs
         ]);
     }
     

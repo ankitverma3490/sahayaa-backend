@@ -16,13 +16,13 @@ class SubscriptionController extends Controller
     public function index(Request $request)
     {
         $query = Subscription::query();
-if ($request->has('type') && !is_null($request->type)) {
-    $query->where('type', $request->type);
-}
+        if ($request->has('type') && !is_null($request->type)) {
+            $query->where('type', $request->type);
+        }
 
-if ($request->has('validity') && !is_null($request->validity)) {
-    $query->where('validity', $request->validity);
-}
+        if ($request->has('validity') && !is_null($request->validity)) {
+            $query->where('validity', $request->validity);
+        }
 
         $subscriptions = $query->get();
 

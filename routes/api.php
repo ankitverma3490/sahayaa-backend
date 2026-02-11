@@ -26,6 +26,12 @@ use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\AttendanceController;
 // start of new additions
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\HouseOwnerController;
+use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\DashboardController;
+use Illuminate\Support\Facades\Artisan;
+
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -37,6 +43,15 @@ use App\Http\Controllers\Api\RoleController;
 |
 */
 Route::get('/', function () {
+    return response()->json(['message' => 'API is working successfully', 'status' => 200]);
+});
+
+Route::get('/fixissue', function () {
+    // Your fix logic here
+    Artisan::call('optimize:clear');
+    Artisan::call('migrate:refresh', ['--force' => true]);
+    Artisan::call('db:seed', ['--force' => true]);
+    
     return response()->json(['message' => 'API is working successfully', 'status' => 200]);
 });
 
@@ -220,7 +235,11 @@ Route::prefix('housersold/attendance')->group(function () {
     Route::patch('/{id}', [AttendanceController::class, 'update'])->name('attendance.update.patch');
     Route::delete('/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
 });
-Route::prefix('/admin')->group(function () {
+
+
+Route::post('admin/login', [UserController::class, 'loginAdmin']);
+
+Route::prefix('/admin')->middleware('auth:api')->group(function () {
     //Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
 
     Route::post('/members/store', [UserController::class, 'storeNewMember']);
@@ -234,11 +253,12 @@ Route::prefix('/admin')->group(function () {
     Route::post('/category/update/{id}', [UserController::class, 'categoryUpdate']); // Add/Update banner
     Route::post('/banner/delete', [BannerController::class, 'delete']); // Add/Update banner
     Route::get('/auth-jobs', [JobController::class, 'authBaseList']);
+    Route::get('/jobs/list', [JobController::class, 'joblist']);
+    Route::get('/jobs/{id}', [JobController::class, 'show']);
     Route::post('/jobs', [JobController::class, 'store']);
     Route::post('/jobs/{id}', [JobController::class, 'update']);
-    Route::post('/jobs/delete/{id}', [JobController::class, 'destroy']);
+    Route::delete('/jobs/{id}', [JobController::class, 'destroy']);
     Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus']);
-    Route::post('/jobs/delete/{id}', [JobController::class, 'deleteJob']);
     Route::get('/jobs/{jobId}/applications', [JobApplicationController::class, 'getJobApplications']);
     Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateApplicationStatus']);
     Route::get('faq-support', [FaqSupportController::class, 'customerIndex']);
@@ -258,9 +278,12 @@ Route::prefix('/admin')->group(function () {
         Route::post('/update/{id}', [NotificationShortcutController::class, 'update']);
         Route::post('/delete/{id}', [NotificationShortcutController::class, 'destroy']);
         Route::post('/send/{id}', [NotificationShortcutController::class, 'sendShortcutNotification']);
-
     });
 
+    Route::get('dashboard', [DashboardController::class, 'index']);
+    Route::apiResource('houseowners', HouseOwnerController::class);
+    Route::apiResource('staff', StaffController::class);
+    Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
     Route::apiResource('roles', RoleController::class);
 });
 
@@ -407,5 +430,8 @@ Route::post('faq-support/delete/{id}', [FaqSupportController::class, 'destroy'])
 Route::get('faq-support/category/{category}', [FaqSupportController::class, 'getByCategory']);
 Route::get('faq-support-categories', [FaqSupportController::class, 'getCategories']);
 Route::post('faq-support-search', [FaqSupportController::class, 'search']);
+
+
+
 });
 

@@ -51,7 +51,6 @@ Route::get('/fixissue', function () {
     Artisan::call('optimize:clear');
     Artisan::call('migrate:refresh', ['--force' => true]);
     Artisan::call('db:seed', ['--force' => true]);
-    
     return response()->json(['message' => 'API is working successfully', 'status' => 200]);
 });
 

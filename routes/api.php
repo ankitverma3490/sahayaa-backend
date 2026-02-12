@@ -150,14 +150,17 @@ Route::get('/fix-passport', function () {
 
 Route::post('customer/login', [UserController::class, 'loginCustomer']);
 Route::get('/designations-list', [UserController::class, 'designationsIndex']);
+
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
+Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
+
 Route::post('/signup', [UserController::class, 'signUp']);
 Route::post('/verify-otp', [UserController::class, 'verifyOtp']);
 Route::post('/resend-otp', [UserController::class, 'resendOtp']);
 Route::get('/category', [UserController::class, 'categoryList']);
 Route::get('/cms-page', [UserController::class, 'getCmsData']);
-Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
+
 Route::post('/cms-page-update', [BannerController::class, 'updateBody']);
 Route::post('/google', [UserController::class, 'socialLoginCallback']);
 Route::get('housersold/staff/active-today', [SalaryController::class, 'getTodayActiveStaff']);
@@ -286,6 +289,15 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::apiResource('roles', RoleController::class);
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);
+
+    Route::prefix('subscriptionuser')->group(function () {
+        Route::get('/show/{id}', [SubscriptionController::class, 'getSubscriptionUser']);
+        Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
+        Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
+        Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
+        Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+    });
+
 });
 
 
@@ -415,12 +427,6 @@ Route::post('/booking/completed/{id}', [BookingController::class, 'completedBook
 Route::get('analytics/customers', [AnalyticsController::class, 'customerAnalytics']);
 Route::get('analytics/vendors', [AnalyticsController::class, 'vendorAnalytics']);
 
-Route::prefix('subscription')->group(function () {
-    Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
-    Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
-    Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
-    Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
-});
 
 Route::get('faq-support', [FaqSupportController::class, 'index']);
 Route::get('faq-support/{id}', [FaqSupportController::class, 'show']);

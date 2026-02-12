@@ -30,6 +30,10 @@ class Kernel extends ConsoleKernel
             ->timezone('Asia/Kolkata') // Adjust to your timezone
             ->appendOutputTo(storage_path('logs/auto-salary.log'));
 
+        $schedule->command('subscriptions:generate-orders')
+            ->everyMinute()
+            ->timezone('Asia/Kolkata') // Adjust to your timezone
+            ->appendOutputTo(storage_path('logs/auto-subscriptions.log'));
 
     }
 

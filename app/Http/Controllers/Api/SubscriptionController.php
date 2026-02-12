@@ -10,9 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Notification;
+use Carbon\Carbon;
+use Razorpay\Api\Api;
 
 class SubscriptionController extends Controller
 {
+    
+
     public function index(Request $request)
     {
         $query = Subscription::query();
@@ -80,7 +84,7 @@ class SubscriptionController extends Controller
     }
 
 
-     public function destroy($id)
+    public function destroy($id)
     {
         $subscription = Subscription::find($id);
         if (!$subscription) {
@@ -115,21 +119,25 @@ class SubscriptionController extends Controller
     }
 
 
-     public function createSubscriptionOrder(Request $request)
+    public function createSubscriptionOrder(Request $request)
     {
+        
         $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
         ]);
-
-        $user = Auth::guard('api')->user();
-        $subscription = Subscription::findOrFail($request->subscription_id);
-
+        $user = Auth::user();
+        $subscription = Subscription::find($request->subscription_id);
+        if(!$subscription){
+            return response()->json([
+                'status' => false,
+                'message' => 'Subscription not found'
+            ], 404);
+        }
         // Check if user already has an active subscription
         $activeSubscription = SubscriptionUser::where('user_id', $user->id)
             ->where('status', 'active')
             ->where('end_date', '>', now())
             ->first();
-
         if ($activeSubscription) {
             return response()->json([
                 'status' => false,
@@ -140,32 +148,15 @@ class SubscriptionController extends Controller
         try {
             $api_key = config('services.razorpay.key');
             $api_secret = config('services.razorpay.secret');
-
+            
             $razorpayData = [
-                "amount" => $subscription->price * 100, // in paise
+                "amount" => (int) $subscription->price * 100, // in paise
                 "currency" => "INR",
                 "receipt" => "sub_" . uniqid(),
                 "payment_capture" => 1
             ];
-
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => "https://api.razorpay.com/v1/orders",
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_USERPWD => "$api_key:$api_secret",
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-                CURLOPT_POSTFIELDS => json_encode($razorpayData),
-            ]);
-            $response = curl_exec($ch);
-            $err = curl_error($ch);
-            curl_close($ch);
-
-            if ($err) {
-                return response()->json(['status' => false, 'message' => $err], 500);
-            }
-
-            $order = json_decode($response, true);
-
+            $api = new Api($api_key, $api_secret);
+            $order = $api->order->create($razorpayData);
             // Create subscription user record
             $subscriptionUser = SubscriptionUser::create([
                 'user_id' => $user->id,
@@ -175,8 +166,10 @@ class SubscriptionController extends Controller
                 'amount' => $subscription->price,
                 'currency' => 'INR',
                 'payment_status' => 'pending',
-                'role' => $request->role ?? 'vendor',
+                'role' => $user->user_role_id,
                 'type' => 'credit',
+                'start_date' => now(),
+                'end_date' => now()->addDays($subscription->validity),
             ]);
 
             return response()->json([
@@ -208,14 +201,11 @@ class SubscriptionController extends Controller
             'razorpay_signature' => 'required',
             'subscription_user_id' => 'required',
         ]);
-
         $user = Auth::guard('api')->user();
-   $subscriptionUser = SubscriptionUser::find($request->subscription_user_id);
+        $subscriptionUser = SubscriptionUser::find($request->subscription_user_id);
+        
         try {
             DB::beginTransaction();
-
-         
-
             // Verify signature
             $generated_signature = hash_hmac(
                 'sha256',
@@ -302,16 +292,38 @@ class SubscriptionController extends Controller
      */
     public function getSubscriptionHistory()
     {
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
-        $subscriptions = SubscriptionUser::with('subscription')
-            ->where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
-
+        if($user->user_role_id == 1) {
+            $subscriptions = SubscriptionUser::with('subscription')
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        } else {
+            $subscriptions = SubscriptionUser::with('subscription')
+                ->where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        }
+    
         return response()->json([
             'status' => true,
             'subscriptions' => $subscriptions,
+        ]);
+    }
+
+    /**
+     * Get subscription user details
+     */
+    public function getSubscriptionUser($id)
+    {
+        $subscriptionUser = SubscriptionUser::with('subscription')
+            ->where('id', $id)
+            ->first();
+
+        return response()->json([
+            'status' => true,
+            'data' => $subscriptionUser,
+            'message' => 'Subscription user details fetched successfully'
         ]);
     }
 

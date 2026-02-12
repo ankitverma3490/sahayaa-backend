@@ -283,6 +283,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     
     Route::apiResource('subscriptions', SubscriptionController::class);
     Route::get('dashboard', [DashboardController::class, 'index']);
+    Route::post('report', [DashboardController::class, 'report']);
     Route::apiResource('houseowners', HouseOwnerController::class);
     Route::apiResource('staff', StaffController::class);
     Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);

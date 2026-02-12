@@ -17,19 +17,6 @@ class StaffController extends Controller
      */
     public function index(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id'
-        ]);
-
-        // If validation fails, return a 422 response with errors
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         $role = Role::where('slug', 'staff')->first();
         $query = User::where('user_role_id', $role->id);
         // 🔍 Search

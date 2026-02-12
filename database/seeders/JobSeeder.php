@@ -18,7 +18,7 @@ class JobSeeder extends Seeder
     public function run()
     {
         foreach (range(1, 10) as $index) {
-            $user = User::where('user_role_id', 2)->inRandomOrder()->first();
+            $user = User::where('user_role_id', 3)->inRandomOrder()->first();
             Job::create([
                 'title' => 'Full-Time Nanny Required for Two Children ' . $index,
                 'description' => 'Looking for an experienced nanny to care for two children.',
@@ -45,16 +45,16 @@ class JobSeeder extends Seeder
         }
 
         foreach (range(1, 10) as $index) {
-            $user = User::where('user_role_id', 2)->inRandomOrder()->first();
-            $job = Job::inRandomOrder()->first();
             $user = User::where('user_role_id', 3)->inRandomOrder()->first();
+            $job = Job::inRandomOrder()->first();
+            $staff = User::where('user_role_id', 2)->inRandomOrder()->first();
 
             JobApplication::create([
                 'job_id' => $job?->id ?? 1,
-                'user_id' => $user?->id ?? 1,
-                'application_status' => 'pending',
+                'user_id' => $staff?->id ?? 1,
+                'application_status' => 'accepted',
                 'cover_letter' => 'I am very interested in this position and have ' . $index . ' years of experience.',
-                'expected_salary' => 2800.00,
+                'expected_salary' => rand(9000,80500),
                 'available_from' => now()->addDays(7),
                 'is_advance' => $user->id % 2 == 0 ? true : false,
             ]);

@@ -99,8 +99,8 @@ class AttendanceSeeder extends Seeder
 
             $date = Carbon::now()->subDays(rand(0, 30))->format('Y-m-d');
 
-            $staff = User::where('user_role_id', 3)->inRandomOrder()->first();
-            $houseowner = User::where('user_role_id', 2)->inRandomOrder()->first();
+            $staff = User::where('user_role_id', 2)->inRandomOrder()->first();
+            $houseowner = User::where('user_role_id', 3)->inRandomOrder()->first();
 
             if (!$staff || !$houseowner) {
                 continue;

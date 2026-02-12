@@ -35,7 +35,7 @@ class GenerateMonthlySalary extends Command
         $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d');
         $endOfMonth = Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        $staffMembers = User::where('user_role_id', 3) // staff role
+        $staffMembers = User::where('user_role_id', 2) // staff role
                             ->where('status', 'active') // optional
                             ->get();
         foreach ($staffMembers as $staff) {
@@ -55,7 +55,7 @@ class GenerateMonthlySalary extends Command
                     'payment_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
                 ],
                 [
-                    'houseowner_id' => $staff->parent_user_id,
+                    'houseowner_id' => $staff->added_by,
                     'amount' => $dailyCompensation,
                     'status' => 'pending',
                 ]

@@ -20,7 +20,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
-         $schedule->command('attendance:auto-mark')
+        $schedule->command('attendance:auto-mark')
             ->dailyAt('7:00')
             ->timezone('Asia/Kolkata') // Adjust to your timezone
             ->appendOutputTo(storage_path('logs/auto-attendance.log'));

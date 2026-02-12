@@ -24,13 +24,13 @@ class AdminSeeder extends Seeder
         ]);
 
         DB::table('roles')->insert([
-            'name' => "HouseHolder",
-            'slug' => "householder",
+            'name' => "Staff",
+            'slug' => "staff",
         ]);
 
         DB::table('roles')->insert([
-            'name' => "Staff",
-            'slug' => "staff",
+            'name' => "HouseHolder",
+            'slug' => "householder",
         ]);
 
         DB::table('users')->insert([
@@ -44,7 +44,7 @@ class AdminSeeder extends Seeder
 
         foreach (range(1, 10) as $index) {
             DB::table('users')->insert([
-                'user_role_id' => "2",
+                'user_role_id' => "3",
                 'name' => "householder" . $index,
                 'email' => "householder" . $index . "@yopmail.com",
                 'phone_number' => "78787878" . str_pad($index, 2, '0', STR_PAD_LEFT),
@@ -54,17 +54,22 @@ class AdminSeeder extends Seeder
         }
         
         foreach (range(1, 10) as $index) {
-            $houseowner = User::where('user_role_id', 2)->inRandomOrder()->first();
+            $houseowner = User::where('user_role_id', 3)->inRandomOrder()->first();
             DB::table('users')->insert([
-                'user_role_id' => "3",
+                'user_role_id' => "2",
                 'name' => "Staff" . $index,
                 'email' => "staff" . $index . "@yopmail.com",
                 'phone_number' => "78787878" . str_pad($index, 2, '0', STR_PAD_LEFT),
                 'is_active' => "1",
                 'password' => Hash::make('Staff@123'),
                 'parent_user_id' => $houseowner->id,
+                'added_by' => $houseowner->id
             ]);
-        } 
+        }
+
+        
+        
+         
     
     }
 }

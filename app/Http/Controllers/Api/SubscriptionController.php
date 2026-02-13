@@ -125,7 +125,6 @@ class SubscriptionController extends Controller
 
     public function createSubscriptionOrder(Request $request)
     {
-        
         $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
         ]);

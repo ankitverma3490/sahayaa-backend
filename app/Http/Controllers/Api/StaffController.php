@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Attendance;
+use App\Models\LeaveType;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class StaffController extends Controller
 {
@@ -17,8 +21,21 @@ class StaffController extends Controller
      */
     public function index(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        // If validation fails, return a 422 response with errors
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
         $role = Role::where('slug', 'staff')->first();
-        $query = User::where('user_role_id', $role->id);
+        $query = User::where('user_role_id', $role->id)->where('added_by', $request->user_id);
         // 🔍 Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -128,5 +145,57 @@ class StaffController extends Controller
             'data'    => $user,
             'message' => 'Staff status updated successfully',
         ]);
+    }
+
+    public function getAttendance(Request $request)
+    {
+        // Validate request
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:users,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $staff = User::find($request->id);
+        if (!$staff) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Staff not found'
+            ], 404);
+        }
+        $startDate = $request->start_date;
+        $endDate   = $request->end_date;
+        
+        $attendance = Attendance::whereBetween('date', [$startDate, $endDate])
+        ->where('staff_id', $staff->id)
+        ->pluck('status', 'date'); // key => date, value => status
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $result = [];
+        
+        foreach ($period as $date) {
+            $formattedDate = $date->format('Y-m-d');
+            $result[] = [
+                    'date' => $formattedDate,
+                    'status' => $attendance->has($formattedDate)
+                        ? $attendance[$formattedDate]
+                        : 'absent'
+            ];
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Attendance retrieved successfully',
+            'data' => [
+               "data" => $result
+            ]
+        ], 200);
     }
 }

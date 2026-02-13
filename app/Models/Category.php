@@ -12,8 +12,6 @@ class Category extends Model
     protected $table = 'categories';
 
     protected $fillable = [
-        'user_id',
-        'parent_id',
         'name',
         'image',
     ];
@@ -26,13 +24,13 @@ class Category extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-      public function getImageAttribute($value)
-{
-    if ($value) {
-        return env('APP_URL') . '/public/' . $value;
+    public function getImageAttribute($value)
+    {
+        if ($value) {
+            return env('APP_URL') . '/public/' . $value;
+        }
+        return env('APP_URL') . '/public/noimage.jpg';
     }
-    return env('APP_URL') . '/public/noimage.jpg';
-}
 
     /**
      * Relation: Category may have a Parent Category

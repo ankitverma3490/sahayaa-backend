@@ -253,7 +253,6 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::get('/user/list', [UserController::class, 'userList']); // Get banner
     Route::get('/vendor/list', [UserController::class, 'vendorList']); // Get banner
     Route::post('/banner', [BannerController::class, 'storeOrUpdate']); // Add/Update banner
-    Route::post('/category/update/{id}', [UserController::class, 'categoryUpdate']); // Add/Update banner
     Route::post('/banner/delete', [BannerController::class, 'delete']); // Add/Update banner
     Route::get('/auth-jobs', [JobController::class, 'authBaseList']);
     Route::get('/jobs/list', [JobController::class, 'joblist']);
@@ -316,6 +315,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/settings/notification/update', [SettingController::class, 'handleNotification']);
     Route::post('/last-work-experience/save', [UserController::class, 'saveLastWorkExperience']);
     Route::post('/category/save', [UserController::class, 'storeOrUpdate']);
+    Route::post('/category/update/{id}', [UserController::class, 'categoryUpdate']); // Add/Update banner
     Route::get('/category/subcategories', [UserController::class, 'listSubcategories']);
     Route::get('/applications', [JobApplicationController::class, 'index']);
     Route::post('/applications', [JobApplicationController::class, 'store']);

@@ -2886,17 +2886,15 @@ public function listSubcategories(Request $request)
 
   public function storeOrUpdate(Request $request)
     {
-        $user = Auth::guard('api')->user();
-
+        $user = Auth::user();
+        
         $validated = $request->validate([
             'id' => 'nullable|exists:categories,id',
-            'parent_id' => 'nullable|exists:categories,id',
             'name' => 'required|string|max:255',
             'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120', // 5MB max
         ]);
-
+        
         $data = [
-            'parent_id' => $validated['parent_id'] ?? null,
             'name' => $validated['name'],
         ];
 
@@ -2922,12 +2920,12 @@ public function listSubcategories(Request $request)
 
             $data['image'] = $path;
         }
-
-        $category = Category::updateOrCreate(
-            ['id' => $validated['id'] ?? null],
-            $data
-        );
-
+        if(isset($validated['id']) && !empty($validated['id'])){
+            $category = Category::update(['id' => $validated['id']],$data);
+        }else{
+            $category = Category::Create($data);
+        }
+        
         return response()->json([
             'success' => true,
             'message' => !empty($validated['id']) 

@@ -320,6 +320,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/last-work-experience/save', [UserController::class, 'saveLastWorkExperience']);
     Route::post('/category/save', [UserController::class, 'storeOrUpdate']);
     Route::post('/category/update/{id}', [UserController::class, 'categoryUpdate']); // Add/Update banner
+    Route::delete('category/{id}', [UserController::class, 'destroy']);
     Route::get('/category/subcategories', [UserController::class, 'listSubcategories']);
     Route::get('/applications', [JobApplicationController::class, 'index']);
     Route::post('/applications', [JobApplicationController::class, 'store']);

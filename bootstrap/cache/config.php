@@ -1062,18 +1062,6 @@
       'enable_html5_parser' => true,
     ),
   ),
-  'passport' => 
-  array (
-    'guard' => 'web',
-    'private_key' => NULL,
-    'public_key' => NULL,
-    'client_uuids' => false,
-    'personal_access_client' => 
-    array (
-      'id' => NULL,
-      'secret' => NULL,
-    ),
-  ),
   'excel' => 
   array (
     'exports' => 

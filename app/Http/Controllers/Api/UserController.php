@@ -29,6 +29,7 @@ use App\Models\UserWorkInfo;
 use App\Models\Category;
 use Illuminate\Validation\Rule;
 use App\Models\Designation;
+use App\Models\Role;
 
 
 class UserController extends Controller
@@ -272,14 +273,12 @@ public function signUpCustomer(Request $request)
         'email'        => 'nullable|email|unique:users,email',
         'phone_number' => 'required|string|max:20',
         'location'     => 'nullable|string|max:255',
-         'lat' => 'nullable',
-        'long' => 'nullable',
+        'lat'         => 'nullable',
+        'long'        => 'nullable',
     ]);
-
     if ($validator->fails()) {
         return response()->json(['errors' => $validator->errors()], 422);
     }
-
     // Format phone number to E.164
     $to = '+91' . ltrim($request->phone_number, '0');
 
@@ -298,7 +297,6 @@ public function signUpCustomer(Request $request)
 
     if (true) { // Force static OTP for all users (SMS Disabled)
         $verificationCode = 123456;
-
         if ($user) {
             $user->update([
                 'verification_code'           => "123456",
@@ -313,65 +311,20 @@ public function signUpCustomer(Request $request)
                 'location'                      => $request->location,
                 'lat'                           => $request->lat,
                 'long'                          => $request->long,
-                'user_role_id'                  => 2,
-                'verification_code'             => "123456",
+                'user_role_id'                  => 3, // Assuming 3 is houseowner role
+                'verification_code'             => "123456", //verificationCode,
                 'verification_code_sent_time'   => now(),
                 'country_code'                  => $request->country_code,
             ]);
-
-              // Save SMS log
-        // \App\Models\SmsLog::create([
-        //     'user_id' => $user->id ?? null,
-        //     'to'      => $to,
-        //     'from'    => env('TWILIO_PHONE_NUMBER'),
-        //     'message' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. This is a dev/test number.",
-        //     'status'  => 'sent',
-        //     'sid'     => null,
-        //     'sent_at' => now(),
-        // ]);
-        // $sid   = env('TWILIO_SID');
-        // $token = env('TWILIO_AUTH_TOKEN');
-        // $from  = env('TWILIO_PHONE_NUMBER');
-
-        // try {
-        //     $url = "https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json";
-
-        //     $response = \Http::withBasicAuth($sid, $token)->asForm()->post($url, [
-        //         'From' => $from,
-        //         'To'   => $to,
-        //         'Body' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. Please enter this OTP in the app or website. Expires in 10 minutes."
-        //     ]);
-
-        //     $data = $response->json();
-
-        //     // Save SMS log
-        //     \App\Models\SmsLog::create([
-        //         'user_id' => $user->id ?? null,
-        //         'to'      => $to,
-        //         'from'    => $from,
-        //         'message' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. Please enter this OTP in the app or website. Expires in 10 minutes.",
-        //         'status'  => $data['status'] ?? 'failed',
-        //         'sid'     => $data['sid'] ?? null,
-        //         'sent_at' => now(),
-        //     ]);
-
-        // } catch (\Exception $e) {
-        //     \Log::error('OTP SMS failed: '.$e->getMessage());
-        // }
         }
-
-      
-
     } else {
         // Real number → generate random OTP
         $verificationCode = rand(100000, 999999);
-
         if ($user) {
             $user->update([
                 'verification_code'           => "123456",
                 'verification_code_sent_time' => now(),
             ]);
-
         } else {
             $user = User::create([
                 'name'                          => $request->name,
@@ -380,46 +333,16 @@ public function signUpCustomer(Request $request)
                 'location'                      => $request->location,
                 'lat'                           => $request->lat,
                 'long'                          => $request->long,
-                'user_role_id'                  => 2,
-                'verification_code'             => "123456",
+                'user_role_id'                  => 3,
+                'verification_code'             => "123456", //verificationCode,
                 'verification_code_sent_time'   => now(),
                 'country_code'                  => $request->country_code,
             ]);
         }
-
-        // --- Send OTP SMS via Twilio REST API ---
-        // $sid   = env('TWILIO_SID');
-        // $token = env('TWILIO_AUTH_TOKEN');
-        // $from  = env('TWILIO_PHONE_NUMBER');
-
-        // try {
-        //     $url = "https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json";
-
-        //     $response = \Http::withBasicAuth($sid, $token)->asForm()->post($url, [
-        //         'From' => $from,
-        //         'To'   => $to,
-        //         'Body' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. Please enter this OTP in the app or website. Expires in 10 minutes."
-        //     ]);
-
-        //     $data = $response->json();
-        //     // Save SMS log
-        //     // \App\Models\SmsLog::create([
-        //     //     'user_id' => $user->id ?? null,
-        //     //     'to'      => $to,
-        //     //     'from'    => $from,
-        //     //     'message' => "Hello! Your verification code for QuickMySlot (QMS) is {$verificationCode}. Please enter this OTP in the app or website. Expires in 10 minutes.",
-        //     //     'status'  => $data['status'] ?? 'failed',
-        //     //     'sid'     => $data['sid'] ?? null,
-        //     //     'sent_at' => now(),
-        //     // ]);
-
-        // } catch (\Exception $e) {
-        //   //  \Log::error('OTP SMS failed: '.$e->getMessage());
-        // }
     }
 
     return response()->json([
-                'status'  => true,
+        'status'  => true,
         'message' => 'OTP sent successfully',
         'user_id' => $user->id
     ]);
@@ -430,27 +353,23 @@ public function getProfile(Request $request)
     try {
         $user = Auth::guard('api')->user();
         $userDetails = User::with(['addresses','petDetails','lastExp','householdInformation','kycInformation','userWorkInfo','addedByUser', 'addedByUser.addresses',
-    'addedByUser.petDetails',
-    'addedByUser.lastExp',
-    'addedByUser.householdInformation',
-    'addedByUser.kycInformation',
-    'addedByUser.userWorkInfo'])->find($user->id);
+            'addedByUser.petDetails',
+            'addedByUser.lastExp',
+            'addedByUser.householdInformation',
+            'addedByUser.kycInformation',
+            'addedByUser.userWorkInfo'])->find($user->id);
         if (!$user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not authenticated'
             ], 401);
         }
-
         // Return user data without sensitive information
-       
-
         return response()->json([
             'success' => true,
             'message' => 'Profile retrieved successfully',
             'data' => $userDetails
         ], 200);
-
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -460,392 +379,335 @@ public function getProfile(Request $request)
     }
 }
 
+    public function resetPassword(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'password' => 'required|string|min:6|confirmed'
+            ]);
 
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-// public function getProfile(Request $request)
-// {
-//     try {
-//         $user = Auth::guard('api')->user();
-        
-//         if (!$user) {
-//             return response()->json([
-//                 'success' => false,
-//                 'message' => 'User not authenticated'
-//             ], 401);
-//         }
-//         $currentUser = User::with([
-//             'addresses',
-//             'petDetails',
-//             'lastExp',
-//             'householdInformation',
-//             'kycInformation',
-//             'userWorkInfo'
-//         ])->find($user->id);
+            $user = User::find(Auth::guard('api')->user()->id);
 
-//         // Prepare response data
-//         $responseData = [
-//             'current_user' => $currentUser,
-//             'added_by_user' => null,
-//             'relation' => $user->relation
-//         ];
+            
 
-//         if ($user->added_by) {
-//             $addedByUser = User::with([
-//                 'addresses',
-//                 'petDetails',
-//                 'lastExp',
-//                 'householdInformation',
-//                 'kycInformation',
-//                 'userWorkInfo'
-//             ])->find($user->added_by);
+            // // Check if reset code is expired
+            // $expiryTime = $user->password_reset_code_sent_at->addMinutes(10);
+            // if (now()->gt($expiryTime)) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Reset code has expired'
+            //     ], 422);
+            // }
 
-//             if ($addedByUser) {
-//                 $responseData['added_by_user'] = $addedByUser;
-//             }
-//         }
+            // Update password and clear reset code
+            $user->password = Hash::make($request->password);
+            $user->save();
 
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'Profile retrieved successfully',
-//             'data' => $responseData
-//         ], 200);
+            // Invalidate all existing tokens (optional)
+            $user->tokens()->delete();
 
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => 'Failed to retrieve profile',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-public function resetPassword(Request $request)
-{
-    try {
-        $validator = Validator::make($request->all(), [
-            'password' => 'required|string|min:6|confirmed'
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Password reset successfully'
+            ], 200);
 
-        if ($validator->fails()) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Failed to reset password',
+                'error' => $e->getMessage()
+            ], 500);
         }
+    }
 
-        $user = User::find(Auth::guard('api')->user()->id);
-
-        
-
-        // // Check if reset code is expired
-        // $expiryTime = $user->password_reset_code_sent_at->addMinutes(10);
-        // if (now()->gt($expiryTime)) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Reset code has expired'
-        //     ], 422);
-        // }
-
-        // Update password and clear reset code
-        $user->password = Hash::make($request->password);
-        $user->save();
-
-        // Invalidate all existing tokens (optional)
-        $user->tokens()->delete();
-
+    public function logout(Request $request)
+    {
+        if ($request->user()) { 
+            $request->user()->token()->revoke();
+        }
         return response()->json([
-            'success' => true,
-            'message' => 'Password reset successfully'
+            'status' => true,
+            'message' => 'Logged out successfully'
         ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to reset password',
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 
-public function logout(Request $request)
-{
-    if ($request->user()) { 
-        $request->user()->token()->revoke();
-    }
-    return response()->json([
-        'status' => true,
-        'message' => 'Logged out successfully'
-    ], 200);
-}
+    public function login(Request $request)
+    {
+        if ($request->isMethod('POST')) {
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'email_or_phone' => 'required',
+                    'password'       => 'required|min:8',
+                ],
+                [
+                    'email_or_phone.required' => "This field is required.",
+                    'password.required'       => "This field is required.",
+                    'password.min'            => "Password must be at least 8 characters.",
+                ]
+            );
 
-public function login(Request $request)
-{
-    if ($request->isMethod('POST')) {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'email_or_phone' => 'required',
-                'password'       => 'required|min:8',
-            ],
-            [
-                'email_or_phone.required' => "This field is required.",
-                'password.required'       => "This field is required.",
-                'password.min'            => "Password must be at least 8 characters.",
-            ]
-        );
-
-        if ($validator->fails()) {
-            return response()->json([
-                "status" => "error",
-                "msg"    => "Input field is required.",
-                "errors" => $validator->errors()
-            ], 422);
-        }
-
-        // Check whether input is email or phone
-        $loginField = $request->email_or_phone;
-        if (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
-            // Login using email
-            $user = User::where('email', $loginField)->first();
-        } else {
-            // Login using phone number
-            $user = User::where('phone_number', $loginField)->first();
-        }
-
-        if (!empty($user) && Hash::check($request->password, $user->password)) {
-            try {
-                $token = $user->createToken('AuthToken')->accessToken;
-                
-                return response()->json([
-                    "status" => "success",
-                    "msg"    => "You are now logged in.",
-                    "token"  => $token,
-                    "user"   => $user
-                ], 200);
-            } catch (\Exception $e) {
-                if (strpos($e->getMessage(), 'Personal access client not found') !== false) {
-                    return response()->json([
-                        "status" => "error",
-                        "msg"    => "Authentication system not properly configured. Please contact support."
-                    ], 500);
-                }
-
+            if ($validator->fails()) {
                 return response()->json([
                     "status" => "error",
-                    "msg"    => "An error occurred during authentication."
+                    "msg"    => "Input field is required.",
+                    "errors" => $validator->errors()
+                ], 422);
+            }
+
+            // Check whether input is email or phone
+            $loginField = $request->email_or_phone;
+            if (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
+                // Login using email
+                $user = User::where('email', $loginField)->first();
+            } else {
+                // Login using phone number
+                $user = User::where('phone_number', $loginField)->first();
+            }
+
+            if (!empty($user) && Hash::check($request->password, $user->password)) {
+                try {
+                    $token = $user->createToken('AuthToken')->accessToken;
+                    
+                    return response()->json([
+                        "status" => "success",
+                        "msg"    => "You are now logged in.",
+                        "token"  => $token,
+                        "user"   => $user
+                    ], 200);
+                } catch (\Exception $e) {
+                    if (strpos($e->getMessage(), 'Personal access client not found') !== false) {
+                        return response()->json([
+                            "status" => "error",
+                            "msg"    => "Authentication system not properly configured. Please contact support."
+                        ], 500);
+                    }
+
+                    return response()->json([
+                        "status" => "error",
+                        "msg"    => "An error occurred during authentication."
+                    ], 500);
+                }
+            }
+
+            return response()->json([
+                "status" => "error",
+                "msg"    => "Your email/phone or password is incorrect."
+            ], 401);
+        }
+    }
+
+
+
+    public function verifyOtp(Request $request)
+    {
+        
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'otp' => 'required|digits:6'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        
+        $user = User::find($request->user_id);
+        
+        if ($user->is_deleted == 1) {
+            return response()->json([
+                'error' => 'This account has been deleted. Please contact support.'
+            ], 403);
+        }
+        
+        // Check if OTP matches the static code (123456)
+        if ((string)$request->otp === (string)$user->verification_code) {
+            
+            // Expiration check disabled...
+
+            try {
+                
+                // return \DB::transaction(function () use ($user) {
+                    $user->update([
+                        'is_verified' => 1,
+                        'verification_code' => null,
+                        'verification_code_sent_time' => null,
+                        'updated_at' => now(),
+                    ]);
+                    
+                    
+                    // Create Passport token
+                    $userData = User::find($request->user_id);
+                    $token = $userData->createToken('AuthToken')->plainTextToken;
+
+                    // Login user into api guard
+                    // Auth::guard('api')->setUser($user);
+
+                    return response()->json([
+                        'message' => 'Logged in successfully',
+                        'user' => $user,
+                        'token' => $token
+                    ]);
+                // });
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => 'Login Failed: ' . $e->getMessage()
                 ], 500);
             }
         }
 
         return response()->json([
-            "status" => "error",
-            "msg"    => "Your email/phone or password is incorrect."
-        ], 401);
+            'error' => 'Invalid verification code',
+            'debug_sent' => $request->otp,
+            'debug_stored' => $user->verification_code,
+        ], 422);
     }
-}
 
 
+    public function aadharVerifyOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'otp' => 'required|digits:6'
+        ]);
 
-public function verifyOtp(Request $request)
-{
-    
-    $validator = Validator::make($request->all(), [
-        'user_id' => 'required|exists:users,id',
-        'otp' => 'required|digits:6'
-    ]);
-    
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-    
-    $user = User::find($request->user_id);
-    
-    if ($user->is_deleted == 1) {
-        return response()->json([
-            'error' => 'This account has been deleted. Please contact support.'
-        ], 403);
-    }
-    
-    // Check if OTP matches the static code (123456)
-    if ((string)$request->otp === (string)$user->verification_code) {
-        
-        // Expiration check disabled...
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-        try {
+        $user = User::find($request->user_id ?? Auth::guard('api')->user()->id);
+        // if ($user->is_deleted == 1) {
+        //     return response()->json([
+        //         'error' => 'This account has been deleted. Please contact support.'
+        //     ], 403);
+        // }
+
+        if ($user->aadhar__verify_otp != $request->otp) {
+                return response()->json(['error' => 'Invalid otp'], 422);
+            }
+
+        // Check if OTP matches the static code (123456)
             
-            // return \DB::transaction(function () use ($user) {
-                $user->update([
-                    'is_verified' => 1,
-                    'verification_code' => null,
-                    'verification_code_sent_time' => null,
-                    'updated_at' => now(),
-                ]);
-                
-                
-                // Create Passport token
-                $userData = User::find($request->user_id);
-                $token = $userData->createToken('AuthToken')->plainTextToken;
+            // Check if OTP is expired (10 minutes validity)
+            $expirationTime = 10; // minutes
+            // if (now()->diffInMinutes($user->aadhar_number_otp_expire_at) > $expirationTime) {
+            //     return response()->json(['error' => 'Verification code has expired'], 422);
+            // }
 
-                // Login user into api guard
-                // Auth::guard('api')->setUser($user);
+            $user->update([
+                'aadhar__verify' => 1,
+                'aadhar__verify_otp' => null,
+                'aadhar_number_otp_expire_at' => null,
+                'aadhar_number_otp_expire_at' => now(),
+            ]);
+        //  dd($user);
 
-                return response()->json([
-                    'message' => 'Logged in successfully',
-                    'user' => $user,
-                    'token' => $token
-                ]);
-            // });
+            // Create Passport token
+            // $token = $user->createToken('AuthToken')->accessToken;
+
+            // Login user into api guard
+
+            return response()->json([
+                'message' => 'Verify in successfully',
+                'user' => $user,
+            ]);
+
+        return response()->json(['error' => 'Invalid verification code'], 422);
+    }
+
+
+
+    public function overview()
+    {
+        try {
+            // Only active users that are not deleted
+            $totalCustomers = User::where('is_deleted', 0)
+                                ->where('is_active', 1)
+                                ->count();
+
+            $totalRevenue = 1200.00;   // static for now
+            $reach = "5% ";           // static example
+            $footfall = "50 / Day";    // static example
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Performance overview retrieved successfully',
+                'data' => [
+                    'revenue_this_month' => $totalRevenue,
+                    'total_customers' => $totalCustomers,
+                    'reach' => $reach,
+                    'estimated_footfall' => $footfall,
+                ]
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Login Failed: ' . $e->getMessage()
+                'status' => 'error',
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
+        
+    public function resendOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone_number' => 'required|string|max:20'
+        ]);
 
-    return response()->json([
-        'error' => 'Invalid verification code',
-        'debug_sent' => $request->otp,
-        'debug_stored' => $user->verification_code,
-    ], 422);
-}
-
-
-public function aadharVerifyOtp(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'otp' => 'required|digits:6'
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-    $user = User::find($request->user_id ?? Auth::guard('api')->user()->id);
-    // if ($user->is_deleted == 1) {
-    //     return response()->json([
-    //         'error' => 'This account has been deleted. Please contact support.'
-    //     ], 403);
-    // }
-
-    if ($user->aadhar__verify_otp != $request->otp) {
-            return response()->json(['error' => 'Invalid otp'], 422);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-    // Check if OTP matches the static code (123456)
-        
-        // Check if OTP is expired (10 minutes validity)
-        $expirationTime = 10; // minutes
-        // if (now()->diffInMinutes($user->aadhar_number_otp_expire_at) > $expirationTime) {
-        //     return response()->json(['error' => 'Verification code has expired'], 422);
-        // }
+        $user = User::where('phone_number', $request->phone_number)->where('is_deleted',0)->first();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User with this phone number does not exist.'
+            ], 404);
+        }
+
+        // Format phone number to E.164
+        $to = '+91' . ltrim($request->phone_number, '0');
+
+        // Dev/test numbers
+        $devNumbers = [
+            '+917339788361',
+            '+917733884515',
+        '+917020916535',
+    '+919001136061',
+    '+919509993036',
+            // add your other test numbers here
+        ];
+
+        // Use fixed code 123456 for ALL numbers for now
+        $verificationCode = 123456;
+
+        // Update user with new code
         $user->update([
-            'aadhar__verify' => 1,
-            'aadhar__verify_otp' => null,
-            'aadhar_number_otp_expire_at' => null,
-            'aadhar_number_otp_expire_at' => now(),
-        ]);
-      //  dd($user);
-
-        // Create Passport token
-        // $token = $user->createToken('AuthToken')->accessToken;
-
-        // Login user into api guard
-
-        return response()->json([
-            'message' => 'Verify in successfully',
-            'user' => $user,
+            'verification_code' => $verificationCode,
+            'verification_code_sent_time' => now(),
+            'updated_at' => now()
         ]);
 
-    return response()->json(['error' => 'Invalid verification code'], 422);
-}
-
-
-
-public function overview()
-{
-    try {
-        // Only active users that are not deleted
-        $totalCustomers = User::where('is_deleted', 0)
-                              ->where('is_active', 1)
-                              ->count();
-
-        $totalRevenue = 1200.00;   // static for now
-        $reach = "5% ";           // static example
-        $footfall = "50 / Day";    // static example
+        // SMS Sending Logic (Commented Out)
+        /*
+        // ...
+        */
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Performance overview retrieved successfully',
-            'data' => [
-                'revenue_this_month' => $totalRevenue,
-                'total_customers' => $totalCustomers,
-                'reach' => $reach,
-                'estimated_footfall' => $footfall,
-            ]
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Something went wrong',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' => 'Verification code resent to your Phone Number',
+            'user_id' => $user->id
+        ]);
     }
-}
-public function resendOtp(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'phone_number' => 'required|string|max:20'
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json(['errors' => $validator->errors()], 422);
-    }
-
-    $user = User::where('phone_number', $request->phone_number)->where('is_deleted',0)->first();
-
-    if (!$user) {
-        return response()->json([
-            'success' => false,
-            'message' => 'User with this phone number does not exist.'
-        ], 404);
-    }
-
-    // Format phone number to E.164
-    $to = '+91' . ltrim($request->phone_number, '0');
-
-    // Dev/test numbers
-    $devNumbers = [
-        '+917339788361',
-        '+917733884515',
-       '+917020916535',
-'+919001136061',
-'+919509993036',
-        // add your other test numbers here
-    ];
-
-    // Use fixed code 123456 for ALL numbers for now
-    $verificationCode = 123456;
-
-    // Update user with new code
-    $user->update([
-        'verification_code' => $verificationCode,
-        'verification_code_sent_time' => now(),
-        'updated_at' => now()
-    ]);
-
-    // SMS Sending Logic (Commented Out)
-    /*
-    // ...
-    */
-
-    return response()->json([
-        'message' => 'Verification code resent to your Phone Number',
-        'user_id' => $user->id
-    ]);
-}
 
 // public function updateProfile(Request $request)
 // {

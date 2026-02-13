@@ -1273,6 +1273,32 @@ private function saveWorkAndExperience($user, $request, $isEdit)
 }
 
 
+    public function destroy($id)
+    {
+        try {
+            $category = Category::find($id);
+            if (!$category) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Category not found'
+                ], 404);
+            }
+
+            $category->is_deleted = 1;
+            $category->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Category deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete category',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
 public function categoryUpdate(Request $request, $id)
 {
@@ -1596,7 +1622,7 @@ public function updateProfileCustomer(Request $request)
 
 public function categoryList(Request $request){
     try {
-        $category = Category::all();
+        $category = Category::where('is_deleted', 0)->get();
         return response()->json([
             'success' => true,
             'message' => 'Category Fetch successfully',

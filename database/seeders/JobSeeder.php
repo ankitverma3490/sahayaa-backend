@@ -32,7 +32,7 @@ class JobSeeder extends Seeder
                 'commitment_type' => 'full-time',
                 'preferred_hours' => '9-5',
                 'preferred_days' => 'Monday to Friday',
-                'status' => 'active',
+                'status' => 'open',
                 'childcare_experience' => true,
                 'cooking_required' => true,
                 'driving_license_required' => false,

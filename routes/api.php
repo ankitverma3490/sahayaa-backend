@@ -230,14 +230,6 @@ Route::prefix('housesold/salary')->group(function () {
     Route::get('/list', [SalaryController::class, 'getRecentPayments']);
 });
 
-Route::prefix('housersold/attendance')->group(function () {
-    Route::get('/', [AttendanceController::class, 'index'])->name('attendance.index');
-    Route::post('/', [AttendanceController::class, 'store'])->name('attendance.store');
-    Route::get('/{id}', [AttendanceController::class, 'show'])->name('attendance.show');
-    Route::put('/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
-    Route::patch('/{id}', [AttendanceController::class, 'update'])->name('attendance.update.patch');
-    Route::delete('/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
-});
 
 
 Route::post('admin/login', [UserController::class, 'loginAdmin']);
@@ -286,6 +278,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::apiResource('houseowners', HouseOwnerController::class);
     Route::apiResource('staff', StaffController::class);
     Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
+    Route::post('/staff/{id}/attendance', [StaffController::class, 'getAttendance']);
     Route::apiResource('roles', RoleController::class);
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);
@@ -296,6 +289,17 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
         Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
         Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+    });
+
+
+    Route::prefix('housersold/attendance')->group(function () {
+        Route::get('/', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/', [AttendanceController::class, 'store'])->name('attendance.store');
+        Route::get('/{id}', [AttendanceController::class, 'show'])->name('attendance.show');
+        Route::put('/{id}', [AttendanceController::class, 'update'])->name('attendance.update');
+        Route::patch('/{id}', [AttendanceController::class, 'update'])->name('attendance.update.patch');
+        Route::delete('/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
+        
     });
 
 });

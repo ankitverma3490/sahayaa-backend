@@ -179,7 +179,7 @@ class AttendanceController extends Controller
                 'processed_by' => Auth::guard('api')->user()->id
             ];
 
-            if ($request->status == 'present' || $request->status == 'late') {
+            if ($request->status == 'present') {
                 $attendanceData['check_in_time'] = $request->check_in_time;
             } else {
                 $attendanceData['check_in_time'] = null;
@@ -187,8 +187,6 @@ class AttendanceController extends Controller
 
             if ($request->status == 'late') {
                 $attendanceData['late_minutes'] = $request->late_minutes;
-            } else {
-                $attendanceData['late_minutes'] = null;
             }
 
             if ($request->status == 'absent') {
@@ -208,6 +206,7 @@ class AttendanceController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return response()->json([
                 'status' => false,

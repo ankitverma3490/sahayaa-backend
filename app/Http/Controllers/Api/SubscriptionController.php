@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Notification;
 use Carbon\Carbon;
 use Razorpay\Api\Api;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Role;
+use Illuminate\Http\JsonResponse;
+
 
 class SubscriptionController extends Controller
 {
@@ -346,6 +350,38 @@ class SubscriptionController extends Controller
             'title' => 'New Subscription',
             'message' => 'User ' . $user->name . ' has purchased subscription #' . $subscriptionUser->order_number,
             'status' => 'unread',
+        ]);
+    }
+
+    public function subscriptionByRole(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'role_id' => 'required|exists:roles,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        $role = Role::where('id', $request->role_id)->first();
+        if (!$role) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Role not found'
+            ], 404);
+        }
+        $subscriptions = Subscription::where('role_id', $request->role_id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json([
+            'status' => true,
+            'data' => $subscriptions,
+            'message' => 'Subscriptions fetched successfully'
         ]);
     }
 }

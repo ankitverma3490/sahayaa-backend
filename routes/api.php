@@ -154,6 +154,8 @@ Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
 Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
+Route::post('subscriptions/role', [SubscriptionController::class,'subscriptionByRole']);
+    
 
 Route::post('/signup', [UserController::class, 'signUp']);
 Route::post('/verify-otp', [UserController::class, 'verifyOtp']);

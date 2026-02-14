@@ -3634,6 +3634,7 @@ public function addStaff(Request $request)
                 'is_active' => 1,
                 'is_verified' => 1,
                 'relation' => $request->emergency_contact_name,
+                'upi_id' => $request->upi_id ?? null,
             ]);
 
             \Log::info('Staff user record created successfully', [

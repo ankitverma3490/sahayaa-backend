@@ -280,7 +280,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::apiResource('houseowners', HouseOwnerController::class);
     Route::apiResource('staff', StaffController::class);
     Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
-    Route::post('/staff/{id}/attendance', [StaffController::class, 'getAttendance']);
+    Route::post('/staff/attendance', [StaffController::class, 'getAttendance']);
     Route::apiResource('roles', RoleController::class);
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);

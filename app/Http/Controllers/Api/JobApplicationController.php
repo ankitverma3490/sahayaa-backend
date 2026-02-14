@@ -177,88 +177,88 @@ class JobApplicationController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-    $validator = Validator::make($request->all(), [
-        'job_id' => 'required|exists:jobs,id',
-        'cover_letter' => 'required|string|min:10|max:5000',
-        'expected_salary' => 'nullable|numeric|min:0|max:9999999.99',
-        'available_from' => 'required|date|after_or_equal:today',
-        'is_advance' => 'nullable|boolean',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Validation failed',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-
-    try {
-        // Get authenticated user
-        $user = Auth::guard('api')->user();
-        if (!$user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthenticated'
-            ], 401);
-        }
-
-        $jobId = $request->job_id;
-
-        // Check if job exists and is open
-        $job = Job::find($jobId);
-        if (!$job) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Job not found'
-            ], 404);
-        }
-
-        if ($job->status !== 'open') {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'This job is not currently accepting applications'
-            ], 400);
-        }
-
-        // Check for existing application
-        $existingApplication = JobApplication::where('job_id', $jobId)
-                                           ->where('user_id', $user->id)
-                                           ->first();
-
-        if ($existingApplication) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You have already applied for this job'
-            ], 400);
-        }
-
-        // Create application
-        $application = JobApplication::create([
-            'job_id' => $jobId,
-            'user_id' => $user->id,
-            'cover_letter' => $request->cover_letter,
-            'expected_salary' => $request->expected_salary,
-            'available_from' => $request->available_from,
-            'is_advance' => $request->boolean('is_advance'),
-            'application_status' => 'pending',
+        $validator = Validator::make($request->all(), [
+            'job_id' => 'required|exists:jobs,id',
+            // 'cover_letter' => 'required|string|min:10|max:5000',
+            'expected_salary' => 'nullable|numeric|min:0|max:9999999.99',
+            'available_from' => 'required|date|after_or_equal:today',
+            'is_advance' => 'nullable|boolean',
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $application->load('job'),
-            'message' => 'Application submitted successfully'
-        ], 201);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
 
-    } catch (\Exception $e) {
-        \Log::error('Job application error: ' . $e->getMessage());
-        
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to submit application. Please try again.'
-        ], 500);
+        try {
+            // Get authenticated user
+            $user = Auth::guard('api')->user();
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            $jobId = $request->job_id;
+
+            // Check if job exists and is open
+            $job = Job::find($jobId);
+            if (!$job) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Job not found'
+                ], 404);
+            }
+
+            if ($job->status !== 'open') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This job is not currently accepting applications'
+                ], 400);
+            }
+
+            // Check for existing application
+            $existingApplication = JobApplication::where('job_id', $jobId)
+                                            ->where('user_id', $user->id)
+                                            ->first();
+
+            if ($existingApplication) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'You have already applied for this job'
+                ], 400);
+            }
+
+            // Create application
+            $application = JobApplication::create([
+                'job_id' => $jobId,
+                'user_id' => $user->id,
+                'cover_letter' => $request->cover_letter ?? '',
+                'expected_salary' => $request->expected_salary,
+                'available_from' => $request->available_from,
+                'is_advance' => $request->boolean('is_advance'),
+                'application_status' => 'pending',
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $application->load('job'),
+                'message' => 'Application submitted successfully'
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Log::error('Job application error: ' . $e->getMessage());
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to submit application. Please try again.'
+            ], 500);
+        }
     }
-}
 
     public function updateApplicationStatus(Request $request, $id): JsonResponse
     {

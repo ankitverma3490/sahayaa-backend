@@ -151,9 +151,9 @@ class StaffController extends Controller
     {
         // Validate request
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:users,id',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'id'    => 'required|exists:users,id',
+            'month' => 'required|integer|min:1|max:12',
+            'year'  => 'required|integer|min:2000',
         ]);
 
         if ($validator->fails()) {
@@ -165,37 +165,35 @@ class StaffController extends Controller
         }
 
         $staff = User::find($request->id);
-        if (!$staff) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Staff not found'
-            ], 404);
-        }
-        $startDate = $request->start_date;
-        $endDate   = $request->end_date;
-        
+
+        // Get first and last date of given month
+        $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+        $endDate   = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+
+        // Get attendance records for that month
         $attendance = Attendance::whereBetween('date', [$startDate, $endDate])
-        ->where('staff_id', $staff->id)
-        ->pluck('status', 'date'); // key => date, value => status
+            ->where('staff_id', $staff->id)
+            ->pluck('status', 'date'); // key = date, value = status
+
         $period = CarbonPeriod::create($startDate, $endDate);
+
         $result = [];
-        
+
         foreach ($period as $date) {
             $formattedDate = $date->format('Y-m-d');
+
             $result[] = [
-                    'date' => $formattedDate,
-                    'status' => $attendance->has($formattedDate)
-                        ? $attendance[$formattedDate]
-                        : 'absent'
+                'date' => $formattedDate,
+                'status' => $attendance->has($formattedDate)
+                    ? $attendance[$formattedDate]
+                    : 'absent'
             ];
         }
 
         return response()->json([
             'status' => true,
             'message' => 'Attendance retrieved successfully',
-            'data' => [
-               "data" => $result
-            ]
+            'data' => $result
         ], 200);
     }
 }

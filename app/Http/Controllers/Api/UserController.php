@@ -3443,8 +3443,7 @@ public function addStaff(Request $request)
     $logAction = 'STAFF_ADD';
     
     try {
-        // Log the start of the process
-     
+        // Log the start of the process 
         // Validate the request
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
@@ -3454,27 +3453,22 @@ public function addStaff(Request $request)
             'phone_number_country_code' => 'required|string|max:5',
             'gender' => 'required|in:male,female,other',
             'dob' => 'required|date',
-            
             // Address fields
             'street' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'required|string|max:255',
             'pincode' => 'required|string|max:10',
-            
             // Emergency contact
-        //   'emergency_contact_name' => 'required|string|max:255',
-         //   'emergency_contact_number' => 'required|string|max:15',
-            
+            // 'emergency_contact_name' => 'required|string|max:255',
+            // 'emergency_contact_number' => 'required|string|max:15',
             // Work details
             'role_designation' => 'array',
             'joining_date' => 'required|date',
             'salary' => 'required|numeric',
             'pay_frequency' => 'required|in:weekly,monthly,bi-weekly,daily',
             'working_days' => 'required|array',
-            
             // Aadhar details
             'aadhar_number' => 'required',
-            
             // Document files (optional)
             'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'aadhar_front' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -3489,7 +3483,6 @@ public function addStaff(Request $request)
                 'validation_errors' => $validator->errors()->toArray(),
                 'timestamp' => now()->toDateTimeString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',

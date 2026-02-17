@@ -350,9 +350,7 @@ class JobApplicationController extends Controller
             "end_date" => "required|date",
             "reason" => "required|string"
         ]);
-
         $userId =  Auth::guard('api')->user()->id;
-
         $quit = QuitJob::create([
             "job_id" => $request->job_id,
             "user_id" => $userId,
@@ -360,7 +358,6 @@ class JobApplicationController extends Controller
             "reason" => $request->reason,
             "status" => "pending"
         ]);
-
         return response()->json([
             "message" => "Quit request submitted successfully",
             "data" => $quit
@@ -371,6 +368,7 @@ class JobApplicationController extends Controller
     public function applyLeave(Request $request)
     {
         $request->validate([
+            "houseowner_id" => "required|exists:users,id",
             "leave_type_id" => "required|exists:leave_types,id",
             "start_date" => "required|date",
             "end_date" => "required|date",
@@ -394,13 +392,14 @@ class JobApplicationController extends Controller
         }
         $leave = LeaveRequest::create([
             "user_id" => $user->id,
-            'job_id' => $request->job_id,
+            'houseowner_id' => $request->houseowner_id,
             "leave_type_id" => $request->leave_type_id,
             "start_date" => $request->start_date,
             "end_date" => $request->end_date,
             "reason" => $request->reason,
             "status" => "pending",
-            "supporting_document" => $filePath
+            "supporting_document" => $filePath,
+            "created_by" => $user->id
         ]);
 
         return response()->json([
@@ -413,17 +412,21 @@ class JobApplicationController extends Controller
 
 
     public function leaveList(Request $request)
-    {
+    { 
         // 1. Logged in API user ID
-        $userId = Auth::guard('api')->user()->id;
+        $user = Auth::user();
         // 2. Get all job IDs created by this user
-        $jobIds = Job::where('created_by', $userId)->pluck('id');
-        // 3. Get Leave Requests where job_id is in user's jobs
-        $leaveRequests = LeaveRequest::with(['user', 'leaveType'])
-            ->whereIn('job_id', $jobIds)
+        if($user->user_role_id == 2){
+            $leaveRequests = LeaveRequest::with(['user', 'leaveType'])
+            ->whereIn('created_by', $user->id)
             ->orderBy('id', 'desc')
             ->get();
-
+        } else {
+            $leaveRequests = LeaveRequest::with(['user', 'leaveType'])
+            ->where('houseowner_id', $user->id)
+            ->orderBy('id', 'desc')
+            ->get();
+        }
         return response()->json([
             'status' => true,
             'message' => 'Leave requests fetched successfully',
@@ -436,17 +439,14 @@ class JobApplicationController extends Controller
     public function approve($id)
     {
         $leave = LeaveRequest::find($id);
-
         if (!$leave) {
             return response()->json([
                 'status' => false,
                 'message' => 'Leave request not found'
             ], 404);
         }
-
         $leave->status = 'approved';
         $leave->save();
-
         return response()->json([
             'status' => true,
             'message' => 'Leave request approved successfully',
@@ -460,17 +460,14 @@ class JobApplicationController extends Controller
     public function reject($id)
     {
         $leave = LeaveRequest::find($id);
-
         if (!$leave) {
             return response()->json([
                 'status' => false,
                 'message' => 'Leave request not found'
             ], 404);
         }
-
         $leave->status = 'rejected';
         $leave->save();
-
         return response()->json([
             'status' => true,
             'message' => 'Leave request rejected successfully',

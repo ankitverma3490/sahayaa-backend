@@ -358,6 +358,12 @@ public function getProfile(Request $request)
             'addedByUser.householdInformation',
             'addedByUser.kycInformation',
             'addedByUser.userWorkInfo'])->find($user->id);
+
+        $attendanceSummary = DB::table('attendance')
+        ->select('status', DB::raw('COUNT(*) as total'))
+        ->where('staff_id', $user->id)
+        ->groupBy('status')
+        ->get();
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -368,7 +374,8 @@ public function getProfile(Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Profile retrieved successfully',
-            'data' => $userDetails
+            'data' => $userDetails,
+            'attendanceSummary' => $attendanceSummary
         ], 200);
     } catch (\Exception $e) {
         return response()->json([
@@ -1751,7 +1758,7 @@ public function notificationAdd(Request $request)
 
     public function notificationList(Request $request)
     {
-$userId = Auth::guard('api')->user()->id;
+        $userId = Auth::user()->id;
         $notifications = Notification::where('user_id', $userId) // replace with $userId
             ->orderBy('created_at', 'desc')
             ->get();

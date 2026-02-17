@@ -13,7 +13,9 @@ class LeaveRequest extends Model
         'reason',
         'job_id',
         'status',
-        'supporting_document'
+        'supporting_document',
+        'created_by',
+        'houseowner_id'
     ];
 
     protected $appends = ['supporting_document_url'];

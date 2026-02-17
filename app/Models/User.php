@@ -97,7 +97,8 @@ class User extends Authenticatable
         'url_image',
         'is_staff_added',
         'status',
-        'parent_user_id'
+        'parent_user_id',
+        'upi_id'
     ];
 
     /**

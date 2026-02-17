@@ -281,6 +281,8 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::apiResource('staff', StaffController::class);
     Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
     Route::post('/staff/attendance', [StaffController::class, 'getAttendance']);
+    Route::post('/staff/get-ai-data', [StaffController::class, 'getAiData']);
+    
     Route::apiResource('roles', RoleController::class);
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);

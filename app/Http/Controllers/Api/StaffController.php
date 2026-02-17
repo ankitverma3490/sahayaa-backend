@@ -11,6 +11,8 @@ use App\Models\Attendance;
 use App\Models\LeaveType;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use OpenAI\Laravel\Facades\OpenAI;
+use App\Services\Admin\AiFilterService;
 
 class StaffController extends Controller
 {
@@ -196,4 +198,92 @@ class StaffController extends Controller
             'data' => $result
         ], 200);
     }
+
+    public function getAiData(Request $request) {
+        $request->validate([
+            'query' => 'required|string'
+        ]);
+        
+
+        $ai = new AiFilterService();
+        $filters = $ai->generateFilters($request->all());
+        if (!is_array($filters)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI returned invalid format'
+            ]);
+        }
+        
+        try {
+            
+            
+            
+            // 2️⃣ Apply filters to database
+            $query = User::with('userWorkInfo')->where('user_role_id', '2');
+
+            if (!empty($filters['name'])) {
+                $query->where('name', 'like', '%' . $filters['name'] . '%');
+            }
+
+            if (!empty($filters['email'])) {
+                $query->where('email', 'like', '%' . $filters['email'] . '%');
+            }
+
+            if (!empty($filters['status'])) {
+                $query->where('status', $filters['status']);
+            }
+
+            // Salary filter (gt, gte, lt, lte, eq)
+            if (!empty($filters['salary']) && is_array($filters['salary'])) {
+
+                $query->whereHas('userWorkInfo', function ($q) use ($filters) {
+                    
+                    if (!empty($filters['salary']['$gt'])) {
+                        $q->where('salary', '>', $filters['salary']['$gt']);
+                    }
+
+                    if (!empty($filters['salary']['gt'])) {
+                        $q->where('salary', '>', $filters['salary']['gt']);
+                    }
+
+                    if (!empty($filters['salary']['gte'])) {
+                        $q->where('salary', '>=', $filters['salary']['gte']);
+                    }
+
+                    if (!empty($filters['salary']['lt'])) {
+                        $q->where('salary', '<', $filters['salary']['lt']);
+                    }
+
+                    if (!empty($filters['salary']['$lt'])) {
+                        $q->where('salary', '<', $filters['salary']['$lt']);
+                    }
+
+                    if (!empty($filters['salary']['lte'])) {
+                        $q->where('salary', '<=', $filters['salary']['lte']);
+                    }
+
+                    if (!empty($filters['salary']['eq'])) {
+                        $q->where('salary', '=', $filters['salary']['eq']);
+                    }
+                });
+            }
+
+            $data = $query->get();
+
+            return response()->json([
+                'success' => true,
+                'ai_filters' => $filters,
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+
 }

@@ -26,6 +26,8 @@
         "league/omnipay": "^3.2",
         "maatwebsite/excel": "^3.1",
         "omnipay/paypal": "^3.0",
+        "openai-php/client": "^0.10.3",
+        "openai-php/laravel": "^0.11.0",
         "overtrue/pinyin": "^5.0",
         "past/paytr": "^1.0",
         "php-ffmpeg/php-ffmpeg": "^1.2",

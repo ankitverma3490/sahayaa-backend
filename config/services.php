@@ -46,4 +46,9 @@ return [
         'secret' => env('GOOGLE_CAPTCHA_SECRET_KEY'),
     ],
 
+    "openai" => [
+        'key' => env('OPENAI_API_KEY'),
+        'organization' => env('OPENAI_ORGANIZATION',"Sahara"),
+    ]
+    
 ];

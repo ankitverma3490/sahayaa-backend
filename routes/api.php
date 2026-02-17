@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\AnalyticsController;
-use App\Http\Controllers\Api\NotificationShortcutController;
+// use App\Http\Controllers\Api\NotificationShortcutController;
 use App\Http\Controllers\Api\MailShortcutController;
 use App\Http\Controllers\Api\KycVerificationController;
 use App\Http\Controllers\Api\JobController;
@@ -179,13 +179,9 @@ Route::post('/supports/{id}/reply', [SupportController::class, 'reply']);
 Route::group(['prefix' => '/customer'], function() {
     Route::get('/dashbord-data', [SalaryController::class, 'getStaffDashboard']);
     Route::get('/approved-job', [JobApplicationController::class, 'approvedJob']);
-    Route::post('/quit-job-request', [JobApplicationController::class, 'requestQuitJob']);
+    
 
-    Route::post('/leave-apply', [JobApplicationController::class, 'applyLeave']);
-    Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
-    Route::get('/leave-type-list', [JobApplicationController::class, 'leaveTypeList']);
-    Route::post('/leave-reject/{id}', [JobApplicationController::class, 'reject']);
-    Route::post('/leave-approve/{id}', [JobApplicationController::class, 'approve']);
+    
     Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
     Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
 
@@ -264,14 +260,14 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::post('faq-support/delete/{id}', [FaqSupportController::class, 'customerDestroy']);
 
     Route::get('/getTransactions', [BookingController::class, 'getTransactions']);
-    Route::prefix('notification-shortcuts')->group(function () {
-        Route::get('/', [NotificationShortcutController::class, 'index']);
-        Route::post('/', [NotificationShortcutController::class, 'store']);
-        Route::get('/{id}', [NotificationShortcutController::class, 'show']);
-        Route::post('/update/{id}', [NotificationShortcutController::class, 'update']);
-        Route::post('/delete/{id}', [NotificationShortcutController::class, 'destroy']);
-        Route::post('/send/{id}', [NotificationShortcutController::class, 'sendShortcutNotification']);
-    });
+    // Route::prefix('notification-shortcuts')->group(function () {
+    //     Route::get('/', [NotificationShortcutController::class, 'index']);
+    //     Route::post('/', [NotificationShortcutController::class, 'store']);
+    //     Route::get('/{id}', [NotificationShortcutController::class, 'show']);
+    //     Route::post('/update/{id}', [NotificationShortcutController::class, 'update']);
+    //     Route::post('/delete/{id}', [NotificationShortcutController::class, 'destroy']);
+    //     Route::post('/send/{id}', [NotificationShortcutController::class, 'sendShortcutNotification']);
+    // });
 
     
     Route::apiResource('subscriptions', SubscriptionController::class);
@@ -305,6 +301,8 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         Route::delete('/{id}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
         
     });
+
+    
 
 });
 
@@ -358,96 +356,102 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/delete/member/{id}', [UserController::class, 'deleteAccUser']);
     Route::get('/random-analytics/overview', [UserController::class, 'overview']);
     Route::post('/update/business-profile/2', [UserController::class, 'completeBusinessProfile']);
+    
     Route::prefix('notifications')->group(function () {
-    Route::post('/add', [UserController::class, 'notificationAdd']);
-    Route::get('/list', [UserController::class, 'notificationList']);
-    Route::put('/{id}/read', [UserController::class, 'notificationMarkAsRead']);
-});
+        Route::post('/add', [UserController::class, 'notificationAdd']);
+        Route::get('/list', [UserController::class, 'notificationList']);
+        Route::put('/{id}/read', [UserController::class, 'notificationMarkAsRead']);
+    });
 
 
-Route::prefix('reviews')->group(function () {
-    Route::post('/store', [ReviewController::class, 'store']);    // Add Review
-    Route::get('/list', [ReviewController::class, 'index']); 
-    Route::get('/list-self', [ReviewController::class, 'selfIndex']); 
-    Route::delete('/delete/{id}', [ReviewController::class, 'destroy']); // Delete Review
-});
+    Route::prefix('reviews')->group(function () {
+        Route::post('/store', [ReviewController::class, 'store']);    // Add Review
+        Route::get('/list', [ReviewController::class, 'index']); 
+        Route::get('/list-self', [ReviewController::class, 'selfIndex']); 
+        Route::delete('/delete/{id}', [ReviewController::class, 'destroy']); // Delete Review
+    });
 
-Route::get('mails', [MailShortcutController::class, 'index']);
-Route::post('mails', [MailShortcutController::class, 'store']);
-Route::get('mails/{id}', [MailShortcutController::class, 'show']);
-Route::put('mails/{id}', [MailShortcutController::class, 'update']);
-Route::patch('mails/{id}', [MailShortcutController::class, 'update']);
-Route::delete('mails/{id}', [MailShortcutController::class, 'destroy']);
-Route::post('mails/{id}/send', [MailShortcutController::class, 'sendShortcutMail']);
-Route::post('/update/business-availability/3', [UserController::class, 'setBusinessAvailability']);
-Route::get('/bookings/list', [BookingController::class, 'vendorBookingList']);
+    Route::get('mails', [MailShortcutController::class, 'index']);
+    Route::post('mails', [MailShortcutController::class, 'store']);
+    Route::get('mails/{id}', [MailShortcutController::class, 'show']);
+    Route::put('mails/{id}', [MailShortcutController::class, 'update']);
+    Route::patch('mails/{id}', [MailShortcutController::class, 'update']);
+    Route::delete('mails/{id}', [MailShortcutController::class, 'destroy']);
+    Route::post('mails/{id}/send', [MailShortcutController::class, 'sendShortcutMail']);
+    Route::post('/update/business-availability/3', [UserController::class, 'setBusinessAvailability']);
+    Route::get('/bookings/list', [BookingController::class, 'vendorBookingList']);
 
-Route::prefix('services')->group(function () {
-    Route::get('/', [ServiceController::class, 'index']);
-    Route::post('/', [ServiceController::class, 'store']);
-    Route::get('/{service}', [ServiceController::class, 'show']);
-    Route::post('/{service}', [ServiceController::class, 'update']);
-    Route::post('/delete/{service}', [ServiceController::class, 'destroy']);
-    Route::get('/category/{categoryId}', [ServiceController::class, 'getByCategory']);
-    Route::get('/user/{userId}', [ServiceController::class, 'getByUser']);
-});
-
-
-Route::prefix('sub-services')->group(function () {
-    Route::get('/', [SubServiceController::class, 'index']);  
-    Route::get('/{id}', [SubServiceController::class, 'show']);   
-    Route::post('/', [SubServiceController::class, 'store']); 
-    Route::post('/{id}', [SubServiceController::class, 'update']);
-    Route::post('/delete/{id}', [SubServiceController::class, 'destroy']); 
-});
-
-Route::get('promo-codes', [PromoCodeController::class, 'index']); 
-Route::get('promo-codes/{id}', [PromoCodeController::class, 'show']);
-Route::post('promo-codes', [PromoCodeController::class, 'store']); // Create new promo code
-Route::post('promo-codes/validate', [PromoCodeController::class, 'validatePromoCode']); // Validate promo code
-Route::post('promo-codes/update/{id}', [PromoCodeController::class, 'update']); // Full update of promo code
-Route::post('promo-codes/delete/{id}', [PromoCodeController::class, 'destroy']);
-   
-
-Route::get('bank-accounts', [BankAccountController::class, 'index']);
-Route::get('bank-accounts/{id}', [BankAccountController::class, 'show']);
-Route::post('bank-accounts', [BankAccountController::class, 'store']);
-Route::post('bank-accounts/update/{id}', [BankAccountController::class, 'update']);
-Route::post('bank-accounts/delete/{id}', [BankAccountController::class, 'destroy']);
-Route::get('bank-accounts/type/{type}', [BankAccountController::class, 'getByType']);
-Route::post('bank-accounts/set/{id}', [BankAccountController::class, 'setAcc']);
+    Route::prefix('services')->group(function () {
+        Route::get('/', [ServiceController::class, 'index']);
+        Route::post('/', [ServiceController::class, 'store']);
+        Route::get('/{service}', [ServiceController::class, 'show']);
+        Route::post('/{service}', [ServiceController::class, 'update']);
+        Route::post('/delete/{service}', [ServiceController::class, 'destroy']);
+        Route::get('/category/{categoryId}', [ServiceController::class, 'getByCategory']);
+        Route::get('/user/{userId}', [ServiceController::class, 'getByUser']);
+    });
 
 
-Route::get('vendor-transactions/list', [BankAccountController::class, 'vendorTransactionsList']);
-Route::get('read-all', [UserController::class, 'readAll']);
-Route::get('transactions/{transaction}/invoice', [TransactionController::class, 'downloadInvoice']);
+    Route::prefix('sub-services')->group(function () {
+        Route::get('/', [SubServiceController::class, 'index']);  
+        Route::get('/{id}', [SubServiceController::class, 'show']);   
+        Route::post('/', [SubServiceController::class, 'store']); 
+        Route::post('/{id}', [SubServiceController::class, 'update']);
+        Route::post('/delete/{id}', [SubServiceController::class, 'destroy']); 
+    });
 
-Route::prefix('wallet')->group(function () {
-    Route::get('/', [WalletController::class, 'index']);
-    Route::post('/', [WalletController::class, 'store']); 
-    Route::post('/verify', [WalletController::class, 'verifyAndCreditWallet']); 
-});
+    Route::get('promo-codes', [PromoCodeController::class, 'index']); 
+    Route::get('promo-codes/{id}', [PromoCodeController::class, 'show']);
+    Route::post('promo-codes', [PromoCodeController::class, 'store']); // Create new promo code
+    Route::post('promo-codes/validate', [PromoCodeController::class, 'validatePromoCode']); // Validate promo code
+    Route::post('promo-codes/update/{id}', [PromoCodeController::class, 'update']); // Full update of promo code
+    Route::post('promo-codes/delete/{id}', [PromoCodeController::class, 'destroy']);
+    
 
-Route::get('/transaction/list', [BookingController::class, 'vendorTransactionList']);
-Route::get('/appointment/list', [UserController::class, 'appointmentList']);
-Route::post('/booking/accepted/{id}', [BookingController::class, 'acceptBooking']);
-Route::post('/booking/reject/{id}', [BookingController::class, 'rejectBooking']);
-Route::post('/booking/completed/{id}', [BookingController::class, 'completedBooking']);
-
-Route::get('analytics/customers', [AnalyticsController::class, 'customerAnalytics']);
-Route::get('analytics/vendors', [AnalyticsController::class, 'vendorAnalytics']);
-
-
-Route::get('faq-support', [FaqSupportController::class, 'index']);
-Route::get('faq-support/{id}', [FaqSupportController::class, 'show']);
-Route::post('faq-support', [FaqSupportController::class, 'store']);
-Route::post('faq-support/update/{id}', [FaqSupportController::class, 'update']);
-Route::post('faq-support/delete/{id}', [FaqSupportController::class, 'destroy']);
-Route::get('faq-support/category/{category}', [FaqSupportController::class, 'getByCategory']);
-Route::get('faq-support-categories', [FaqSupportController::class, 'getCategories']);
-Route::post('faq-support-search', [FaqSupportController::class, 'search']);
+    Route::get('bank-accounts', [BankAccountController::class, 'index']);
+    Route::get('bank-accounts/{id}', [BankAccountController::class, 'show']);
+    Route::post('bank-accounts', [BankAccountController::class, 'store']);
+    Route::post('bank-accounts/update/{id}', [BankAccountController::class, 'update']);
+    Route::post('bank-accounts/delete/{id}', [BankAccountController::class, 'destroy']);
+    Route::get('bank-accounts/type/{type}', [BankAccountController::class, 'getByType']);
+    Route::post('bank-accounts/set/{id}', [BankAccountController::class, 'setAcc']);
 
 
+    Route::get('vendor-transactions/list', [BankAccountController::class, 'vendorTransactionsList']);
+    Route::get('read-all', [UserController::class, 'readAll']);
+    Route::get('transactions/{transaction}/invoice', [TransactionController::class, 'downloadInvoice']);
 
+    Route::prefix('wallet')->group(function () {
+        Route::get('/', [WalletController::class, 'index']);
+        Route::post('/', [WalletController::class, 'store']); 
+        Route::post('/verify', [WalletController::class, 'verifyAndCreditWallet']); 
+    });
+
+    Route::get('/transaction/list', [BookingController::class, 'vendorTransactionList']);
+    Route::get('/appointment/list', [UserController::class, 'appointmentList']);
+    Route::post('/booking/accepted/{id}', [BookingController::class, 'acceptBooking']);
+    Route::post('/booking/reject/{id}', [BookingController::class, 'rejectBooking']);
+    Route::post('/booking/completed/{id}', [BookingController::class, 'completedBooking']);
+
+    Route::get('analytics/customers', [AnalyticsController::class, 'customerAnalytics']);
+    Route::get('analytics/vendors', [AnalyticsController::class, 'vendorAnalytics']);
+
+
+    Route::get('faq-support', [FaqSupportController::class, 'index']);
+    Route::get('faq-support/{id}', [FaqSupportController::class, 'show']);
+    Route::post('faq-support', [FaqSupportController::class, 'store']);
+    Route::post('faq-support/update/{id}', [FaqSupportController::class, 'update']);
+    Route::post('faq-support/delete/{id}', [FaqSupportController::class, 'destroy']);
+    Route::get('faq-support/category/{category}', [FaqSupportController::class, 'getByCategory']);
+    Route::get('faq-support-categories', [FaqSupportController::class, 'getCategories']);
+    Route::post('faq-support-search', [FaqSupportController::class, 'search']);
+
+
+    Route::post('/leave-apply', [JobApplicationController::class, 'applyLeave']);
+    Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
+    Route::get('/leave-type-list', [JobApplicationController::class, 'leaveTypeList']);
+    Route::post('/leave-reject/{id}', [JobApplicationController::class, 'reject']);
+    Route::post('/leave-approve/{id}', [JobApplicationController::class, 'approve']);
+    Route::post('/quit-job-request', [JobApplicationController::class, 'requestQuitJob']);
 });
 

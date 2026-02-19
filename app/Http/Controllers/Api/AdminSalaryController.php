@@ -38,4 +38,29 @@ class AdminSalaryController extends Controller
             'data' => $salaries
         ], 200);
     }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string'
+        ]);
+
+        if(!in_array($request->status, ['paid', 'unpaid', 'pending'])) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid status'
+            ], 400);
+        }
+        
+        $salary = Salary::findOrFail($id);
+        $salary->status = $request->status;
+        $salary->save();
+        
+        return response()->json([
+            'status' => true,
+            'message' => 'Salary updated successfully',
+            'data' => $salary
+        ], 200);
+    }
+
 }

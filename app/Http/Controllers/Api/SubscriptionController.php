@@ -50,7 +50,8 @@ class SubscriptionController extends Controller
             'type'              => 'required|in:monthly,yearly,quarterly',
             'razorpay_order_id' => 'nullable',
             'role_id'           => 'required|exists:roles,id',
-            'extra'             => 'nullable'
+            'extra'             => 'nullable',
+            'subscription_limit' => 'required|numeric'
         ]);
 
         $subscription = Subscription::create($data);
@@ -75,7 +76,8 @@ class SubscriptionController extends Controller
             'type'              => 'sometimes|in:monthly,yearly,quarterly',
             'razorpay_order_id' => 'nullable|string',
             'role_id'           => 'required|exists:roles,id',
-            'extra'             => 'nullable|array'
+            'extra'             => 'nullable|array',
+            'subscription_limit' => 'required|numeric'
         ]);
 
         $subscription->update($data);

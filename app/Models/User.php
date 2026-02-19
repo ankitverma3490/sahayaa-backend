@@ -475,4 +475,16 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'id', 'user_role_id');
     }
+
+    public function lastsalary()
+    {
+        return $this->hasOne(Salary::class, 'staff_id', 'id')
+                ->latestOfMany('payment_date');
+    }
+
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class, 'created_by', 'id');
+    }
 }

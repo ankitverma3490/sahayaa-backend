@@ -13,6 +13,13 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use OpenAI\Laravel\Facades\OpenAI;
 use App\Services\Admin\AiFilterService;
+use Illuminate\Support\Facades\Auth;
+use App\Models\JobApplication;
+use App\Models\Job;
+use App\Models\Salary;
+use App\Models\SubscriptionUser;
+use App\Models\Subscription;
+
 
 class StaffController extends Controller
 {
@@ -199,27 +206,55 @@ class StaffController extends Controller
         ], 200);
     }
 
-    public function getAiData(Request $request) {
+    public function getAiData(Request $request)
+    {
         $request->validate([
             'query' => 'required|string'
         ]);
-        
 
-        $ai = new AiFilterService();
-        $filters = $ai->generateFilters($request->all());
-        if (!is_array($filters)) {
+        $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
+
+        if (!$subscription) {
             return response()->json([
                 'success' => false,
-                'message' => 'AI returned invalid format'
+                'message' => 'No active subscription found.'
+            ]);
+        }
+
+        $plan = Subscription::find($subscription->subscription_id);
+
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subscription plan not found.'
+            ]);
+        }
+        
+        // ✅ Check limit
+        if ($subscription->user_limit >= $plan->subscription_limit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Monthly AI limit exceeded.'
             ]);
         }
         
         try {
-            
-            
-            
-            // 2️⃣ Apply filters to database
-            $query = User::with('userWorkInfo')->where('user_role_id', '2');
+
+            // 🔹 AI Generate Filters
+            $ai = new AiFilterService();
+            $filters = $ai->generateFilters($request->all());
+
+            if (!is_array($filters)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AI returned invalid format'
+                ]);
+            }
+
+            // 🔹 Apply Filters
+            $query = User::with('userWorkInfo')
+                ->where('user_role_id', 2);
 
             if (!empty($filters['name'])) {
                 $query->where('name', 'like', '%' . $filters['name'] . '%');
@@ -233,46 +268,35 @@ class StaffController extends Controller
                 $query->where('status', $filters['status']);
             }
 
-            // Salary filter (gt, gte, lt, lte, eq)
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
 
                 $query->whereHas('userWorkInfo', function ($q) use ($filters) {
-                    
-                    if (!empty($filters['salary']['$gt'])) {
-                        $q->where('salary', '>', $filters['salary']['$gt']);
-                    }
 
-                    if (!empty($filters['salary']['gt'])) {
-                        $q->where('salary', '>', $filters['salary']['gt']);
-                    }
+                    foreach ([
+                        'gt' => '>',
+                        'gte' => '>=',
+                        'lt' => '<',
+                        'lte' => '<=',
+                        'eq' => '='
+                    ] as $key => $operator) {
 
-                    if (!empty($filters['salary']['gte'])) {
-                        $q->where('salary', '>=', $filters['salary']['gte']);
-                    }
-
-                    if (!empty($filters['salary']['lt'])) {
-                        $q->where('salary', '<', $filters['salary']['lt']);
-                    }
-
-                    if (!empty($filters['salary']['$lt'])) {
-                        $q->where('salary', '<', $filters['salary']['$lt']);
-                    }
-
-                    if (!empty($filters['salary']['lte'])) {
-                        $q->where('salary', '<=', $filters['salary']['lte']);
-                    }
-
-                    if (!empty($filters['salary']['eq'])) {
-                        $q->where('salary', '=', $filters['salary']['eq']);
+                        if (!empty($filters['salary'][$key])) {
+                            $q->where('salary', $operator, $filters['salary'][$key]);
+                        }
                     }
                 });
             }
 
             $data = $query->get();
 
+            // ✅ Increment only after success
+            $subscription->increment('user_limit');
+
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
+                'remaining_limit' =>
+                    $plan->subscription_limit - ($subscription->used_limit + 1),
                 'data' => $data
             ]);
 
@@ -284,6 +308,26 @@ class StaffController extends Controller
             ]);
         }
     }
+
+
+    public function getJobs() {
+        $id = Auth::user()->id;
+        $staff = User::find($id);
+        if (!$staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff member not found'
+            ], 404);
+        }
+
+        $jobs = JobApplication::where('user_id', $staff->id)->where('application_status', 'accepted')->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jobs retrieved successfully',
+            'data' => $jobs
+        ]);
+    }    
 
 
 }

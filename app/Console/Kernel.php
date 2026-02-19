@@ -35,6 +35,11 @@ class Kernel extends ConsoleKernel
             ->timezone('Asia/Kolkata') // Adjust to your timezone
             ->appendOutputTo(storage_path('logs/auto-subscriptions.log'));
 
+        $schedule->command('subscriptions:reset-user-limit')
+            ->monthlyOn(1, '00:00')
+            ->timezone('Asia/Kolkata') // Adjust to your timezone
+            ->appendOutputTo(storage_path('logs/auto-subscriptions.log'));
+
     }
 
     /**

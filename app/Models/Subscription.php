@@ -19,7 +19,8 @@ class Subscription extends Model
         'type',
         'razorpay_order_id',
         'extra',
-        'role_id'
+        'role_id',
+        'subscription_limit'
     ];
 
     protected $casts = [

@@ -182,8 +182,6 @@ Route::group(['prefix' => '/customer'], function() {
     
 
     
-    Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
-    Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
 
     Route::get('/vendor/{id}', [UserController::class, 'vendorDetails']);
     Route::get('/home', [BookingController::class, 'homeScreen']);
@@ -278,10 +276,12 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
     Route::post('/staff/attendance', [StaffController::class, 'getAttendance']);
     Route::post('/staff/get-ai-data', [StaffController::class, 'getAiData']);
+    Route::get('/staff/job/list', [StaffController::class, 'getjobs']);
     
     Route::apiResource('roles', RoleController::class);
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);
+    Route::put('/salary/{id}/status', [AdminSalaryController::class, 'updateStatus']);
 
     Route::prefix('subscriptionuser')->group(function () {
         Route::get('/show/{id}', [SubscriptionController::class, 'getSubscriptionUser']);
@@ -356,7 +356,8 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/delete/member/{id}', [UserController::class, 'deleteAccUser']);
     Route::get('/random-analytics/overview', [UserController::class, 'overview']);
     Route::post('/update/business-profile/2', [UserController::class, 'completeBusinessProfile']);
-    
+    Route::get('/mywork', [UserController::class, 'getMyWork']);
+
     Route::prefix('notifications')->group(function () {
         Route::post('/add', [UserController::class, 'notificationAdd']);
         Route::get('/list', [UserController::class, 'notificationList']);
@@ -453,5 +454,9 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/leave-reject/{id}', [JobApplicationController::class, 'reject']);
     Route::post('/leave-approve/{id}', [JobApplicationController::class, 'approve']);
     Route::post('/quit-job-request', [JobApplicationController::class, 'requestQuitJob']);
+
+    Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
+    Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
+
 });
 

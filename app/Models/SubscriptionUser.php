@@ -29,7 +29,8 @@ class SubscriptionUser extends Model
         'for_entry',
         'start_date',
         'end_date',
-        'status'
+        'status',
+        'user_limit'
     ];
 
     protected $casts = [
@@ -64,4 +65,6 @@ class SubscriptionUser extends Model
                $this->end_date && 
                $this->end_date->isFuture();
     }
+
+    
 }

@@ -346,12 +346,11 @@ public function getEarningsSummary(Request $request)
                 'errors' => $validator->errors()
             ], 422);
         }
-
-        $user = Auth::guard('api')->user();
+        
+        $user = Auth::user();
         $jobId = $request->job_id;
         $month = $request->month ?? date('Y-m');
         $monthName = date('F Y', strtotime($month));
-
         // Get approved job applications
         $applications = JobApplication::where('user_id', $user->id)
             ->where('application_status', 'accepted')
@@ -368,9 +367,9 @@ public function getEarningsSummary(Request $request)
                 "data" => []
             ], 404);
         }
-
+        
         $response = [];
-
+        
         foreach ($applications as $application) {
             $job = $application->job ? $application->job->toArray() : [];
             $employer = $application->job && $application->job->creator 

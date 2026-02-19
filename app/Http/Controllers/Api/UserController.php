@@ -30,7 +30,8 @@ use App\Models\Category;
 use Illuminate\Validation\Rule;
 use App\Models\Designation;
 use App\Models\Role;
-
+use App\Models\UserRole;
+use App\Models\LeaveRequest;
 
 class UserController extends Controller
 {
@@ -5020,5 +5021,52 @@ private function updateExistingStaff(User $existingUser, Request $request)
             ], 500);
         }
     }
+
+    public function getMyWork(Request $request)
+    {
+        try {
+            $user = Auth::guard('api')->user();
+            $userDetails = User::with([
+                'addresses','lastExp','lastsalary','userWorkInfo','lastExp','leaveRequests'])->find($user->id);
+
+            $attendanceSummary = DB::table('attendance')
+                ->select('status', DB::raw('COUNT(*) as total'))
+                ->where('staff_id', $user->id)
+                ->whereMonth('date', date('m'))
+                ->whereYear('date', date('Y'))
+                ->groupBy('status')
+                ->get();
+            $leaveSummary = LeaveRequest::select(
+                'leave_types.name as leave_type_name',
+                DB::raw('COUNT(leave_requests.id) as total')
+            )
+            ->join('leave_types', 'leave_types.id', '=', 'leave_requests.leave_type_id')
+            ->where('leave_requests.created_by', $user->id)
+            ->groupBy('leave_types.name')
+            ->get();
+   
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated'
+                ], 401);
+            }
+            // Return user data without sensitive information
+            return response()->json([
+                'success' => true,
+                'message' => 'Get my work successfully',
+                'data' => $userDetails,
+                'attendanceSummary' => $attendanceSummary,
+                'leaveSummary' => $leaveSummary
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve profile',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 }

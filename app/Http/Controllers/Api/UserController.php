@@ -5075,6 +5075,12 @@ private function updateExistingStaff(User $existingUser, Request $request)
             ->where('leave_requests.created_by', $user->id)
             ->groupBy('leave_types.name')
             ->get();
+
+            $jobApplications = DB::table('job_applications')
+            ->where('user_id', $user->id)
+            ->where('application_status', "accepted")
+            ->get();
+
    
             if (!$user) {
                 return response()->json([
@@ -5088,7 +5094,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 'message' => 'Get my work successfully',
                 'data' => $userDetails,
                 'attendanceSummary' => $attendanceSummary,
-                'leaveSummary' => $leaveSummary
+                'leaveSummary' => $leaveSummary,
+                "jobApplications" => $jobApplications
             ], 200);
         } catch (\Exception $e) {
             return response()->json([

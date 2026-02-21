@@ -27,7 +27,7 @@ class Category extends Model
     public function getImageAttribute($value)
     {
         if ($value) {
-            return env('APP_URL') . '/public/' . $value;
+            return $value;
         }
         return env('APP_URL') . '/public/noimage.jpg';
     }

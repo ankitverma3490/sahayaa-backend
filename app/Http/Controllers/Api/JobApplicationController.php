@@ -14,9 +14,11 @@ use Carbon\Carbon;
 use App\Models\LeaveType;
 use App\Models\LeaveRequest;
 use App\Models\User;
+use App\Traits\ImageUpload;
 
 class JobApplicationController extends Controller
 {
+    use ImageUpload;
 
     // public function approvedJob(Request $request)
     // {
@@ -382,12 +384,13 @@ class JobApplicationController extends Controller
 
         if ($request->hasFile('supporting_document')) {
                 $directory = "uploads/leave_documents";
-                if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-                $image = $request->file('supporting_document');
-                $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path($directory), $fileName);
-                $path = $directory . '/' . $fileName;
-                if ($user->image && file_exists(public_path($user->image))) unlink(public_path($user->image));
+                // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
+                // $image = $request->file('supporting_document');
+                // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                // $image->move(public_path($directory), $fileName);
+                // $path = $directory . '/' . $fileName;
+                // if ($user->image && file_exists(public_path($user->image))) unlink(public_path($user->image));
+                $path = $this->uploadCloudary($request,"supporting_document",$directory);
                 $filePath = $path;
         }
         $leave = LeaveRequest::create([
@@ -420,6 +423,9 @@ class JobApplicationController extends Controller
             $leaveRequests = LeaveRequest::with(['user', 'leaveType'])
             ->whereIn('created_by', $user->id)
             ->orderBy('id', 'desc')
+            ->get();
+        } elseif($user->user_role_id == 1){
+            $leaveRequests = LeaveRequest::with(['user', 'leaveType'])->orderBy('id', 'desc')
             ->get();
         } else {
             $leaveRequests = LeaveRequest::with(['user', 'leaveType'])

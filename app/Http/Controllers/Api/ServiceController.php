@@ -21,8 +21,11 @@ use App\Models\PromoCode;
 use App\Models\Booking;
 use DateTime;
 use App\Models\Cart;
+use App\Traits\ImageUpload;
+
 class ServiceController extends Controller
 {
+    use ImageUpload;
     public function index()
 {
     $user = Auth::guard('api')->user();
@@ -88,20 +91,21 @@ class ServiceController extends Controller
 
     // Handle image upload
     if ($request->hasFile('image')) {
-        $image = $request->file('image');
+        // $image = $request->file('image');
         $directory = 'uploads/services';
 
-        // Create directory if not exists
-        if (!file_exists(public_path($directory))) {
-            mkdir(public_path($directory), 0755, true);
-        }
+        // // Create directory if not exists
+        // if (!file_exists(public_path($directory))) {
+        //     mkdir(public_path($directory), 0755, true);
+        // }
 
-        $extension = $image->getClientOriginalExtension();
-        $fileName = time() . '_' . uniqid() . '.' . $extension;
+        // $extension = $image->getClientOriginalExtension();
+        // $fileName = time() . '_' . uniqid() . '.' . $extension;
 
-        $image->move(public_path($directory), $fileName);
+        // $image->move(public_path($directory), $fileName);
 
-        $path = $directory . '/' . $fileName;
+        // $path = $directory . '/' . $fileName;
+        $path = $this->uploadCloudary($request,"image",$directory);
 
         $serviceData['image'] = $path;
     }

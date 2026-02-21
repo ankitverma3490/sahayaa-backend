@@ -32,9 +32,11 @@ use App\Models\Designation;
 use App\Models\Role;
 use App\Models\UserRole;
 use App\Models\LeaveRequest;
+use App\Traits\ImageUpload;
 
 class UserController extends Controller
 {
+    use ImageUpload;
 
     public function signUp(Request $request)
     {
@@ -977,13 +979,18 @@ public function updateProfile(Request $request)
 
         // ✅ Profile picture upload
         if ($request->hasFile('profile_picture')) {
-            $directory = "uploads/user_profile_images";
-            if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-            $image = $request->file('profile_picture');
-            $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path($directory), $fileName);
-            $path = $directory . '/' . $fileName;
-            if ($user->image && file_exists(public_path($user->image))) unlink(public_path($user->image));
+            $folderPath = "uploads/user_profile_images";
+            // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
+            // $image = $request->file('profile_picture');
+            // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            // $image->move(public_path($directory), $fileName);
+            // $path = $directory . '/' . $fileName;
+            // if ($user->image && file_exists(public_path($user->image))) unlink(public_path($user->image));
+            try {
+                $path = $this->uploadCloudary($request,"profile_picture",$folderPath);
+            } catch (\Throwable $th) {
+                //throw $th;
+            }
             $data['image'] = $path;
         }
         $jsonResponse = json_encode($request->user_role_id, JSON_PRETTY_PRINT);
@@ -1098,12 +1105,13 @@ private function saveWorkAndExperience($user, $request, $isEdit)
     ];
     if ($request->hasFile('voice_note')) {
         $directory = "uploads/user_voice_notes";
-        if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-        $file = $request->file('voice_note');
-        $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        $file->move(public_path($directory), $fileName);
-        $path = $directory . '/' . $fileName;
-        if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) unlink(public_path($workInfo->voice_note));
+        // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
+        // $file = $request->file('voice_note');
+        // $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        // $file->move(public_path($directory), $fileName);
+        // $path = $directory . '/' . $fileName;
+        // if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) unlink(public_path($workInfo->voice_note));
+        $path = $this->uploadCloudary($request,"voice_note",$directory);
         $data['voice_note'] = $path;
     }
     UserWorkInfo::updateOrCreate(['user_id' => $user->id], $data);
@@ -1205,21 +1213,22 @@ public function categoryUpdate(Request $request, $id)
             $directory = "uploads/categories";
             
             // Create directory if it doesn't exist
-            if (!file_exists(public_path($directory))) {
-                mkdir(public_path($directory), 0755, true);
-            }
+            // if (!file_exists(public_path($directory))) {
+            //     mkdir(public_path($directory), 0755, true);
+            // }
 
-            $image = $request->file('image');
-            $extension = $image->getClientOriginalExtension();
-            $fileName = time() . '_' . uniqid() . '.' . $extension;
-            $image->move(public_path($directory), $fileName);
+            // $image = $request->file('image');
+            // $extension = $image->getClientOriginalExtension();
+            // $fileName = time() . '_' . uniqid() . '.' . $extension;
+            // $image->move(public_path($directory), $fileName);
 
-            $path = $directory . '/' . $fileName;
+            // $path = $directory . '/' . $fileName;
 
-            // Delete old image if exists
-            if ($category->image && file_exists(public_path($category->image))) {
-                unlink(public_path($category->image));
-            }
+            // // Delete old image if exists
+            // if ($category->image && file_exists(public_path($category->image))) {
+            //     unlink(public_path($category->image));
+            // }
+            $path = $this->uploadCloudary($request,"image",$directory);
 
             // Add the new image path to data
             $data['image'] = $path;
@@ -1368,17 +1377,17 @@ public function updateProfileCustomer(Request $request)
         // ✅ Handle profile picture
         if ($request->hasFile('profile_picture')) {
             $directory = "uploads/user_profile_images";
-            if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
+            // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
 
-            $image = $request->file('profile_picture');
-            $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path($directory), $fileName);
-            $path = $directory . '/' . $fileName;
+            // $image = $request->file('profile_picture');
+            // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            // $image->move(public_path($directory), $fileName);
+            // $path = $directory . '/' . $fileName;
 
-            if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
-                unlink(public_path($user->profile_picture));
-            }
-
+            // if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
+            //     unlink(public_path($user->profile_picture));
+            // }
+            $path = $this->uploadCloudary($request,"profile_picture",$directory);
             $data['image'] = $path;
         }
 
@@ -1433,12 +1442,13 @@ public function updateProfileCustomer(Request $request)
     }
         if ($request->hasFile('voice_note')) {
             $directory = "uploads/user_voice_notes";
-            if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-            $file = $request->file('voice_note');
-            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path($directory), $fileName);
-            $path = $directory . '/' . $fileName;
-            if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) unlink(public_path($workInfo->voice_note));
+            // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
+            // $file = $request->file('voice_note');
+            // $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            // $file->move(public_path($directory), $fileName);
+            // $path = $directory . '/' . $fileName;
+            // if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) unlink(public_path($workInfo->voice_note));
+            $path = $this->uploadCloudary($request,"voice_note",$directory);
             $workData['voice_note'] = $path;
         }
 
@@ -1595,58 +1605,66 @@ public function completeBusinessProfile(Request $request)
 
         // Handle photo verification upload
         if ($request->hasFile('photo_verification')) {
-            $image = $request->file('photo_verification');
             $directory = 'uploads/users/verification';
+            // $image = $request->file('photo_verification');
             
-            if (!file_exists(public_path($directory))) {
-                mkdir(public_path($directory), 0755, true);
-            }
             
-            $fileName = 'photo_verification_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path($directory), $fileName);
-            $updateData['photo_verification'] = $directory . '/' . $fileName;
+            // if (!file_exists(public_path($directory))) {
+            //     mkdir(public_path($directory), 0755, true);
+            // }
+            
+            // $fileName = 'photo_verification_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            // $image->move(public_path($directory), $fileName);
+            $path = $this->uploadCloudary($request,"photo_verification",$directory);
+            $updateData['photo_verification'] = $path;
         }
 
         // Handle business proof upload
         if ($request->hasFile('business_proof')) {
-            $image = $request->file('business_proof');
             $directory = 'uploads/users/verification';
+            // $image = $request->file('business_proof');
             
-            if (!file_exists(public_path($directory))) {
-                mkdir(public_path($directory), 0755, true);
-            }
             
-            $fileName = 'business_proof_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path($directory), $fileName);
-            $updateData['business_proof'] = $directory . '/' . $fileName;
+            // if (!file_exists(public_path($directory))) {
+            //     mkdir(public_path($directory), 0755, true);
+            // }
+            
+            // $fileName = 'business_proof_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            // $image->move(public_path($directory), $fileName);
+            $path = $this->uploadCloudary($request,"business_proof",$directory);
+            $updateData['business_proof'] = $path;
         }
 
         // Handle adhaar card verification upload
         if ($request->hasFile('adhaar_card_verification')) {
-            $image = $request->file('adhaar_card_verification');
             $directory = 'uploads/users/verification';
             
-            if (!file_exists(public_path($directory))) {
-                mkdir(public_path($directory), 0755, true);
-            }
+            // $image = $request->file('adhaar_card_verification');
             
-            $fileName = 'adhaar_verification_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path($directory), $fileName);
-            $updateData['adhaar_card_verification'] = $directory . '/' . $fileName;
+            // if (!file_exists(public_path($directory))) {
+            //     mkdir(public_path($directory), 0755, true);
+            // }
+            
+            // $fileName = 'adhaar_verification_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            // $image->move(public_path($directory), $fileName);
+            $path = $this->uploadCloudary($request,"adhaar_card_verification",$directory);
+            $updateData['adhaar_card_verification'] = $path;
         }
 
         // Handle PAN card upload
         if ($request->hasFile('pan_card')) {
-            $image = $request->file('pan_card');
             $directory = 'uploads/users/verification';
             
-            if (!file_exists(public_path($directory))) {
-                mkdir(public_path($directory), 0755, true);
-            }
+            // $image = $request->file('pan_card');
             
-            $fileName = 'pan_card_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move(public_path($directory), $fileName);
-            $updateData['pan_card'] = $directory . '/' . $fileName;
+            // if (!file_exists(public_path($directory))) {
+            //     mkdir(public_path($directory), 0755, true);
+            // }
+            
+            // $fileName = 'pan_card_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            // $image->move(public_path($directory), $fileName);
+            $path = $this->uploadCloudary($request,"pan_card",$directory);
+            $updateData['pan_card'] = $path;
         }
 
         $user->update($updateData);
@@ -1658,12 +1676,12 @@ public function completeBusinessProfile(Request $request)
             }
 
             foreach ($request->file('portfolio_images') as $file) {
-                $fileName = 'portfolio_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path($portfolioDir), $fileName);
-
+                // $fileName = 'portfolio_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                // $file->move(public_path($portfolioDir), $fileName);
+                $path = $this->uploadCloudary($request,"portfolio_images",$portfolioDir);
                 PortfolioImage::create([
                     'user_id' => $user->id,
-                    'image' => $portfolioDir . '/' . $fileName
+                    'image' => $path
                 ]);
             }
         }
@@ -2740,17 +2758,18 @@ UserHouseholdInformation::updateOrCreate(
     ];
     if ($request->hasFile('voice_note')) {
         $directory = "uploads/user_voice_notes";
-        if (!file_exists(public_path($directory))) {
-            mkdir(public_path($directory), 0755, true);
-        }
-        $file = $request->file('voice_note');
-        $extension = $file->getClientOriginalExtension();
-        $fileName = time() . '_' . uniqid() . '.' . $extension;
-        $file->move(public_path($directory), $fileName);
-        $path = $directory . '/' . $fileName;
-        if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) {
-            unlink(public_path($workInfo->voice_note));
-        }
+        // if (!file_exists(public_path($directory))) {
+        //     mkdir(public_path($directory), 0755, true);
+        // }
+        // $file = $request->file('voice_note');
+        // $extension = $file->getClientOriginalExtension();
+        // $fileName = time() . '_' . uniqid() . '.' . $extension;
+        // $file->move(public_path($directory), $fileName);
+        // $path = $directory . '/' . $fileName;
+        // if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) {
+        //     unlink(public_path($workInfo->voice_note));
+        // }
+        $path = $this->uploadCloudary($request,"voice_note",$directory);
         $data['voice_note'] = $path;
     }
     $workInfo = UserWorkInfo::updateOrCreate(
@@ -2780,56 +2799,57 @@ public function listSubcategories(Request $request)
         ]);
     }
 
-  public function storeOrUpdate(Request $request)
-    {
-        $user = Auth::user();
-        
-        $validated = $request->validate([
-            'id' => 'nullable|exists:categories,id',
-            'name' => 'required|string|max:255',
-            'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120', // 5MB max
-        ]);
-        
-        $data = [
-            'name' => $validated['name'],
-        ];
+ public function storeOrUpdate(Request $request)
+{
+    $user = Auth::user();
 
-        if ($request->hasFile('image')) {
-            $directory = "uploads/category_images";
+    $validated = $request->validate([
+        'id' => 'nullable|exists:categories,id',
+        'name' => 'required|string|max:255',
+        'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+    ]);
 
-            if (!file_exists(public_path($directory))) {
-                mkdir(public_path($directory), 0755, true);
-            }
+    $data = [
+        'name' => $validated['name'],
+    ];
 
-            $file = $request->file('image');
-            $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path($directory), $fileName);
-            $path = $directory . '/' . $fileName;
+    // If updating, get existing category
+    $category = null;
+    if (!empty($validated['id'])) {
+        $category = Category::findOrFail($validated['id']);
+    }
 
-            // Delete old image if updating
-            if (!empty($validated['id'])) {
-                $oldCategory = Category::find($validated['id']);
-                if ($oldCategory && $oldCategory->image && file_exists(public_path($oldCategory->image))) {
-                    unlink(public_path($oldCategory->image));
-                }
-            }
+    // Upload new image
+    if ($request->hasFile('image')) {
 
-            $data['image'] = $path;
+        $file = $request->file('image');
+
+        // Folder structure (no filename here)
+        $folderPath = 'uploads/category_images/';
+        try {
+            $imagepathfull = $this->uploadCloudary($request,"image",$folderPath);
+        } catch (\Throwable $th) {
+            //throw $th;
+            // dd($th->getMessage());
         }
-        if(isset($validated['id']) && !empty($validated['id'])){
-            $category = Category::update(['id' => $validated['id']],$data);
-        }else{
-            $category = Category::Create($data);
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => !empty($validated['id']) 
+        $data['image'] = $imagepathfull;
+    }
+
+    // Create or Update
+    if ($category) {
+        $category->update($data);
+    } else {
+        $category = Category::create($data);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => !empty($validated['id']) 
                 ? 'Category updated successfully' 
                 : 'Category created successfully',
-            'data' => $category
-        ]);
-    }
+        'data' => $category
+    ]);
+}
 
 
 public function deleteSelfAccount(Request $request)
@@ -3531,7 +3551,8 @@ public function addStaff(Request $request)
 
         try {
             if ($request->hasFile('staff_photo')) {
-                $staffPhotoPath = $request->file('staff_photo')->store('staff/photos', 'public');
+                // $staffPhotoPath = $request->file('staff_photo')->store('staff/photos', 'public');
+                $staffPhotoPath = $this->uploadCloudary($request,"staff_photo","staff/photos");
                 \Log::info('Staff photo uploaded successfully', [
                     'action' => $logAction,
                     'file_path' => $staffPhotoPath,
@@ -3548,7 +3569,9 @@ public function addStaff(Request $request)
 
         try {
             if ($request->hasFile('aadhar_front')) {
-                $aadharFrontPath = $request->file('aadhar_front')->store('staff/aadhar', 'public');
+                // $aadharFrontPath = $request->file('aadhar_front')->store('staff/aadhar', 'public');
+                $aadharFrontPath = $this->uploadCloudary($request,"aadhar_front","staff/aadhar");
+                
                 \Log::info('Aadhar front photo uploaded successfully', [
                     'action' => $logAction,
                     'file_path' => $aadharFrontPath,
@@ -3565,7 +3588,8 @@ public function addStaff(Request $request)
 
         try {
             if ($request->hasFile('aadhar_back')) {
-                $aadharBackPath = $request->file('aadhar_back')->store('staff/aadhar', 'public');
+                // $aadharBackPath = $request->file('aadhar_back')->store('staff/aadhar', 'public');
+                $aadharBackPath = $this->uploadCloudary($request,"aadhar_back","staff/aadhar");
                 \Log::info('Aadhar back photo uploaded successfully', [
                     'action' => $logAction,
                     'file_path' => $aadharBackPath,
@@ -3582,7 +3606,9 @@ public function addStaff(Request $request)
 
         try {
             if ($request->hasFile('police_clearance_certificate')) {
-                $policeClearancePath = $request->file('police_clearance_certificate')->store('staff/documents', 'public');
+                // $policeClearancePath = $request->file('police_clearance_certificate')->store('staff/documents', 'public');
+                $aadharBackPath = $this->uploadCloudary($request,"police_clearance_certificate","staff/documents");
+                
                 \Log::info('Police clearance certificate uploaded successfully', [
                     'action' => $logAction,
                     'file_path' => $policeClearancePath,
@@ -3865,8 +3891,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
                         'timestamp' => now()->toDateTimeString()
                     ]);
                 }
-                
-                $staffPhotoPath = $request->file('staff_photo')->store('staff/photos', 'public');
+                $staffPhotoPath = $this->uploadCloudary($request,"staff_photo","staff/photos");
+                // $staffPhotoPath = $request->file('staff_photo')->store('staff/photos', 'public');
                 $fileUpdateLog['staff_photo'] = 'updated';
                 
                 \Log::info('Staff photo updated successfully', [
@@ -3904,8 +3930,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
                         'timestamp' => now()->toDateTimeString()
                     ]);
                 }
-                
-                $aadharFrontPath = $request->file('aadhar_front')->store('staff/aadhar', 'public');
+                $aadharFrontPath = $this->uploadCloudary($request,"aadhar_front","staff/aadhar");
+                // $aadharFrontPath = $request->file('aadhar_front')->store('staff/aadhar', 'public');
                 $fileUpdateLog['aadhar_front'] = 'updated';
                 
                 \Log::info('Aadhar front updated successfully', [
@@ -3943,8 +3969,9 @@ private function updateExistingStaff(User $existingUser, Request $request)
                         'timestamp' => now()->toDateTimeString()
                     ]);
                 }
+                $aadharBackPath = $this->uploadCloudary($request,"aadhar_back","staff/aadhar");
                 
-                $aadharBackPath = $request->file('aadhar_back')->store('staff/aadhar', 'public');
+                // $aadharBackPath = $request->file('aadhar_back')->store('staff/aadhar', 'public');
                 $fileUpdateLog['aadhar_back'] = 'updated';
                 
                 \Log::info('Aadhar back updated successfully', [
@@ -3983,7 +4010,9 @@ private function updateExistingStaff(User $existingUser, Request $request)
                     ]);
                 }
                 
-                $policeClearancePath = $request->file('police_clearance_certificate')->store('staff/documents', 'public');
+                $policeClearancePath = $this->uploadCloudary($request,"police_clearance_certificate","staff/documents");
+                
+                // $policeClearancePath = $request->file('police_clearance_certificate')->store('staff/documents', 'public');
                 $fileUpdateLog['police_clearance_certificate'] = 'updated';
                 
                 \Log::info('Police clearance certificate updated successfully', [
@@ -4556,8 +4585,10 @@ private function updateExistingStaff(User $existingUser, Request $request)
                     'old_photo_exists' => !empty($staff->image),
                     'timestamp' => now()->toDateTimeString()
                 ]);
-
-                $updateData['image'] = $request->file('staff_photo')->store('staff/photos', 'public');
+                
+                $updateData['image'] = $this->uploadCloudary($request,"staff_photo","staff/photos");
+                
+                // $updateData['image'] = $request->file('staff_photo')->store('staff/photos', 'public');
                 $updatedFields[] = 'image';
                 
                 \Log::info('Staff photo uploaded successfully', [

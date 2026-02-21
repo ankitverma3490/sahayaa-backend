@@ -7,9 +7,13 @@ use App\Models\Support;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Traits\ImageUpload;
 
 class SupportController extends Controller
 {
+
+    use ImageUpload;
+
     // Save new support request
     public function store(Request $request)
     {
@@ -34,17 +38,17 @@ class SupportController extends Controller
 
             // Image Upload
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
+                // $image = $request->file('image');
                 $directory = 'uploads/supports';
 
-                if (!file_exists(public_path($directory))) {
-                    mkdir(public_path($directory), 0755, true);
-                }
+                // if (!file_exists(public_path($directory))) {
+                //     mkdir(public_path($directory), 0755, true);
+                // }
 
-                $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path($directory), $fileName);
-
-                $data['image'] = $directory . '/' . $fileName;
+                // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                // $image->move(public_path($directory), $fileName);
+                $path = $this->uploadCloudary($request,"image",$directory);
+                $data['image'] = $path;
             }
 
             $support = Support::create($data);

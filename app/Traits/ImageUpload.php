@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use Illuminate\Http\Request;
 use Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 trait ImageUpload {
 
@@ -18,11 +19,23 @@ trait ImageUpload {
                     $deleteFolderPath       = $directory.$deleteImageFollder;
                     if(Storage::disk('public')->exists($deleteFolderPath)) {
                         Storage::disk('public')->delete($deleteFolderPath);
+                        // Cloudinary::destroy($deleteFolderPath);
                     }
                 }
-                if (Storage::disk('public')->putFileAs($folderPath,$request->file($fieldname),$fileName, 'public')) {
-                    return $folderName . $fileName;
-                }
+
+                $upload = Cloudinary::upload(
+                    $file->getRealPath(),
+                    [
+                        'folder' => $folderPath,
+                        'resource_type' => 'image',
+                    ]
+                );
+                $publicId = $upload->getPublicId();
+                $imageUrl = Cloudinary::getUrl($publicId);
+                return $imageUrl;
+                // if (Storage::disk('public')->putFileAs($folderPath,$request->file($fieldname),$fileName, 'public')) {
+                //     return $folderName . $fileName;
+                // }
             }
         }else{
             if($deleteImageFollder != ''){
@@ -65,6 +78,54 @@ trait ImageUpload {
         }
     
         return null; 
+    }
+
+    public function uploadCloudary($request, $fieldname = 'image', $directory = 'images',$deleteImageFollder = '') {
+        if( $request->hasFile( $fieldname ) ) {
+            // dd($request->file($fieldname)->isValid());
+            if ($request->file($fieldname)->isValid()) {
+                $extension              = $request->file($fieldname)->getClientOriginalExtension();
+                $fileName               = time() . '-image.' . $extension;
+                $folderName             = strtoupper(date('M') . date('Y')) . "/";
+                $folderPath             = $directory .$folderName;
+                if($deleteImageFollder != ''){
+                    $deleteFolderPath       = $directory.$deleteImageFollder;
+                    if(Storage::disk('public')->exists($deleteFolderPath)) {
+                        Storage::disk('public')->delete($deleteFolderPath);
+                        // Cloudinary::destroy($deleteFolderPath);
+                    }
+                }
+                $file = $request->file($fieldname);
+                $upload = Cloudinary::upload(
+                    $file->getRealPath(),
+                    [
+                        'folder' => $folderPath,
+                        'resource_type' => 'image',
+                    ]
+                );
+                
+                $publicId = $upload->getPublicId();
+                
+                $imageUrl = Cloudinary::getUrl($publicId);
+                return $imageUrl;
+            }
+        }else{
+            if($deleteImageFollder != ''){
+                return $deleteImageFollder; 
+            }
+        }
+        return null;
+    }
+
+    public function getImageCloudinary($image) {
+
+        $imageUrl = Cloudinary::getUrl($image, [
+            'width' => 300,
+            'height' => 300,
+            'crop' => 'fill',
+            'quality' => 'auto'
+        ]);
+        return $imageUrl;
     }
     
 }

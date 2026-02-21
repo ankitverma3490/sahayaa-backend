@@ -7,8 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\Banner;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Cms;
+use App\Traits\ImageUpload;
+
 class BannerController extends Controller
 {
+    use ImageUpload;
 public function storeOrUpdate(Request $request)
 {
     $userId = Auth::guard('api')->user()->id;
@@ -21,16 +24,19 @@ public function storeOrUpdate(Request $request)
     ];
 
     if ($request->hasFile('image')) {
-        $image = $request->file('image');
         $directory = 'uploads/banner';
 
-        if (!file_exists(public_path($directory))) {
-            mkdir(public_path($directory), 0755, true);
-        }
+        // $image = $request->file('image');
+        
+        // if (!file_exists(public_path($directory))) {
+        //     mkdir(public_path($directory), 0755, true);
+        // }
 
-        $fileName = 'banner_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-        $image->move(public_path($directory), $fileName);
-        $updateData['image'] = $directory . '/' . $fileName;
+        // $fileName = 'banner_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+        // $image->move(public_path($directory), $fileName);
+
+        $path = $this->uploadCloudary($request,"image",$directory);
+        $updateData['image'] = $path;
     } else {
         $updateData['image'] = $request->image;
     }

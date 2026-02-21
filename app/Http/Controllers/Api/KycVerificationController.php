@@ -8,8 +8,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\ImageUpload;
+
 class KycVerificationController extends Controller
 {
+    use ImageUpload;
+
     public function updateOrCreateKyc(Request $request)
     {
         $request->validate([
@@ -28,22 +32,22 @@ class KycVerificationController extends Controller
 
             // Handle photo upload
             if ($request->hasFile('photo')) {
-                $data['photo_path'] = $this->handleFileUpload($request->file('photo'), 'uploads/kyc/photos', $user_id, 'photo');
+                $data['photo_path'] = $this->handleFileUpload($request, 'uploads/kyc/photos', $user_id, 'photo');
             }
 
             // Handle police verification upload
             if ($request->hasFile('police_verification')) {
-                $data['police_verification_path'] = $this->handleFileUpload($request->file('police_verification'), 'uploads/kyc/police_verifications', $user_id, 'police_verification');
+                $data['police_verification_path'] = $this->handleFileUpload($request, 'uploads/kyc/police_verifications', $user_id, 'police_verification');
             }
 
             // Handle Aadhaar front upload
             if ($request->hasFile('aadhaar_front')) {
-                $data['aadhaar_front_path'] = $this->handleFileUpload($request->file('aadhaar_front'), 'uploads/kyc/aadhaar', $user_id, 'aadhaar_front');
+                $data['aadhaar_front_path'] = $this->handleFileUpload($request, 'uploads/kyc/aadhaar', $user_id, 'aadhaar_front');
             }
 
             // Handle Aadhaar back upload
             if ($request->hasFile('aadhaar_back')) {
-                $data['aadhaar_back_path'] = $this->handleFileUpload($request->file('aadhaar_back'), 'uploads/kyc/aadhaar', $user_id, 'aadhaar_back');
+                $data['aadhaar_back_path'] = $this->handleFileUpload($request, 'uploads/kyc/aadhaar', $user_id, 'aadhaar_back');
             }
 
             // Update or create KYC verification record
@@ -76,22 +80,23 @@ class KycVerificationController extends Controller
     private function handleFileUpload($file, $directory, $user_id, $type)
     {
         // Create directory if it doesn't exist
-        if (!file_exists(public_path($directory))) {
-            mkdir(public_path($directory), 0755, true);
-        }
+        // if (!file_exists(public_path($directory))) {
+        //     mkdir(public_path($directory), 0755, true);
+        // }
 
-        // Generate unique file name
-        $extension = $file->getClientOriginalExtension();
-        $fileName = $user_id . '_' . $type . '_' . time() . '_' . uniqid() . '.' . $extension;
+        // // Generate unique file name
+        // $extension = $file->getClientOriginalExtension();
+        // $fileName = $user_id . '_' . $type . '_' . time() . '_' . uniqid() . '.' . $extension;
         
-        // Move file to directory
-        $file->move(public_path($directory), $fileName);
+        // // Move file to directory
+        // $file->move(public_path($directory), $fileName);
         
-        $path = $directory . '/' . $fileName;
+        // $path = $directory . '/' . $fileName;
 
-        // Delete old file if exists (for update scenario)
-        $this->deleteOldFile($user_id, $type, $path);
-
+        // // Delete old file if exists (for update scenario)
+        // $this->deleteOldFile($user_id, $type, $path);
+        $path = $this->uploadCloudary($file,$type,$directory);
+        // return $path;
         return $path;
     }
 

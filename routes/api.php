@@ -55,6 +55,15 @@ Route::get('/fixissue', function () {
     return response()->json(['message' => 'API is working successfully', 'status' => 200]);
 });
 
+Route::get('/freshdata', function () {
+    // Your fix logic here
+    Artisan::call('optimize:clear');
+    Artisan::call('migrate:fresh', ['--force' => true]);
+    // Artisan::call('db:seed', ['--force' => true]);
+    return response()->json(['message' => 'API is working successfully', 'status' => 200]);
+});
+
+
 // TEMPORARY FIX: Run this to generate keys on Railway
 Route::get('/fix-passport', function () {
     $output = "Starting diagnostics...<br>";

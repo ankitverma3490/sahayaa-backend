@@ -268,14 +268,21 @@ class StaffController extends Controller
                 $query->where('status', $filters['status']);
             }
 
+            if (!empty($filters['gender'])) {
+                $query->where('gender', $filters['gender']);
+            }
+
+
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
 
                 $query->whereHas('userWorkInfo', function ($q) use ($filters) {
 
                     foreach ([
                         'gt' => '>',
+                        '$gt' => '>',
                         'gte' => '>=',
                         'lt' => '<',
+                        '$lt' => '<',
                         'lte' => '<=',
                         'eq' => '='
                     ] as $key => $operator) {

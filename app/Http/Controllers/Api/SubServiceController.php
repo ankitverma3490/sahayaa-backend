@@ -6,9 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\SubService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\ImageUpload;
+
 
 class SubServiceController extends Controller
 {
+    use ImageUpload;
+    
     // List all sub services
     public function index()
     {
@@ -53,17 +57,17 @@ class SubServiceController extends Controller
 
     // Image Upload
     if ($request->hasFile('image')) {
-        $image = $request->file('image');
+        // $image = $request->file('image');
         $directory = 'uploads/services';
 
-        if (!file_exists(public_path($directory))) {
-            mkdir(public_path($directory), 0755, true);
-        }
+        // if (!file_exists(public_path($directory))) {
+        //     mkdir(public_path($directory), 0755, true);
+        // }
 
-        $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-        $image->move(public_path($directory), $fileName);
-
-        $serviceData['image'] = $directory . '/' . $fileName;
+        // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+        // $image->move(public_path($directory), $fileName);
+        $path = $this->uploadCloudary($request,"image",$directory);
+        $serviceData['image'] = $path;
     }
 
     $subService = SubService::create($serviceData);
@@ -98,17 +102,17 @@ public function update(Request $request, $id)
 
     // Image Upload
     if ($request->hasFile('image')) {
-        $image = $request->file('image');
+        // $image = $request->file('image');
         $directory = 'uploads/services';
 
-        if (!file_exists(public_path($directory))) {
-            mkdir(public_path($directory), 0755, true);
-        }
+        // if (!file_exists(public_path($directory))) {
+        //     mkdir(public_path($directory), 0755, true);
+        // }
 
-        $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-        $image->move(public_path($directory), $fileName);
-
-        $serviceData['image'] = $directory . '/' . $fileName;
+        // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+        // $image->move(public_path($directory), $fileName);
+        $path = $this->uploadCloudary($request,"image",$directory);
+        $serviceData['image'] = $path;
     }
 
     $subService->update($serviceData);

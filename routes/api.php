@@ -291,6 +291,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::apiResource('roles', RoleController::class);
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);
+    Route::post('/salary/store', [AdminSalaryController::class, 'store']);
     Route::put('/salary/{id}/status', [AdminSalaryController::class, 'updateStatus']);
 
     Route::prefix('subscriptionuser')->group(function () {

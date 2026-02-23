@@ -12,7 +12,13 @@ class Salary extends Model
     protected $fillable = [
         'staff_id',
         'houseowner_id',
-        'amount',
+        'basic_salary',
+        'performative_allowance',
+        'over_time_allowance',
+        'tax',
+        'advance_payment',
+        'net_salary',
+        'payment_mode',
         'payment_date',
         'status',
     ];

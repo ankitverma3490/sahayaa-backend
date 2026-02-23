@@ -35,9 +35,6 @@ class GenerateMonthlySalary extends Command
         // daily present
         $users = User::where('user_role_id', '2')->get();
         foreach($users as $user){
-            $user->update([
-                'daily_present' => Attendance::where('staff_id', $user->id)->where('date', Carbon::now()->format('Y-m-d'))->count(),
-            ]);
             Attendance::updateOrCreate([
                 'staff_id' => $user->id,
                 'date' => Carbon::now()->format('Y-m-d'),
@@ -53,41 +50,43 @@ class GenerateMonthlySalary extends Command
         }
         $this->info('Generating monthly salary...');
 
+        // Generate monthly salary
+        
 
 
-        $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $endOfMonth = Carbon::now()->endOfMonth()->format('Y-m-d');
+        // $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d');
+        // $endOfMonth = Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        $staffMembers = User::where('user_role_id', 2) // staff role
-                            ->where('status', 'active') // optional
-                            ->get();
-        foreach ($staffMembers as $staff) {
-            $attendanceRecords = Attendance::where('staff_id', $staff->id)->whereBetween('date', [$startOfMonth, $endOfMonth])->get();
-            if ($attendanceRecords->isNotEmpty()) {
+        // $staffMembers = User::where('user_role_id', 2) // staff role
+        //                     ->where('status', 'active') // optional
+        //                     ->get();
+        // foreach ($staffMembers as $staff) {
+        //     $attendanceRecords = Attendance::where('staff_id', $staff->id)->whereBetween('date', [$startOfMonth, $endOfMonth])->get();
+        //     if ($attendanceRecords->isNotEmpty()) {
                 
-                $jobApplication = JobApplication::where('user_id', $staff->id)->where('application_status', 'accepted')->first();
-                if ($jobApplication) {
-                    $compensation = $jobApplication->expected_salary / 22; // or get from Job model
-                    $dailyCompensation = $compensation * $attendanceRecords->count(); // Calculate based on attendance
-                } else {
-                    $dailyCompensation = 0; // Default if no job application found
-                }
-                if(isset($staff->added_by)){
-                    Salary::updateOrCreate(
-                        [
-                            'staff_id' => $staff->id,
-                            'payment_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
-                        ],
-                        [
-                            'houseowner_id' => $staff->added_by,
-                            'amount' => $dailyCompensation,
-                            'status' => 'pending',
-                        ]
-                    );
-                }
-                // Process attendance records to calculate salary
-            }
-        }
+        //         $jobApplication = JobApplication::where('user_id', $staff->id)->where('application_status', 'accepted')->first();
+        //         if ($jobApplication) {
+        //             $compensation = $jobApplication->expected_salary / 22; // or get from Job model
+        //             $dailyCompensation = $compensation * $attendanceRecords->count(); // Calculate based on attendance
+        //         } else {
+        //             $dailyCompensation = 0; // Default if no job application found
+        //         }
+        //         if(isset($staff->added_by)){
+        //             Salary::updateOrCreate(
+        //                 [
+        //                     'staff_id' => $staff->id,
+        //                     'payment_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+        //                 ],
+        //                 [
+        //                     'houseowner_id' => $staff->added_by,
+        //                     'amount' => $dailyCompensation,
+        //                     'status' => 'pending',
+        //                 ]
+        //             );
+        //         }
+        //         // Process attendance records to calculate salary
+        //     }
+        // }
         return Command::SUCCESS;
     }
 }

@@ -32,6 +32,29 @@ class GenerateMonthlySalary extends Command
      */
     public function handle()
     {
+        // daily present
+        $users = User::where('user_role_id', '2')->get();
+        foreach($users as $user){
+            $user->update([
+                'daily_present' => Attendance::where('staff_id', $user->id)->where('date', Carbon::now()->format('Y-m-d'))->count(),
+            ]);
+            Attendance::updateOrCreate([
+                'staff_id' => $user->id,
+                'date' => Carbon::now()->format('Y-m-d'),
+            ],[
+                'staff_id' => $user->id,
+                'date' => Carbon::now()->format('Y-m-d'),
+                'status' => 'present',
+                'check_in_time' => Carbon::today()->setTime(10, 0, 0),
+                'late_minutes' => 0,
+                'description' => "auto generated",
+                'processed_by' => $user->added_by ?? $user->parent_user_id
+            ]);
+        }
+        $this->info('Generating monthly salary...');
+
+
+
         $startOfMonth = Carbon::now()->startOfMonth()->format('Y-m-d');
         $endOfMonth = Carbon::now()->endOfMonth()->format('Y-m-d');
 
@@ -49,17 +72,19 @@ class GenerateMonthlySalary extends Command
                 } else {
                     $dailyCompensation = 0; // Default if no job application found
                 }
-                Salary::updateOrCreate(
-                [
-                    'staff_id' => $staff->id,
-                    'payment_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
-                ],
-                [
-                    'houseowner_id' => $staff->added_by,
-                    'amount' => $dailyCompensation,
-                    'status' => 'pending',
-                ]
-            );
+                if(isset($staff->added_by)){
+                    Salary::updateOrCreate(
+                        [
+                            'staff_id' => $staff->id,
+                            'payment_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+                        ],
+                        [
+                            'houseowner_id' => $staff->added_by,
+                            'amount' => $dailyCompensation,
+                            'status' => 'pending',
+                        ]
+                    );
+                }
                 // Process attendance records to calculate salary
             }
         }

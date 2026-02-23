@@ -334,7 +334,32 @@ class StaffController extends Controller
             'message' => 'Jobs retrieved successfully',
             'data' => $jobs
         ]);
-    }    
+    }  
+    
+    
+    public function getStaffList(Request $request)
+    {
+        $role = Role::where('slug', 'staff')->first();
+        $query = User::where('user_role_id', $role->id);
+        // 🔍 Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            });
+        }
+
+        // 🧩 User type / status filter
+        if ($request->filled('user_type')) {
+            $query->where('status', $request->user_type);
+        }
+        $staff = $query->latest()->paginate(10);
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff retrieved successfully',
+            'data'    => $staff,
+        ]);
+    }
 
 
 }

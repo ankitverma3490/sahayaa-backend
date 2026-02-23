@@ -26,7 +26,7 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/auto-attendance.log'));
 
         $schedule->command('salary:generate')
-            ->dailyAt('7:00')
+            ->dailyAt('6:00')
             ->timezone('Asia/Kolkata') // Adjust to your timezone
             ->appendOutputTo(storage_path('logs/auto-salary.log'));
 

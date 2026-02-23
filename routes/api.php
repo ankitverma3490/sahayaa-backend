@@ -286,6 +286,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::post('/staff/attendance', [StaffController::class, 'getAttendance']);
     Route::post('/staff/get-ai-data', [StaffController::class, 'getAiData']);
     Route::get('/staff/job/list', [StaffController::class, 'getjobs']);
+    Route::get('/stafflist', [StaffController::class, 'getStaffList']);
     
     Route::apiResource('roles', RoleController::class);
 

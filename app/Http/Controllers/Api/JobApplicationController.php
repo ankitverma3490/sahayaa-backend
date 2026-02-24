@@ -15,6 +15,7 @@ use App\Models\LeaveType;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Traits\ImageUpload;
+use App\Models\Notification;
 
 class JobApplicationController extends Controller
 {
@@ -405,6 +406,13 @@ class JobApplicationController extends Controller
             "created_by" => $user->id
         ]);
 
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Apply Leave',
+            'message' => 'Your have apply leave request successfully.',
+            'status' => 'unread',
+        ]);
+
         return response()->json([
             "status" => true,
             "message" => "Leave request submitted successfully",
@@ -453,6 +461,14 @@ class JobApplicationController extends Controller
         }
         $leave->status = 'approved';
         $leave->save();
+
+        Notification::create([
+            'user_id' => $leave->user_id,
+            'title' => 'Leave Approved',
+            'message' => 'Your leave request has been approved.',
+            'status' => 'unread',
+        ]);
+
         return response()->json([
             'status' => true,
             'message' => 'Leave request approved successfully',
@@ -474,6 +490,14 @@ class JobApplicationController extends Controller
         }
         $leave->status = 'rejected';
         $leave->save();
+
+        Notification::create([
+            'user_id' => $leave->user_id,
+            'title' => 'Leave Rejected',
+            'message' => 'Your leave request has been rejected.',
+            'status' => 'unread',
+        ]);
+
         return response()->json([
             'status' => true,
             'message' => 'Leave request rejected successfully',

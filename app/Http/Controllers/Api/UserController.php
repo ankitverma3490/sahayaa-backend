@@ -74,6 +74,13 @@ class UserController extends Controller
                 'verification_code_sent_time' => now(),
                 'user_role_id' => $request->role_id,
             ]);
+
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'User Registered',
+                'message' => 'Wel come to the our team.',
+                'status' => 'unread',
+            ]);
         }
 
 
@@ -3808,6 +3815,8 @@ public function addStaff(Request $request)
             'transaction_committed' => true,
             'timestamp' => now()->toDateTimeString()
         ]);
+
+        
 
         return response()->json([
             'success' => true,

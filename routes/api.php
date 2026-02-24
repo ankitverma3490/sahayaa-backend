@@ -31,7 +31,7 @@ use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AdminSalaryController;
-
+use App\Http\Controllers\Api\TerminationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -293,6 +293,8 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::get('/salary', [AdminSalaryController::class, 'index']);
     Route::post('/salary/store', [AdminSalaryController::class, 'store']);
     Route::put('/salary/{id}/status', [AdminSalaryController::class, 'updateStatus']);
+    
+    Route::apiResource('terminations', TerminationController::class);
 
     Route::prefix('subscriptionuser')->group(function () {
         Route::get('/show/{id}', [SubscriptionController::class, 'getSubscriptionUser']);

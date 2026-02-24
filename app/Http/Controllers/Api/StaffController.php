@@ -118,7 +118,18 @@ class StaffController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+        $user->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff deleted successfully'
+        ]);
     }
 
     public function updateStatus(Request $request, int $id)

@@ -42,7 +42,7 @@ class AttendanceController extends Controller
         $validator = Validator::make($request->all(), [
             'staff_id' => 'required|exists:users,id',
             'date' => 'required|date',
-            'status' => 'required|in:present,absent,late',
+            'status' => 'required|in:present,absent,late,holiday',
             'check_in_time' => 'required_if:status,present,late|nullable',
             'late_minutes' => 'required_if:status,late|nullable|integer|min:1',
             'leave_id' => 'required_if:status,absent|nullable',
@@ -132,7 +132,7 @@ class AttendanceController extends Controller
         $validator = Validator::make($request->all(), [
             'staff_id' => 'required|exists:users,id',
             'date' => 'required|date',
-            'status' => 'required|in:present,absent,late',
+            'status' => 'required|in:present,absent,late,holiday',
             'check_in_time' => 'required_if:status,present,late|nullable',
             'late_minutes' => 'required_if:status,late|nullable|integer|min:1',
             'leave_id' => 'required_if:status,absent|nullable',
@@ -206,7 +206,6 @@ class AttendanceController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return response()->json([
                 'status' => false,

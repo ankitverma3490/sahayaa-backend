@@ -9,6 +9,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
+use Carbon\Carbon;
+use App\Models\QuitJob;
+use App\Models\Salary;
+use App\Models\User;
+use App\Models\SubscriptionUser;
+use App\Models\Subscription;
+
 
 class JobController extends Controller
 {
@@ -78,7 +86,30 @@ public function index(Request $request): JsonResponse
     }
 
     public function store(Request $request): JsonResponse
-    {
+    {   
+        $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
+        if (!$subscription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active subscription found.'
+            ]);
+        }
+        
+        $plan = Subscription::find($subscription->subscription_id);
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subscription plan not found.'
+            ]);
+        }
+
+        // ✅ Check limit
+        if ($subscription->job_user_limit >= $plan->job_limit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Monthly Job limit exceeded.'
+            ]);
+        }
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
@@ -113,6 +144,8 @@ public function index(Request $request): JsonResponse
             'created_by' => Auth::guard('api')->user()->id,
             'status' => 'pending'
         ]));
+
+        $subscription->increment('job_user_limit');
 
         return response()->json([
             'status' => 'success',

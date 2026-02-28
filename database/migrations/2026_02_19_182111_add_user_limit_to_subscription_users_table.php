@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::table('subscription_users', function (Blueprint $table) {
             $table->integer('user_limit')->default(0)->after('user_id');
+            $table->integer('job_user_limit')->default(0);
         });
     }
 
@@ -27,6 +28,7 @@ return new class extends Migration
     {
         Schema::table('subscription_users', function (Blueprint $table) {
             $table->dropColumn('user_limit');
+            $table->dropColumn('job_user_limit');
         });
     }
 };

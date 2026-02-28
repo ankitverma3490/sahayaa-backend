@@ -283,6 +283,10 @@ class StaffController extends Controller
                 $query->where('gender', $filters['gender']);
             }
 
+            if (!empty($filters['location'])) {
+                $query->where('location', $filters['location']);
+            }
+
 
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
 

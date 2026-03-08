@@ -699,9 +699,9 @@ public function getProfile(Request $request)
         $devNumbers = [
             '+917339788361',
             '+917733884515',
-        '+917020916535',
-    '+919001136061',
-    '+919509993036',
+            '+917020916535',
+            '+919001136061',
+            '+919509993036',
             // add your other test numbers here
         ];
 

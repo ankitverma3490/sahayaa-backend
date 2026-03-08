@@ -30,7 +30,8 @@ class SubscriptionUser extends Model
         'start_date',
         'end_date',
         'status',
-        'user_limit'
+        'user_limit',
+        'job_user_limit'
     ];
 
     protected $casts = [

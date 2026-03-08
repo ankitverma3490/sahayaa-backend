@@ -51,7 +51,8 @@ class SubscriptionController extends Controller
             'razorpay_order_id' => 'nullable',
             'role_id'           => 'required|exists:roles,id',
             'extra'             => 'nullable',
-            'subscription_limit' => 'required|numeric'
+            'subscription_limit' => 'required|numeric',
+            'job_limit' => 'required|numeric'
         ]);
 
         $subscription = Subscription::create($data);
@@ -151,41 +152,59 @@ class SubscriptionController extends Controller
         }
 
         try {
-            $api_key = config('services.razorpay.key');
-            $api_secret = config('services.razorpay.secret');
-            
-            $razorpayData = [
-                "amount" => (int) $subscription->price * 100, // in paise
-                "currency" => "INR",
-                "receipt" => "sub_" . uniqid(),
-                "payment_capture" => 1
-            ];
-            $api = new Api($api_key, $api_secret);
-            $order = $api->order->create($razorpayData);
-            // Create subscription user record
-            $subscriptionUser = SubscriptionUser::create([
-                'user_id' => $user->id,
-                'subscription_id' => $subscription->id,
-                'order_id' => $order['id'],
-                'order_number' => 'SUB' . time() . $user->id,
-                'amount' => $subscription->price,
-                'currency' => 'INR',
-                'payment_status' => 'pending',
-                'role' => $user->user_role_id,
-                'type' => 'credit',
-                'start_date' => now(),
-                'end_date' => now()->addDays($subscription->validity),
-            ]);
+            if($subscription->price == 0){
+                $subscriptionUser = SubscriptionUser::create([
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                    'order_id' => 'SUB' . time() . $user->id,
+                    'order_number' => 'SUB' . time() . $user->id,
+                    'amount' => $subscription->price,
+                    'currency' => 'INR',
+                    'payment_status' => 'completed',
+                    'role' => $user->user_role_id,
+                    'type' => 'credit',
+                    'start_date' => now(),
+                    'end_date' => now()->addDays($subscription->validity),
+                ]);
+                $data = $this->zeroPaymentData($subscriptionUser);
+                return $data;
+            } else {
+                $api_key = config('services.razorpay.key');
+                $api_secret = config('services.razorpay.secret');
+                
+                $razorpayData = [
+                    "amount" => (int) $subscription->price * 100, // in paise
+                    "currency" => "INR",
+                    "receipt" => "sub_" . uniqid(),
+                    "payment_capture" => 1
+                ];
+                $api = new Api($api_key, $api_secret);
+                $order = $api->order->create($razorpayData);
+                // Create subscription user record
+                $subscriptionUser = SubscriptionUser::create([
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                    'order_id' => $order['id'],
+                    'order_number' => 'SUB' . time() . $user->id,
+                    'amount' => $subscription->price,
+                    'currency' => 'INR',
+                    'payment_status' => 'pending',
+                    'role' => $user->user_role_id,
+                    'type' => 'credit',
+                    'start_date' => now(),
+                    'end_date' => now()->addDays($subscription->validity),
+                ]);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Order created successfully',
-                'order_id' => $order['id'],
-                'amount' => $subscription->price,
-                'currency' => 'INR',
-                'subscription_user_id' => $subscriptionUser->id,
-                'razorpay_key' => $api_key,
-            ]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Order created successfully',
+                    'order_id' => $order['id'],
+                    'amount' => $subscription->price,
+                    'currency' => 'INR',
+                    'subscription_user_id' => $subscriptionUser->id,
+                    'razorpay_key' => $api_key,
+                ]);
+            }
 
         } catch (\Exception $e) {
             return response()->json([
@@ -250,6 +269,59 @@ class SubscriptionController extends Controller
                 $user->update(['role' => $subscriptionUser->role]);
             }
 
+            // Send notifications
+            $this->sendSubscriptionNotifications($user, $subscriptionUser);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment verified successfully and subscription activated.',
+                'subscription' => $subscriptionUser->load('subscription'),
+                'valid_until' => $endDate->format('Y-m-d H:i:s'),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment verification failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function zeroPaymentData($request)
+    {
+        
+        $user = Auth::guard('api')->user();
+        $subscriptionUser = SubscriptionUser::find($request->id);
+        
+        try {
+            DB::beginTransaction();
+            // Get subscription details
+            $subscription = Subscription::find($subscriptionUser->subscription_id);
+
+            // Calculate start and end dates
+            $startDate = now();
+            $endDate = now()->addDays($subscription->validity);
+
+            // Update subscription user record
+            $subscriptionUser->update([
+                'transaction_id' => '',
+                'payment_id' => '',
+                'payment_status' => 'completed',
+                'payment_mode' => 'cash',
+                'payment_response' => $request->all(),
+                'status' => 'active',
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]);
+            
+            // Update user role if needed
+            if ($subscriptionUser->role !== 'user') {
+                $user->update(['role' => $subscriptionUser->role]);
+            }
+            
             // Send notifications
             $this->sendSubscriptionNotifications($user, $subscriptionUser);
 

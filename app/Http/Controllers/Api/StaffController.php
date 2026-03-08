@@ -377,4 +377,243 @@ class StaffController extends Controller
     }
 
 
+    public function getJobByStaffAiData(Request $request)
+    {
+        $request->validate([
+            'query' => 'required|string'
+        ]);
+
+        $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
+
+        if (!$subscription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active subscription found.'
+            ]);
+        }
+
+        $plan = Subscription::find($subscription->subscription_id);
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Subscription plan not found.'
+            ]);
+        }
+
+        // ✅ Check AI limit
+        if ($subscription->user_limit >= $plan->subscription_limit) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Monthly AI limit exceeded.'
+            ]);
+        }
+
+        try {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Generate AI Filters
+            |--------------------------------------------------------------------------
+            */
+
+            $ai = new AiFilterService();
+            $filters = $ai->generateFilters($request->all());
+
+            if (!is_array($filters)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AI returned invalid format'
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Map AI Filters
+            |--------------------------------------------------------------------------
+            */
+
+            if (isset($filters['salary']['greater_than'])) {
+                $filters['compensation']['gt'] = $filters['salary']['greater_than'];
+            }
+
+            if (isset($filters['salary']['less_than'])) {
+                $filters['compensation']['lt'] = $filters['salary']['less_than'];
+            }
+
+            if (isset($filters['location'])) {
+                $filters['city'] = $filters['location'];
+            }
+
+            if (isset($filters['status'])) {
+                $filters['title'] = $filters['status'];
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Start Query
+            |--------------------------------------------------------------------------
+            */
+
+            $query = Job::query()->where('status', 'active');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Text Filters
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($filters['title'])) {
+                $query->where('title', 'like', '%' . $filters['title'] . '%');
+            }
+
+            if (!empty($filters['city'])) {
+                $query->where('city', 'like', '%' . $filters['city'] . '%');
+            }
+
+            if (!empty($filters['state'])) {
+                $query->where('state', 'like', '%' . $filters['state'] . '%');
+            }
+
+            if (!empty($filters['salary']) && is_array($filters['salary'])) {
+
+                $operator = $filters['salary']['operator'] ?? '=';
+                $value = $filters['salary']['value'] ?? null;
+
+                if ($value !== null) {
+
+                    $allowedOperators = ['>', '<', '>=', '<=', '=', '!='];
+
+                    if (in_array($operator, $allowedOperators)) {
+                        $query->where('compensation', $operator, $value);
+                    }
+                }
+            }
+
+            if (!empty($filters['salary']) && is_array($filters['salary'])) {
+
+                $salary = $filters['salary'];
+
+                if (isset($salary['$gt'])) {
+                    $query->where('compensation', '>', $salary['$gt']);
+                }
+
+                if (isset($salary['$gte'])) {
+                    $query->where('compensation', '>=', $salary['$gte']);
+                }
+
+                if (isset($salary['$lt'])) {
+                    $query->where('compensation', '<', $salary['$lt']);
+                }
+
+                if (isset($salary['$lte'])) {
+                    $query->where('compensation', '<=', $salary['$lte']);
+                }
+
+                if (isset($salary['$eq'])) {
+                    $query->where('compensation', '=', $salary['$eq']);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Compensation Filter
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($filters['compensation']) && is_array($filters['compensation'])) {
+
+                $comp = $filters['compensation'];
+
+                if (!empty($comp['gt'])) {
+                    $query->where('compensation', '>', $comp['gt']);
+                }
+
+                if (!empty($comp['gte'])) {
+                    $query->where('compensation', '>=', $comp['gte']);
+                }
+
+                if (!empty($comp['lt'])) {
+                    $query->where('compensation', '<', $comp['lt']);
+                }
+
+                if (!empty($comp['lte'])) {
+                    $query->where('compensation', '<=', $comp['lte']);
+                }
+
+                if (!empty($comp['eq'])) {
+                    $query->where('compensation', '=', $comp['eq']);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Job Details
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($filters['commitment_type'])) {
+                $query->where('commitment_type', $filters['commitment_type']);
+            }
+
+            if (!empty($filters['preferred_hours'])) {
+                $query->where('preferred_hours', $filters['preferred_hours']);
+            }
+
+            if (!empty($filters['preferred_days'])) {
+                $query->where('preferred_days', $filters['preferred_days']);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Boolean Filters
+            |--------------------------------------------------------------------------
+            */
+
+            $booleanFields = [
+                'childcare_experience',
+                'cooking_required',
+                'driving_license_required',
+                'first_aid_certified',
+                'pet_care_required'
+            ];
+
+            foreach ($booleanFields as $field) {
+                if (isset($filters[$field])) {
+                    $query->where($field, $filters[$field] ? 1 : 0);
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Expected Compensation
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($filters['expected_compensation'])) {
+                $query->where('expected_compensation', '<=', $filters['expected_compensation']);
+            }
+
+            $data = $query->get();
+
+            // ✅ Increase usage
+            $subscription->increment('user_limit');
+
+            return response()->json([
+                'success' => true,
+                'ai_filters' => $filters,
+                'remaining_limit' => $plan->subscription_limit - ($subscription->user_limit + 1),
+                'data' => $data
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+
 }

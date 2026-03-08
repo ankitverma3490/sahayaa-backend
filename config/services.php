@@ -49,6 +49,13 @@ return [
     "openai" => [
         'key' => env('OPENAI_API_KEY'),
         'organization' => env('OPENAI_ORGANIZATION',"Sahara"),
+    ],
+
+    "smscountry" => [
+        'auth_key'   => env('SMSCOUNTRY_AUTH_KEY'),
+        'auth_token'   => env('SMSCOUNTRY_AUTH_TOKEN'),
+        'sender_id'  => env('SMSCOUNTRY_SENDER'),
+        'notify_url' => env('SMSCOUNTRY_NOTIFY_URL'),
     ]
     
 ];

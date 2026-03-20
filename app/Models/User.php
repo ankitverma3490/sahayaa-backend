@@ -22,6 +22,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'user_role_id',
+        'auto_attendence',
         'first_name',
         'last_name',
         'name',
@@ -98,7 +99,10 @@ class User extends Authenticatable
         'is_staff_added',
         'status',
         'parent_user_id',
-        'upi_id'
+        'upi_id',
+        'referral_code',
+        'referred_by',
+        'referral_earnings'
     ];
 
     /**
@@ -138,6 +142,7 @@ class User extends Authenticatable
         'working_days' => 'array',
         'languages_spoken' => 'array',
         'skills' => 'array',
+        'auto_attendence' => 'boolean',
     ];
 
     /*
@@ -268,6 +273,11 @@ class User extends Authenticatable
     public function addedByUser()
     {
         return $this->belongsTo(User::class, 'added_by');
+    }
+
+    public function parentUserId()
+    {
+        return $this->belongsTo(User::class, 'parent_user_id');
     }
 
     /**

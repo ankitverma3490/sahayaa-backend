@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Attendance;
 use Carbon\Carbon;
 
+
 class AutoAttendanceCommand extends Command
 {
     protected $signature = 'attendance:auto-mark';
@@ -18,8 +19,7 @@ class AutoAttendanceCommand extends Command
         $currentTime = Carbon::now()->format('H:i:s');
         
         // Get all users with is_attendance = 1
-        $users = User::where('is_attendance', '1')->get();
-        
+        $users = User::with('parentUserId')->where('user_role_id', '2')->get();
         $markedCount = 0;
         $errors = [];
         
@@ -36,8 +36,14 @@ class AutoAttendanceCommand extends Command
                 }
                 
                 // Determine status based on check-in time (7 AM check-in is considered present)
-                $status = 'present';
-                
+                $status = 'absent';
+                if($user->parentUserId){
+                    if($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1){
+                        $status = 'present';
+                    } else {
+                        $status = 'absent';
+                    }
+                }
                 // Create attendance record
                 $attendance = Attendance::create([
                     'staff_id' => $user->id,

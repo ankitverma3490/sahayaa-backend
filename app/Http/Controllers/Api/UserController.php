@@ -32,19 +32,22 @@ use App\Models\Designation;
 use App\Models\Role;
 use App\Models\UserRole;
 use App\Models\LeaveRequest;
+use App\Models\ReferralReward;
 use App\Traits\ImageUpload;
+use App\Traits\SmsCountryTrait;
+use App\Models\SubscriptionUser;
 
 class UserController extends Controller
 {
-    use ImageUpload;
+    use ImageUpload,SmsCountryTrait;
 
     public function signUp(Request $request)
     {
-    $validator = Validator::make($request->all(), [
-        'name' => 'string|max:255',
-        'email' => 'nullable|email|unique:users,email',
-        'phone_number' => 'required|string|max:20',
-        'business_name' => 'string|max:255|nullable',
+        $validator = Validator::make($request->all(), [
+            'name' => 'string|max:255',
+            'email' => 'nullable|email|unique:users,email',
+            'phone_number' => 'required|string|max:20',
+            'business_name' => 'string|max:255|nullable',
         ]);
 
         if ($validator->fails()) {
@@ -290,7 +293,7 @@ public function signUpCustomer(Request $request)
         return response()->json(['errors' => $validator->errors()], 422);
     }
     // Format phone number to E.164
-    $to = '+91' . ltrim($request->phone_number, '0');
+    $to = '91' . ltrim($request->phone_number, '0');
 
     // Development/test numbers
     $devNumbers = [
@@ -304,7 +307,12 @@ public function signUpCustomer(Request $request)
 
     // Check if phone number already exists
     $user = User::where('phone_number', $request->phone_number)->where('is_deleted',0)->first();
-
+    
+    // $verificationCode = "123456";
+    // // dd($to,$verificationCode);
+    // $code = $this->sendSms($to, $verificationCode);
+    // dd("ASdas",$code);
+        
     if (true) { // Force static OTP for all users (SMS Disabled)
         $verificationCode = 123456;
         if ($user) {
@@ -978,12 +986,13 @@ public function updateProfile(Request $request)
             'pet_details.*.pet_count' => 'required_with:pet_details|integer|min:1',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'languages_spoken' => 'nullable|array',
+            'auto_attendence' => 'nullable|boolean'
         ]);
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
         $data = $validator->validated();
-
+        
         // ✅ Profile picture upload
         if ($request->hasFile('profile_picture')) {
             $folderPath = "uploads/user_profile_images";
@@ -1092,6 +1101,11 @@ if($isEdit == 1){
         if ($request->has('user_role_id')) {
             $user->update(['user_role_id' => $request->user_role_id]);
         }
+
+        if ($request->has('auto_attendence')) {
+            $user->update(["auto_attendence" => $request->auto_attendence]);
+        }
+        
 
         $user->load(['addresses', 'petDetails', 'householdInformation','userWorkInfo']);
         return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
@@ -5151,6 +5165,226 @@ private function updateExistingStaff(User $existingUser, Request $request)
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve profile',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get user's referral code and details
+     */
+    public function getReferralCode()
+    {
+        try {
+            $user = Auth::guard('api')->user();
+
+            // Generate referral code if not exists
+            if (empty($user->referral_code)) {
+
+                do {
+                    $code = strtoupper(Str::random(8));
+                } while (
+                    User::where('referral_code', $code)->exists()
+                );
+
+                $user->referral_code = $code;
+                $user->save();
+            }
+
+            $referralCount = ReferralReward::where('referrer_id', $user->id)->count();
+            $totalEarnings = $user->referral_earnings ?? 0;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'referral_code' => $user->referral_code,
+                    'referral_link' => config('app.url') . '/signup?ref=' . $user->referral_code,
+                    'referral_count' => $referralCount,
+                    'total_earnings' => $totalEarnings,
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get referral code',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Apply referral code during signup
+     */
+    public function applyReferralCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'referral_code' => 'required|string|exists:users,referral_code',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid referral code',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $user = Auth::guard('api')->user();
+
+            // Check if already referred
+            if (!empty($user->referred_by)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Referral code already applied'
+                ], 400);
+            }
+
+            // Get referrer
+            $referrer = User::where('referral_code', $request->referral_code)->first();
+
+            if ($referrer->id === $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot use your own referral code'
+                ], 400);
+            }
+
+            // Apply referral
+            $user->referred_by = $referrer->id;
+            $user->save();
+
+            // Create referral reward record
+            ReferralReward::create([
+                'referrer_id' => $referrer->id,
+                'referred_id' => $user->id,
+                'reward_amount' => 10,
+                'reward_type' => 'signup',
+                'is_credited' => false,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Referral code applied successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to apply referral code',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get referral history/earnings
+     */
+    public function getReferralHistory()
+    {
+        try {
+            $user = Auth::guard('api')->user();
+
+            $referrals = ReferralReward::with('referred:id,name,phone_number,image,created_at')
+                ->where('referrer_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($reward) {
+                    return [
+                        'id' => $reward->id,
+                        'referred_user' => $reward->referred ? [
+                            'id' => $reward->referred->id,
+                            'name' => $reward->referred->name,
+                            'phone_number' => $reward->referred->phone_number,
+                            'image' => $reward->referred->image,
+                            'joined_at' => $reward->referred->created_at,
+                        ] : null,
+                        'reward_amount' => $reward->reward_amount,
+                        'reward_type' => $reward->reward_type,
+                        'is_credited' => $reward->is_credited,
+                        'credited_at' => $reward->credited_at,
+                        'created_at' => $reward->created_at,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_earnings' => $referrals->sum('reward_amount') ?? 0,
+                    'referral_count' => $referrals->count(),
+                    'referrals' => $referrals,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get referral history',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+        /**
+     * Apply refer credit to job_user_limit in subscription_users
+     * Credit amount = sum of (reward_amount / 10) for all uncredited rewards
+     */
+    public function applyReferCredit()
+    {
+        try {
+            $user = Auth::guard('api')->user();
+
+            // Get all uncredited referral rewards for this user as referrer
+            $rewards = ReferralReward::where('referrer_id', $user->id)
+                ->where('is_credited', false)
+                ->get();
+            
+            if ($rewards->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No uncredited referral rewards found',
+                ], 404);
+            }
+            
+            $totalCredit = 0;
+            $count = 0;
+            
+            foreach ($rewards as $reward) {
+                $credit = (int) ($reward->reward_amount / 10);
+                if ($credit > 0) {
+                    $totalCredit += $credit;
+                    $reward->is_credited = true;
+                    $reward->credited_at = now();
+                    $reward->save();
+                    $count++;
+                }
+            }
+            
+            // Find the user's active subscription and add credit to job_user_limit
+            $subscription = SubscriptionUser::where('user_id', $user->id)
+                ->where('status', 'active')->first();
+
+            if (empty($subscription)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please subscribe to redeem rewards points.',
+                ], 404);
+            }
+            $subscription->increment('job_user_limit', $totalCredit);
+            $newJobLimit = $subscription->job_user_limit;
+            
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Referral credit applied successfully',
+                'data' => [
+                    'rewards_credited' => $count,
+                    'total_credit_added' => $totalCredit,
+                    'new_job_user_limit' => $newJobLimit,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to apply referral credit',
                 'error' => $e->getMessage()
             ], 500);
         }

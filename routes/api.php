@@ -316,7 +316,11 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         
     });
 
-    
+    Route::get('/referral/code', [UserController::class, 'getReferralCode']);
+    Route::post('/referral/apply', [UserController::class, 'applyReferralCode']);
+    Route::post('/referral/credit-apply', [UserController::class, 'applyReferCredit']);
+    Route::get('/referral/history', [UserController::class, 'getReferralHistory']);
+
 
 });
 

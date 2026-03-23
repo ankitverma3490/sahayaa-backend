@@ -34,12 +34,11 @@ use App\Models\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\ReferralReward;
 use App\Traits\ImageUpload;
-use App\Traits\SmsCountryTrait;
 use App\Models\SubscriptionUser;
 
 class UserController extends Controller
 {
-    use ImageUpload,SmsCountryTrait;
+    use ImageUpload;
 
     public function signUp(Request $request)
     {

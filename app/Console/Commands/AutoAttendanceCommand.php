@@ -24,7 +24,7 @@ class AutoAttendanceCommand extends Command
         $errors = [];
         
         foreach ($users as $user) {
-            try {
+            // try {
                 // Check if attendance already exists for today
                 $existingAttendance = Attendance::where('staff_id', $user->id)
                     ->where('date', $today)
@@ -56,11 +56,12 @@ class AutoAttendanceCommand extends Command
                 
                 $markedCount++;
                 $this->info("Auto-marked attendance for user {$user->id} - {$user->name}");
-                
-            } catch (\Exception $e) {
-                $errors[] = "Failed to mark attendance for user {$user->id}: " . $e->getMessage();
-                $this->error("Error for user {$user->id}: " . $e->getMessage());
-            }
+                \Log::error('Auto-attendance errors: ', $attendance);
+            // } catch (\Exception $e) {
+            //     dd($e->getMessage());
+            //     $errors[] = "Failed to mark attendance for user {$user->id}: " . $e->getMessage();
+            //     $this->error("Error for user {$user->id}: " . $e->getMessage());
+            // }
         }
         
         $this->info("Auto-attendance marking completed. Marked: {$markedCount}, Errors: " . count($errors));

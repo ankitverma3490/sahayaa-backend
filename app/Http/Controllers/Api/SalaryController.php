@@ -934,203 +934,248 @@ private function getWorkingDays($startDate, $endDate)
 /**
  * Get staff dashboard summary
  */
-public function getStaffDashboard(Request $request): JsonResponse
-{
-    try {
-        $user = Auth::guard('api')->user();
-        
-        if (!$user) {
+    public function getStaffDashboard(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::guard('api')->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            // Get current date information
+            $currentDate = Carbon::now();
+            $today = $currentDate->format('Y-m-d');
+            $currentMonth = $currentDate->format('Y-m');
+            $lastMonth = $currentDate->subMonth()->format('Y-m');
+            
+            // Get staff information
+            $staffInfo = [
+                'name' => $user->first_name . ' ' . $user->last_name,
+                'greeting' => 'Ready for a productive day!',
+                'date' => $currentDate->format('l, F j, Y')
+            ];
+
+            // Attendance Summary (Last 30 Days)
+            $thirtyDaysAgo = Carbon::now()->subDays(30)->format('Y-m-d');
+            
+            $attendanceRecords = Attendance::where('staff_id', $user->id)
+                ->whereBetween('date', [$thirtyDaysAgo, $today])
+                ->get();
+
+            $presentDays = $attendanceRecords->where('status', 'present')->count();
+            $lateDays = $attendanceRecords->where('status', 'late')->count();
+            $absentDays = $attendanceRecords->where('status', 'absent')->count();
+            
+            $totalWorkingDays = $presentDays + $lateDays + $absentDays;
+            $leaveDays = $absentDays; // Assuming absent days are leave days
+
+            $attendanceSummary = [
+                'last_30_days' => [
+                    'days_present' => $presentDays + $lateDays, // Both present and late count as present
+                    'total_days' => 30,
+                    'leaves_taken' => $leaveDays,
+                    'attendance_percentage' => $totalWorkingDays > 0 ? 
+                        round((($presentDays + $lateDays) / 30) * 100, 2) : 0
+                ]
+            ];
+
+            // Earnings Summary (Current Month)
+            $monthStart = date('Y-m-01');
+            $monthEnd = date('Y-m-t');
+            
+            $currentMonthPayments = Payment::where('staff_id', $user->id)
+                ->where('salary_period', 'like', '%' . date('F Y') . '%')
+                // ->where('status', 'completed')
+                ->get();
+
+            $totalEarnings = $currentMonthPayments->sum('net_salary');
+            
+            // If no payments found, get base salary from accepted job
+            if ($currentMonthPayments->isEmpty()) {
+                $acceptedJob = JobApplication::where('user_id', $user->id)
+                    ->where('application_status', 'accepted')
+                    ->with('job')
+                    ->first();
+                
+                if ($acceptedJob && $acceptedJob->job) {
+                    $totalEarnings = $acceptedJob->job->compensation ?? 0;
+                }
+            }
+
+            $earningsSummary = [
+                'total_earnings' => (float) $totalEarnings,
+                'currency' => 'INR',
+                'period' => 'this month',
+                'trend' => 'up' // You can calculate this by comparing with previous month
+            ];
+
+            // Leave Requests (Last Month)
+            $lastMonthStart = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
+            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
+            
+            $leaveRequestsLastMonth = LeaveRequest::where('user_id', $user->id)
+                ->whereBetween('start_date', [$lastMonthStart, $lastMonthEnd])
+                ->get();
+
+            $leaveSummary = [
+                'last_month' => [
+                    'total_requests' => $leaveRequestsLastMonth->count(),
+                    'approved_requests' => $leaveRequestsLastMonth->where('status', 'approved')->count(),
+                    'pending_requests' => $leaveRequestsLastMonth->where('status', 'pending')->count(),
+                    'rejected_requests' => $leaveRequestsLastMonth->where('status', 'rejected')->count()
+                ]
+            ];
+
+            // New Job Matches
+            $newJobMatches = JobApplication::where('user_id', $user->id)
+                ->where('application_status', 'pending')
+                ->with('job')
+                ->limit(3)
+                ->get()
+                ->map(function($application) {
+                    return [
+                        'job_id' => $application->job_id,
+                        'title' => $application->job->title ?? 'Job Title',
+                        'employer' => $application->job->creator->name ?? 'Employer',
+                        'compensation' => $application->job->compensation ?? 0,
+                        'location' => ($application->job->city ?? '') . ', ' . ($application->job->state ?? ''),
+                        'applied_date' => $application->created_at->format('M j, Y')
+                    ];
+                });
+
+            // Today's Attendance Status
+            $todayAttendance = Attendance::where('staff_id', $user->id)
+                ->whereDate('date', $today)
+                ->first();
+
+            $todayStatus = [
+                'has_attendance' => !is_null($todayAttendance),
+                'status' => $todayAttendance ? $todayAttendance->status : 'not_marked',
+                'check_in_time' => $todayAttendance ? $todayAttendance->check_in_time : null,
+                'late_minutes' => $todayAttendance ? $todayAttendance->late_minutes : 0
+            ];
+
+            // Upcoming Leaves
+            $upcomingLeaves = LeaveRequest::where('user_id', $user->id)
+                ->where('status', 'approved')
+                ->whereDate('start_date', '>=', $today)
+                ->orderBy('start_date', 'asc')
+                ->limit(2)
+                ->get()
+                ->map(function($leave) {
+                    return [
+                        'leave_id' => $leave->id,
+                        'leave_type' => $leave->leaveType->name ?? 'Leave',
+                        'start_date' => $leave->start_date,
+                        'end_date' => $leave->end_date,
+                        'reason' => $leave->reason,
+                        'duration_days' => Carbon::parse($leave->start_date)->diffInDays($leave->end_date) + 1
+                    ];
+                });
+
+            // Recent Payments
+            $recentPayments = Payment::where('staff_id', $user->id)
+                // ->where('status', 'completed')
+                ->orderBy('created_at', 'desc')
+                ->limit(3)
+                ->get()
+                ->map(function($payment) {
+                    return [
+                        'payment_id' => $payment->id,
+                        'amount' => (float) $payment->net_salary,
+                        'period' => $payment->salary_period,
+                        'payment_date' => $payment->updated_at->format('M j, Y'),
+                        'payment_method' => $payment->payment_mode,
+                        'status' => $payment->status
+                    ];
+                });
+
+            // Compile dashboard data
+            $dashboardData = [
+                'staff_info' => $staffInfo,
+                'attendance_summary' => $attendanceSummary,
+                'earnings_summary' => $earningsSummary,
+                'leave_summary' => $leaveSummary,
+                'job_matches' => [
+                    'count' => $newJobMatches->count(),
+                    'jobs' => $newJobMatches
+                ],
+                'today_status' => $todayStatus,
+                'upcoming_leaves' => $upcomingLeaves,
+                'recent_payments' => $recentPayments,
+                'quick_actions' => [
+                    'apply_leave' => true,
+                    'view_jobs' => true,
+                    'view_attendance' => true,
+                    'view_earnings' => true
+                ]
+            ];
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Staff dashboard data retrieved successfully',
+                'data' => $dashboardData
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to retrieve staff dashboard: ' . $e->getMessage());
+            
             return response()->json([
                 'status' => false,
-                'message' => 'Unauthenticated'
-            ], 401);
+                'message' => 'Failed to retrieve dashboard data. Please try again later.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
-
-        // Get current date information
-        $currentDate = Carbon::now();
-        $today = $currentDate->format('Y-m-d');
-        $currentMonth = $currentDate->format('Y-m');
-        $lastMonth = $currentDate->subMonth()->format('Y-m');
-        
-        // Get staff information
-        $staffInfo = [
-            'name' => $user->first_name . ' ' . $user->last_name,
-            'greeting' => 'Ready for a productive day!',
-            'date' => $currentDate->format('l, F j, Y')
-        ];
-
-        // Attendance Summary (Last 30 Days)
-        $thirtyDaysAgo = Carbon::now()->subDays(30)->format('Y-m-d');
-        
-        $attendanceRecords = Attendance::where('staff_id', $user->id)
-            ->whereBetween('date', [$thirtyDaysAgo, $today])
-            ->get();
-
-        $presentDays = $attendanceRecords->where('status', 'present')->count();
-        $lateDays = $attendanceRecords->where('status', 'late')->count();
-        $absentDays = $attendanceRecords->where('status', 'absent')->count();
-        
-        $totalWorkingDays = $presentDays + $lateDays + $absentDays;
-        $leaveDays = $absentDays; // Assuming absent days are leave days
-
-        $attendanceSummary = [
-            'last_30_days' => [
-                'days_present' => $presentDays + $lateDays, // Both present and late count as present
-                'total_days' => 30,
-                'leaves_taken' => $leaveDays,
-                'attendance_percentage' => $totalWorkingDays > 0 ? 
-                    round((($presentDays + $lateDays) / 30) * 100, 2) : 0
-            ]
-        ];
-
-        // Earnings Summary (Current Month)
-        $monthStart = date('Y-m-01');
-        $monthEnd = date('Y-m-t');
-        
-        $currentMonthPayments = Payment::where('staff_id', $user->id)
-            ->where('salary_period', 'like', '%' . date('F Y') . '%')
-            // ->where('status', 'completed')
-            ->get();
-
-        $totalEarnings = $currentMonthPayments->sum('net_salary');
-        
-        // If no payments found, get base salary from accepted job
-        if ($currentMonthPayments->isEmpty()) {
-            $acceptedJob = JobApplication::where('user_id', $user->id)
-                ->where('application_status', 'accepted')
-                ->with('job')
-                ->first();
-            
-            if ($acceptedJob && $acceptedJob->job) {
-                $totalEarnings = $acceptedJob->job->compensation ?? 0;
-            }
-        }
-
-        $earningsSummary = [
-            'total_earnings' => (float) $totalEarnings,
-            'currency' => 'INR',
-            'period' => 'this month',
-            'trend' => 'up' // You can calculate this by comparing with previous month
-        ];
-
-        // Leave Requests (Last Month)
-        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
-        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-        
-        $leaveRequestsLastMonth = LeaveRequest::where('user_id', $user->id)
-            ->whereBetween('start_date', [$lastMonthStart, $lastMonthEnd])
-            ->get();
-
-        $leaveSummary = [
-            'last_month' => [
-                'total_requests' => $leaveRequestsLastMonth->count(),
-                'approved_requests' => $leaveRequestsLastMonth->where('status', 'approved')->count(),
-                'pending_requests' => $leaveRequestsLastMonth->where('status', 'pending')->count(),
-                'rejected_requests' => $leaveRequestsLastMonth->where('status', 'rejected')->count()
-            ]
-        ];
-
-        // New Job Matches
-        $newJobMatches = JobApplication::where('user_id', $user->id)
-            ->where('application_status', 'pending')
-            ->with('job')
-            ->limit(3)
-            ->get()
-            ->map(function($application) {
-                return [
-                    'job_id' => $application->job_id,
-                    'title' => $application->job->title ?? 'Job Title',
-                    'employer' => $application->job->creator->name ?? 'Employer',
-                    'compensation' => $application->job->compensation ?? 0,
-                    'location' => ($application->job->city ?? '') . ', ' . ($application->job->state ?? ''),
-                    'applied_date' => $application->created_at->format('M j, Y')
-                ];
-            });
-
-        // Today's Attendance Status
-        $todayAttendance = Attendance::where('staff_id', $user->id)
-            ->whereDate('date', $today)
-            ->first();
-
-        $todayStatus = [
-            'has_attendance' => !is_null($todayAttendance),
-            'status' => $todayAttendance ? $todayAttendance->status : 'not_marked',
-            'check_in_time' => $todayAttendance ? $todayAttendance->check_in_time : null,
-            'late_minutes' => $todayAttendance ? $todayAttendance->late_minutes : 0
-        ];
-
-        // Upcoming Leaves
-        $upcomingLeaves = LeaveRequest::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->whereDate('start_date', '>=', $today)
-            ->orderBy('start_date', 'asc')
-            ->limit(2)
-            ->get()
-            ->map(function($leave) {
-                return [
-                    'leave_id' => $leave->id,
-                    'leave_type' => $leave->leaveType->name ?? 'Leave',
-                    'start_date' => $leave->start_date,
-                    'end_date' => $leave->end_date,
-                    'reason' => $leave->reason,
-                    'duration_days' => Carbon::parse($leave->start_date)->diffInDays($leave->end_date) + 1
-                ];
-            });
-
-        // Recent Payments
-        $recentPayments = Payment::where('staff_id', $user->id)
-            // ->where('status', 'completed')
-            ->orderBy('created_at', 'desc')
-            ->limit(3)
-            ->get()
-            ->map(function($payment) {
-                return [
-                    'payment_id' => $payment->id,
-                    'amount' => (float) $payment->net_salary,
-                    'period' => $payment->salary_period,
-                    'payment_date' => $payment->updated_at->format('M j, Y'),
-                    'payment_method' => $payment->payment_mode,
-                    'status' => $payment->status
-                ];
-            });
-
-        // Compile dashboard data
-        $dashboardData = [
-            'staff_info' => $staffInfo,
-            'attendance_summary' => $attendanceSummary,
-            'earnings_summary' => $earningsSummary,
-            'leave_summary' => $leaveSummary,
-            'job_matches' => [
-                'count' => $newJobMatches->count(),
-                'jobs' => $newJobMatches
-            ],
-            'today_status' => $todayStatus,
-            'upcoming_leaves' => $upcomingLeaves,
-            'recent_payments' => $recentPayments,
-            'quick_actions' => [
-                'apply_leave' => true,
-                'view_jobs' => true,
-                'view_attendance' => true,
-                'view_earnings' => true
-            ]
-        ];
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Staff dashboard data retrieved successfully',
-            'data' => $dashboardData
-        ]);
-
-    } catch (\Exception $e) {
-        \Log::error('Failed to retrieve staff dashboard: ' . $e->getMessage());
-        
-        return response()->json([
-            'status' => false,
-            'message' => 'Failed to retrieve dashboard data. Please try again later.',
-            'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
-        ], 500);
-    }
     
+    }
+
+
+    public function advanceWithdraw(Request $request)
+    {
+        try {
+            // ✅ Validation
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'amount' => 'required|numeric|min:0'
+            ]);
+
+            // ✅ Find user
+            $user = User::find($request->user_id);
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            // ✅ Update amount (add or overwrite — your choice)
+            $user->advance_withdraw_amount += $request->amount;
+
+            // mark added by user
+            $user->advance_withdraw_added_by = auth()->user()->id;
+
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Advance withdraw updated successfully',
+                'data' => [
+                    'user_id' => $user->id,
+                    'advance_withdraw_amount' => $user->advance_withdraw_amount
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     

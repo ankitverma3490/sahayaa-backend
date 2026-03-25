@@ -43,6 +43,27 @@ use App\Http\Controllers\Api\TerminationController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+use Illuminate\Support\Facades\File;
+
+Route::get('/logs', function () {
+    $path = storage_path('logs/laravel.log');
+
+    if (!File::exists($path)) {
+        return response()->json([
+            'message' => 'Log file not found'
+        ], 404);
+    }
+
+    $logs = File::get($path);
+
+    return response()->json([
+        'logs' => $logs
+    ]);
+});
+
+Route::get('apitestttt', [UserController::class, 'otptest']);
+
+
 Route::get('/', function () {
     return response()->json(['message' => 'API is working successfully', 'status' => 200]);
 });
@@ -475,6 +496,6 @@ Route::group(['middleware' => 'auth:api'], function() {
 
     Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
     Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
-
+    Route::post('/advance-withdraw', [SalaryController::class, 'advanceWithdraw']);
 });
 

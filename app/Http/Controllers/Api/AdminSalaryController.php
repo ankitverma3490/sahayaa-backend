@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Salary;
+use App\Models\User;
+
 
 class AdminSalaryController extends Controller
 {
@@ -66,7 +68,6 @@ class AdminSalaryController extends Controller
 
     public function store(Request $request)
     {
-        
         $request->validate([
             'staff_id' => 'required|exists:users,id',
             'houseowner_id' => 'required|exists:users,id',
@@ -78,8 +79,8 @@ class AdminSalaryController extends Controller
             'status' => 'required|in:pending,paid',
             'payment_mode' => 'nullable|string'
         ]);
-        
-        // Calculate Net Salary (Secure Way)
+
+        // ✅ Calculate Net Salary
         $netSalary =
             $request->basic_salary
             + ($request->performative_allowance ?? 0)
@@ -87,6 +88,7 @@ class AdminSalaryController extends Controller
             - ($request->tax ?? 0)
             - ($request->advance_payment ?? 0);
         
+        // ✅ Create Salary
         $salary = Salary::create([
             'staff_id' => $request->staff_id,
             'houseowner_id' => $request->houseowner_id,
@@ -98,8 +100,24 @@ class AdminSalaryController extends Controller
             'net_salary' => $netSalary,
             'payment_mode' => $request->payment_mode,
             'status' => $request->status,
-            'payment_date' => now()->toDateString(), // auto today
+            'payment_date' => now()->toDateString(),
         ]);
+        
+        // ✅ Update Advance Withdraw Amount (IMPORTANT)
+        if ($request->advance_payment && $request->advance_payment > 0) {
+
+            $user = User::find($request->staff_id);
+            
+            if ($user) {
+                // Deduct advance
+                $user->advance_withdraw_amount =
+                    max(0, $user->advance_withdraw_amount - $request->advance_payment);
+
+                $user->advance_withdraw_added_by = auth()->user()->id;
+
+                $user->save();
+            }
+        }
 
         return response()->json([
             'success' => true,

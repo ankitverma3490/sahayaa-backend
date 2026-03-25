@@ -34,11 +34,12 @@ use App\Models\UserRole;
 use App\Models\LeaveRequest;
 use App\Models\ReferralReward;
 use App\Traits\ImageUpload;
+use App\Traits\SmsCountryTrait;
 use App\Models\SubscriptionUser;
 
 class UserController extends Controller
 {
-    use ImageUpload;
+    use ImageUpload,SmsCountryTrait;
 
     public function signUp(Request $request)
     {
@@ -5389,5 +5390,15 @@ private function updateExistingStaff(User $existingUser, Request $request)
         }
     }
 
+
+    public function otptest()
+    {
+        $to = "919725366212";
+        $verificationCode = "Your OTP is 5555";
+
+        $response = $this->sendSms($to, $verificationCode);
+
+        dd($response);
+    }
 
 }

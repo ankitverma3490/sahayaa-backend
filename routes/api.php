@@ -61,7 +61,7 @@ Route::get('/logs', function () {
     ]);
 });
 
-Route::get('apitestttt', [UserController::class, 'otptest']);
+// Route::get('apitestttt', [UserController::class, 'otptest']);
 
 
 Route::get('/', function () {

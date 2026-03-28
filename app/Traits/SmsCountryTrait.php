@@ -3,49 +3,88 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 trait SmsCountryTrait
 {
-    public function sendSms($number, $message)
+    public function sendSms($number, $otp)
     {
-        $url = "https://api.smartping.in/sms/send";
+        try {
+            $url = "https://restapi.smscountry.com/v0.1/Accounts/" 
+                . config('services.smscountry.auth_key') 
+                . "/SMSes/";
 
-        // $response = Http::timeout(15)
-        //     ->withBasicAuth(
-        //         config('services.smscountry.auth_key'),
-        //         config('services.smscountry.auth_token')
-        //     )
-        //     ->asForm()
-        //     ->post($url, [
-        //         'Text'        => 123456, //$message,
-        //         'Number'      => 9725366212, //$number, // 91XXXXXXXXXX
-        //         'SenderId'    => config('services.smscountry.sender_id'),
-        //         'DRNotifyUrl' => config('services.smscountry.dr_url'),
-        //         'Tool'        => 'API'
-        //     ]);
+            $auth = base64_encode(
+                config('services.smscountry.auth_key') . ':' . config('services.smscountry.auth_token')
+            );
 
-        // return [
-        //     'success' => $response->successful(),
-        //     'status'  => $response->status(),
-        //     'body'    => $response->body(),
-        // ];
+            // curl_close($curl);
+            $payloadone = json_encode([
+                "Text" => "Welcome to Sahayya! Your verification code is {$otp}. Valid for 5 minutes. Please do not share this code with anyone.",
+                "Number" => (string) $number,
+                "SenderId" => "SAHYYA",
+                // "TemplateId" => config('services.smscountry.template_id'), // 🔥 REQUIRED
+                "DRNotifyUrl" => "https://www.domainname.com/notifyurl",
+                "DRNotifyHttpMethod" => "POST",
+                "Tool" => "API"
+            ]);
 
-        $message = "codes is 4555";
-        $number = "919725366212";
-        $response = Http::get('https://bulksmsapi.vispl.in/', [
-            'username'    => config('services.smscountry.auth_key'),
-            'password'    => config('services.smscountry.auth_token'),
-            'messageType' => 'text',
-            'mobile'      => $number, // 919XXXXXXXXX
-            'senderId'    => config('services.smscountry.sender_id'),
-            'ContentID'   => "1707177400205239453",
-            'message'     => urlencode($message),
-        ]);
+            $curl = curl_init();
 
+            curl_setopt_array($curl, array(
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS =>$payloadone,
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json',
+                    'Authorization: Basic '.$auth
+                ),
+            ));
+
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            if (curl_errno($curl)) {
+                $error = curl_error($curl);
+                curl_close($curl);
+
+                return [
+                    'success' => false,
+                    'status'  => 500,
+                    'body'    => $error,
+                ];
+            }
+            curl_close($curl);
+
+            return [
+                'success' => ($httpCode >= 200 && $httpCode < 300),
+                'status'  => $httpCode,
+                'body'    => json_decode($response, true) ?? $response,
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'status'  => 500,
+                'body'    => $e->getMessage(),
+            ];
+        }
+    }
+
+    // ✅ OTP Method
+    public function sendOtp($number,$otp)
+    {
+        // $message = "Welcome to Sahayya! Your verification code is otp: " . $otp . " Valid for 5 minutes.Please do not share this code with anyone.";
+        $response = $this->sendSms($number, $otp);
         return [
-            'success' => $response->successful(),
-            'status'  => $response->status(),
-            'body'    => $response->body(),
+            'success' => $response['success'],
+            'otp'     => $otp,
+            'api'     => $response
         ];
     }
 }

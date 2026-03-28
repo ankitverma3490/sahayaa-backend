@@ -61,11 +61,13 @@ class UserController extends Controller
         $user = User::where('phone_number', $request->phone_number)->where('is_deleted', 0)->first();
 
         // Static OTP for all numbers (for now)
-        $verificationCode = '123456';
-
+        // $verificationCode = '123456';
+        $otp = rand(100000, 999999);
+        $response = $this->sendOtp($to,$otp);
+        // dd($response);
         if ($user) {
             $user->update([
-                'verification_code' => "123456",
+                'verification_code' => $otp,
                 'verification_code_sent_time' => now(),
             ]);
         } else {
@@ -73,7 +75,7 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone_number' => $request->phone_number,
-                'verification_code' => "123456",
+                'verification_code' => $otp,
                 'verification_code_sent_time' => now(),
                 'user_role_id' => $request->role_id,
             ]);
@@ -226,7 +228,10 @@ fclose($filename);
     }
     
     // Always use fixed code 123456
-    $verificationCode = 123456;
+    // $verificationCode = 123456;
+    $verificationCode = rand(100000, 999999);
+    $response = $this->sendOtp($to,$verificationCode);
+    // dd($response);
     
     // Update verification code and time
     $user->update([
@@ -312,16 +317,17 @@ public function signUpCustomer(Request $request)
     // // dd($to,$verificationCode);
     // $code = $this->sendSms($to, $verificationCode);
     // dd("ASdas",$code);
-        
+    $otp = rand(100000, 999999);
+    $response = $this->sendOtp($to,$otp);
+    $verificationCode = $otp;
     if (true) { // Force static OTP for all users (SMS Disabled)
-        $verificationCode = 123456;
+        
         if ($user) {
             $user->update([
-                'verification_code'           => "123456",
+                'verification_code'           => $otp,
                 'verification_code_sent_time' => now(),
             ]);
         } else {
-            $verificationCode = rand(100000, 999999);
             $user = User::create([
                 'name'                          => $request->name ?? 'User',
                 'email'                         => $request->email,
@@ -330,17 +336,17 @@ public function signUpCustomer(Request $request)
                 'lat'                           => $request->lat,
                 'long'                          => $request->long,
                 'user_role_id'                  => 3, // Assuming 3 is houseowner role
-                'verification_code'             => "123456", //verificationCode,
+                'verification_code'             => $verificationCode, //verificationCode,
                 'verification_code_sent_time'   => now(),
                 'country_code'                  => $request->country_code,
             ]);
         }
     } else {
         // Real number → generate random OTP
-        $verificationCode = rand(100000, 999999);
+        // $verificationCode = rand(100000, 999999);
         if ($user) {
             $user->update([
-                'verification_code'           => "123456",
+                'verification_code'           => $verificationCode,
                 'verification_code_sent_time' => now(),
             ]);
         } else {
@@ -352,7 +358,7 @@ public function signUpCustomer(Request $request)
                 'lat'                           => $request->lat,
                 'long'                          => $request->long,
                 'user_role_id'                  => 3,
-                'verification_code'             => "123456", //verificationCode,
+                'verification_code'             => $verificationCode, //verificationCode,
                 'verification_code_sent_time'   => now(),
                 'country_code'                  => $request->country_code,
             ]);
@@ -714,15 +720,17 @@ public function getProfile(Request $request)
         ];
 
         // Use fixed code 123456 for ALL numbers for now
-        $verificationCode = 123456;
+        // $verificationCode = 123456;
+        $otp = rand(100000, 999999);
+        $response = $this->sendOtp($to,$otp);
+        
 
         // Update user with new code
         $user->update([
-            'verification_code' => $verificationCode,
+            'verification_code' => $otp,
             'verification_code_sent_time' => now(),
             'updated_at' => now()
         ]);
-
         // SMS Sending Logic (Commented Out)
         /*
         // ...
@@ -5393,12 +5401,11 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
     public function otptest()
     {
-        $to = "919725366212";
-        $verificationCode = "Your OTP is 5555";
+        $number = "919725366212";
 
-        $response = $this->sendSms($to, $verificationCode);
+        $response = $this->sendOtp($number);
 
-        dd($response);
+        return response()->json($response);
     }
 
 }

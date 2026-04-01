@@ -63,7 +63,7 @@ class UserController extends Controller
         // Static OTP for all numbers (for now)
         // $verificationCode = '123456';
         $otp = rand(100000, 999999);
-        $response = $this->sendOtp($to,$otp);
+        $response = $this->sendOtp(str_replace('+', '', $to),$otp);
         // dd($response);
         if ($user) {
             $user->update([
@@ -230,8 +230,7 @@ fclose($filename);
     // Always use fixed code 123456
     // $verificationCode = 123456;
     $verificationCode = rand(100000, 999999);
-    $response = $this->sendOtp($to,$verificationCode);
-    // dd($response);
+    $response = $this->sendOtp(str_replace('+', '', $to),$verificationCode);
     
     // Update verification code and time
     $user->update([
@@ -722,7 +721,7 @@ public function getProfile(Request $request)
         // Use fixed code 123456 for ALL numbers for now
         // $verificationCode = 123456;
         $otp = rand(100000, 999999);
-        $response = $this->sendOtp($to,$otp);
+        $response = $this->sendOtp(str_replace('+', '', $to),$otp);
         
 
         // Update user with new code

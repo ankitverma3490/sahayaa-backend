@@ -19,15 +19,22 @@ class JobSeeder extends Seeder
     {
         foreach (range(1, 10) as $index) {
             $user = User::where('user_role_id', 3)->inRandomOrder()->first();
+            $cities = [
+                ['city' => 'London', 'state' => 'Greater London'],
+                ['city' => 'Manchester', 'state' => 'Greater Manchester'],
+                ['city' => 'Birmingham', 'state' => 'West Midlands'],
+            ];
+
+            $location = $cities[array_rand($cities)];
             Job::create([
                 'title' => 'Full-Time Nanny Required for Two Children ' . $index,
                 'description' => 'Looking for an experienced nanny to care for two children.',
-                'compensation' => 2500.00,
-                'expected_compensation' => 3000.00,
+                'compensation' => rand(5000,90500),
+                'expected_compensation' => rand(5000,90500),
                 'compensation_type' => 'monthly',
                 'street_address' => '123 Main Street',
-                'city' => 'London',
-                'state' => 'Greater London',
+                'city' => $location['city'],
+                'state' => $location['state'],
                 'zip_code' => 'SW1A 1AA',
                 'commitment_type' => 'full-time',
                 'preferred_hours' => '9-5',

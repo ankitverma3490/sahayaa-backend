@@ -15,6 +15,11 @@ use Carbon\Carbon;
 use App\Models\LeaveRequest;
 use App\Models\Attendance;
 use App\Models\UserWorkInfo;
+use App\Models\SubscriptionUser;
+use Illuminate\Support\Facades\DB;
+use App\Models\Salary;
+use App\Models\Job;
+
 class SalaryController extends Controller
 {
     /**
@@ -1176,6 +1181,143 @@ private function getWorkingDays($startDate, $endDate)
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+
+    public function getAdminDashboard(Request $request)
+    {
+        // try {
+            $user = Auth::guard('api')->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+ 
+            $thirtyDaysAgo = Carbon::now()->subDays(30)->format('Y-m-d');
+            $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d');
+            $currentDate = Carbon::now();
+            $today = $currentDate->format('Y-m-d');
+            
+            $staffCount = User::where('user_role_id', 2)->count();
+            $employerCount = User::where('user_role_id', 3)->count();
+            
+            $staffMonthCount = User::where('user_role_id', 2)->whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
+            $employerMonthCount = User::where('user_role_id', 3)->whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
+            // Compile dashboard data
+
+            $subscriptionUsers = SubscriptionUser::whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
+            $subscriptionRevenue = SubscriptionUser::whereBetween('created_at', [$thirtyDaysAgo, $today])->sum('amount');
+            $totalSubscriptionRevenue = SubscriptionUser::sum('amount');
+            
+            $newUserWeekCount = User::whereBetween('created_at', [$sevenDaysAgo, $today])->count();
+            $newUserMonthCount = User::whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
+
+            $startDate = Carbon::now()->subMonths(11)->startOfMonth();
+            $endDate = Carbon::now()->endOfMonth();
+
+            $userMonthGrowth = User::select(
+                    DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                    DB::raw('COUNT(*) as total')
+                )
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('month')
+                ->orderBy('month', 'ASC')
+                ->get()
+                ->keyBy('month');
+
+            $startDate = Carbon::now()->subDays(29)->startOfDay();
+            $endDate = Carbon::now()->endOfDay();
+
+            $dailySignups = User::select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('COUNT(*) as total')
+                )
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('date')
+                ->orderBy('date', 'ASC')
+                ->get()
+                ->keyBy('date'); 
+                
+            // reveue growth
+            $startDate = Carbon::now()->subMonths(11)->startOfMonth();
+            $endDate = Carbon::now()->endOfMonth();
+            $revenueMonthGrowth = SubscriptionUser::select(
+                    DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                    DB::raw('SUM(amount) as total_revenue')
+                )
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('month')
+                ->orderBy('month', 'ASC')
+                ->get()
+                ->keyBy('month');
+            $freeUser = SubscriptionUser::where('amount',"=<",0)->count();
+            $paidUser = SubscriptionUser::where('amount',">",0)->count();
+                
+            $jobToday = Job::whereDate('created_at', Carbon::today())->count();
+           
+            $jobTotal = Job::count();
+             
+            $jobApplicationsToday = JobApplication::whereDate('created_at', Carbon::today())->count();
+            $jobApplicationsTotal = JobApplication::count();
+
+            // Compile dashboard data
+
+            $totalSalaryProcessed = Salary::where('status', 'paid')->sum('net_salary');
+            $salaryPaymentsDone = Salary::where('status', 'paid')->count();
+            $pendingPayments = DB::table('salaries')->where('status', 'pending')->count();
+            
+            $dashboardData = [
+                'overall_stats' => [
+                    'total_staff' => $staffCount,
+                    'total_employers' => $employerCount,
+                    'staff_this_month' => $staffMonthCount,
+                    'employers_this_month' => $employerMonthCount,
+                    'new_subscriptions_this_month' => $subscriptionUsers,
+                    'subscription_revenue_this_month' => (float) $subscriptionRevenue,
+                    'total_subscription_revenue' => (float) $totalSubscriptionRevenue,
+                    'new_users_last_week' => $newUserWeekCount,
+                    'new_users_last_month' => $newUserMonthCount,
+                    // You can add more overall stats here
+                ],
+                'user_month_growth' => $userMonthGrowth,
+                'daily_signups' => $dailySignups,
+                'revenue_month_growth' => $revenueMonthGrowth,
+                'subscription_breakdown' => [
+                    'free_users' => $freeUser,
+                    'paid_users' => $paidUser
+                ],
+                'job_stats' => [
+                    'jobs_posted_today' => $jobToday,
+                    'total_jobs' => $jobTotal,
+                    'job_applications_today' => $jobApplicationsToday,
+                    'total_job_applications' => $jobApplicationsTotal
+                ],
+                'salary_stats' => [
+                    'total_salary_processed' => (float) $totalSalaryProcessed,
+                    'salary_payments_done' => $salaryPaymentsDone,
+                    'pending_payments' => $pendingPayments,
+                ]
+            ];
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Staff dashboard data retrieved successfully',
+                'data' => $dashboardData
+            ]);
+
+        // } catch (\Exception $e) {
+        //     \Log::error('Failed to retrieve staff dashboard: ' . $e->getMessage());
+            
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'Failed to retrieve dashboard data. Please try again later.',
+        //         'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+        //     ], 500);
+        // }
+    
     }
 
     

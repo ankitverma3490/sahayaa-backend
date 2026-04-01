@@ -445,8 +445,8 @@ class StaffController extends Controller
                 $filters['city'] = $filters['location'];
             }
 
-            if (isset($filters['status'])) {
-                $filters['title'] = $filters['status'];
+            if (isset($filters['title'])) {
+                $filters['title'] = $filters['title'];
             }
 
             /*
@@ -455,8 +455,8 @@ class StaffController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            $query = Job::query()->where('status', 'active');
-
+            $query = Job::query();
+            // dd($filters,$query->get());
             /*
             |--------------------------------------------------------------------------
             | Text Filters

@@ -262,7 +262,9 @@ Route::post('admin/login', [UserController::class, 'loginAdmin']);
 
 Route::prefix('/admin')->middleware('auth:api')->group(function () {
     //Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
+    Route::get('/dashbord-data', [SalaryController::class, 'getAdminDashboard']);
 
+    
     Route::post('/members/store', [UserController::class, 'storeNewMember']);
     Route::get('/members/list', [UserController::class, 'memberList']);
     Route::get('/members/{id}', [UserController::class, 'editMember']);

@@ -5261,12 +5261,12 @@ private function updateExistingStaff(User $existingUser, Request $request)
             // Apply referral
             $user->referred_by = $referrer->id;
             $user->save();
-
+            $points = setting('points_per_action');
             // Create referral reward record
             ReferralReward::create([
                 'referrer_id' => $referrer->id,
                 'referred_id' => $user->id,
-                'reward_amount' => 10,
+                'reward_amount' => $points['value'] ?? 10,
                 'reward_type' => 'signup',
                 'is_credited' => false,
             ]);
@@ -5353,9 +5353,10 @@ private function updateExistingStaff(User $existingUser, Request $request)
             
             $totalCredit = 0;
             $count = 0;
-            
+            $points = setting('points_per_action');
+            $rate = $points['value'] ?? 10;
             foreach ($rewards as $reward) {
-                $credit = (int) ($reward->reward_amount / 10);
+                $credit = (int) ($reward->reward_amount / $rate);
                 if ($credit > 0) {
                     $totalCredit += $credit;
                     $reward->is_credited = true;

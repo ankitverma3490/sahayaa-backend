@@ -91,4 +91,39 @@ class SettingController extends Controller
             'data' => $settings
         ]);
     }
+
+
+    public function store(Request $request)
+    {
+        
+        $request->validate([
+            'settings' => 'required|array',
+            'settings.*.key' => 'required|string',
+            'settings.*.value' => 'nullable',
+        ]);
+
+        $data = [];
+
+        foreach ($request->settings as $item) {
+            $setting = Setting::updateOrCreate(
+                ['key' => $item['key']],
+                [
+                    'value' => $item['value'] ?? null,
+                    'title' => $item['title'] ?? null,
+                    'description' => $item['description'] ?? null,
+                    'input_type' => $item['input_type'] ?? 'text',
+                    'editable' => $item['editable'] ?? 1,
+                    'weight' => $item['weight'] ?? null,
+                ]
+            );
+
+            $data[] = $setting;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Settings saved successfully',
+            'data' => $data
+        ]);
+    }
 }

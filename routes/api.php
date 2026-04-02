@@ -345,6 +345,8 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::get('/referral/history', [UserController::class, 'getReferralHistory']);
 
 
+    Route::post('/settings/store', [SettingController::class, 'store']);
+
 });
 
 

@@ -36,7 +36,7 @@ use App\Models\ReferralReward;
 use App\Traits\ImageUpload;
 use App\Traits\SmsCountryTrait;
 use App\Models\SubscriptionUser;
-
+use App\Models\Subscription;
 class UserController extends Controller
 {
     use ImageUpload,SmsCountryTrait;
@@ -287,7 +287,7 @@ public function signUpCustomer(Request $request)
 { 
     $validator = Validator::make($request->all(), [
         'name'         => 'nullable|string|max:255',
-        'email'        => 'nullable|email|unique:users,email',
+        //'email'        => 'nullable|email|unique:users,email',
         'phone_number' => 'required|string|max:20',
         'location'     => 'nullable|string|max:255',
         'lat'         => 'nullable',
@@ -329,7 +329,7 @@ public function signUpCustomer(Request $request)
         } else {
             $user = User::create([
                 'name'                          => $request->name ?? 'User',
-                'email'                         => $request->email,
+                'email'                         => $request->email ?? '',
                 'phone_number'                  => $request->phone_number,
                 'location'                      => $request->location,
                 'lat'                           => $request->lat,
@@ -363,6 +363,8 @@ public function signUpCustomer(Request $request)
             ]);
         }
     }
+
+    
 
     return response()->json([
         'status'  => true,
@@ -580,6 +582,18 @@ public function getProfile(Request $request)
                     // Login user into api guard
                     // Auth::guard('api')->setUser($user);
 
+                    $subscription = Subscription::where('role_id', 3)->orderBy('price', 'asc')->first();
+                    if ($subscription) {
+                        SubscriptionUser::updateOrCreate(
+                            ['user_id' => $user->id], // condition (unique key)
+                            [
+                                'subscription_id' => $subscription->id,
+                                'start_date' => now(),
+                                'end_date' => now()->addDays($subscription->validity ?? 30),
+                            ]
+                        );
+                    }
+
                     return response()->json([
                         'message' => 'Logged in successfully',
                         'user' => $user,
@@ -593,6 +607,8 @@ public function getProfile(Request $request)
                 ], 500);
             }
         }
+
+
 
         return response()->json([
             'error' => 'Invalid verification code',
@@ -3560,10 +3576,10 @@ public function addStaff(Request $request)
             // 'emergency_contact_number' => 'required|string|max:15',
             // Work details
             'role_designation' => 'array',
-            'joining_date' => 'required|date',
-            'salary' => 'required|numeric',
-            'pay_frequency' => 'required|in:weekly,monthly,bi-weekly,daily',
-            'working_days' => 'required|array',
+            'joining_date' => 'nullable|date',
+            'salary' => 'nullable|numeric',
+            'pay_frequency' => 'nullable|in:weekly,monthly,bi-weekly,daily',
+            'working_days' => 'nullable|array',
             // Aadhar details
             'aadhar_number' => 'required',
             // Document files (optional)
@@ -3701,9 +3717,9 @@ public function addStaff(Request $request)
                     'email' => $request->email,
                     'phone_number' => $request->phone_number,
                     'role_designation' => $request->role_designation,
-                    'joining_date' => $request->joining_date,
-                    'salary' => $request->salary,
-                    'pay_frequency' => $request->pay_frequency
+                    'joining_date' => $request->joining_date ?? null,
+                    'salary' => $request->salary ?? '',
+                    'pay_frequency' => $request->pay_frequency ?? '',
                 ],
                 'timestamp' => now()->toDateTimeString()
             ]);
@@ -3732,7 +3748,7 @@ public function addStaff(Request $request)
                 'relation' => $request->emergency_contact_name,
                 'upi_id' => $request->upi_id ?? null,
             ]);
-
+            
             \Log::info('Staff user record created successfully', [
                 'action' => $logAction,
                 'staff_id' => $staff->id,
@@ -3797,21 +3813,21 @@ public function addStaff(Request $request)
                     'staff_id' => $staff->id,
                     'work_info' => [
                         'primary_role' => $request->role_designation,
-                        'joining_date' => $request->joining_date,
-                        'salary' => $request->salary,
-                        'pay_frequency' => $request->pay_frequency,
-                        'working_days_count' => count($request->working_days)
+                        'joining_date' => $request->joining_date ?? null,
+                        'salary' => $request->salary ?? null,
+                        'pay_frequency' => $request->pay_frequency ?? null,
+                        'working_days_count' => count($request->working_days ?? [])
                     ],
                     'timestamp' => now()->toDateTimeString()
                 ]);
-
+                
                 $workInfo = UserWorkInfo::create([
                     'user_id' => $staff->id,
                     'primary_role' => $request->role_designation,
-                    'joining_date' => $request->joining_date,
-                    'salary' => $request->salary,
-                    'pay_frequency' => $request->pay_frequency,
-                    'working_days' => $request->working_days,
+                    'joining_date' => $request->joining_date ?? null,
+                    'salary' => $request->salary ?? null,
+                    'pay_frequency' => $request->pay_frequency ?? null,
+                    'working_days' => $request->working_days ?? null,
                     'emergency_contact_name' => $request->emergency_contact_name,
                     'emergency_contact_number' => $request->emergency_contact_number,
                 ]);

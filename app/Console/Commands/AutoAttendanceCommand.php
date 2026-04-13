@@ -55,8 +55,8 @@ class AutoAttendanceCommand extends Command
                 ]);
                 
                 $markedCount++;
-                $this->info("Auto-marked attendance for user {$user->id} - {$user->name}");
-                \Log::error('Auto-attendance errors: ', $attendance);
+                // $this->info("Auto-marked attendance for user {$user->id} - {$user->name}");
+                // \Log::error('Auto-attendance errors: ', $attendance);
             // } catch (\Exception $e) {
             //     dd($e->getMessage());
             //     $errors[] = "Failed to mark attendance for user {$user->id}: " . $e->getMessage();
@@ -64,7 +64,7 @@ class AutoAttendanceCommand extends Command
             // }
         }
         
-        $this->info("Auto-attendance marking completed. Marked: {$markedCount}, Errors: " . count($errors));
+        // $this->info("Auto-attendance marking completed. Marked: {$markedCount}, Errors: " . count($errors));
         
         if (!empty($errors)) {
             // Log errors if needed

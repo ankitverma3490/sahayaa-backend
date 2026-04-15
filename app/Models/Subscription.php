@@ -27,4 +27,12 @@ class Subscription extends Model
     protected $casts = [
         'extra' => 'array', // JSON column as array
     ];
+
+    /**
+     * Get the role that this subscription belongs to
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
 }

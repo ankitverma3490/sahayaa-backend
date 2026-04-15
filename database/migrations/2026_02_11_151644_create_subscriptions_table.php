@@ -22,7 +22,8 @@ return new class extends Migration
             $table->string('type')->nullable();
             // Example: monthly, yearly, trial, etc.
             $table->string('razorpay_order_id')->nullable();
-            $table->string('role_id')->nullable(); // housekeeping = 1, staff = 2.
+            $table->unsignedBigInteger('role_id')->nullable(); // housekeeping = 1, staff = 2.
+            $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null');
             $table->json('extra')->nullable(); // JSON column
             $table->softDeletes();
             $table->timestamps();

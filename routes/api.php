@@ -183,6 +183,7 @@ Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
+Route::get('/subscriptions/debug', [SubscriptionController::class, 'debugSubscriptions']); // Debug endpoint
 Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
 Route::post('subscriptions/role', [SubscriptionController::class,'subscriptionByRole']);
     

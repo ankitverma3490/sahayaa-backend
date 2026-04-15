@@ -429,7 +429,7 @@ class SubscriptionController extends Controller
     public function subscriptionByRole(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'role_id' => 'required|exists:roles,id'
+            'role_id' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -440,21 +440,45 @@ class SubscriptionController extends Controller
             ], 400);
         }
 
+        // Check if role exists
         $role = Role::where('id', $request->role_id)->first();
         if (!$role) {
             return response()->json([
                 'status' => false,
-                'message' => 'Role not found'
+                'message' => 'Role not found',
+                'data' => []
             ], 404);
         }
+
+        // Fetch subscriptions for this role
         $subscriptions = Subscription::where('role_id', $request->role_id)
-            ->orderBy('created_at', 'desc')
+            ->whereNull('deleted_at')
+            ->orderBy('price', 'asc')
             ->get();
         
         return response()->json([
             'status' => true,
             'data' => $subscriptions,
-            'message' => 'Subscriptions fetched successfully'
+            'message' => $subscriptions->isEmpty() 
+                ? 'No subscriptions found for this role' 
+                : 'Subscriptions fetched successfully'
+        ]);
+    }
+
+    /**
+     * Debug endpoint to check all subscriptions with their role_ids
+     * Remove this in production
+     */
+    public function debugSubscriptions()
+    {
+        $subscriptions = Subscription::with('role')->get();
+        $roles = Role::all();
+        
+        return response()->json([
+            'status' => true,
+            'subscriptions' => $subscriptions,
+            'roles' => $roles,
+            'message' => 'Debug data fetched successfully'
         ]);
     }
 }

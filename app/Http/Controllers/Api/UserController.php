@@ -5216,6 +5216,10 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
             $referralCount = ReferralReward::where('referrer_id', $user->id)->count();
             $totalEarnings = $user->referral_earnings ?? 0;
+            
+            // Calculate total points from referral rewards
+            $totalPoints = ReferralReward::where('referrer_id', $user->id)
+                ->sum('reward_amount');
 
             return response()->json([
                 'success' => true,
@@ -5224,6 +5228,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                     'referral_link' => config('app.url') . '/signup?ref=' . $user->referral_code,
                     'referral_count' => $referralCount,
                     'total_earnings' => $totalEarnings,
+                    'total_points' => $totalPoints ?? 0,
                 ]
             ]);
 

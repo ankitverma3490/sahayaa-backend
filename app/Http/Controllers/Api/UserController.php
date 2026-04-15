@@ -5272,6 +5272,14 @@ private function updateExistingStaff(User $existingUser, Request $request)
             // Get referrer
             $referrer = User::where('referral_code', $request->referral_code)->first();
 
+            // CRITICAL FIX: Check if referrer exists
+            if (!$referrer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid referral code'
+                ], 404);
+            }
+
             if ($referrer->id === $user->id) {
                 return response()->json([
                     'success' => false,
@@ -5282,12 +5290,16 @@ private function updateExistingStaff(User $existingUser, Request $request)
             // Apply referral
             $user->referred_by = $referrer->id;
             $user->save();
+            
+            // CRITICAL FIX: Safe setting retrieval
             $points = setting('points_per_action');
+            $rate = is_array($points) && isset($points['value']) ? $points['value'] : 10;
+            
             // Create referral reward record
             ReferralReward::create([
                 'referrer_id' => $referrer->id,
                 'referred_id' => $user->id,
-                'reward_amount' => $points['value'] ?? 10,
+                'reward_amount' => $rate,
                 'reward_type' => 'signup',
                 'is_credited' => false,
             ]);
@@ -5351,7 +5363,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
             ], 500);
         }
     }
-        /**
+    /**
      * Apply refer credit to job_user_limit in subscription_users
      * Credit amount = sum of (reward_amount / 10) for all uncredited rewards
      */
@@ -5374,8 +5386,11 @@ private function updateExistingStaff(User $existingUser, Request $request)
             
             $totalCredit = 0;
             $count = 0;
+            
+            // CRITICAL FIX: Safe setting retrieval
             $points = setting('points_per_action');
-            $rate = $points['value'] ?? 10;
+            $rate = is_array($points) && isset($points['value']) ? $points['value'] : 10;
+            
             foreach ($rewards as $reward) {
                 $credit = (int) ($reward->reward_amount / $rate);
                 if ($credit > 0) {
@@ -5387,16 +5402,18 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 }
             }
             
-            // Find the user's active subscription and add credit to job_user_limit
+            // CRITICAL FIX: Check if subscription exists before increment
             $subscription = SubscriptionUser::where('user_id', $user->id)
-                ->where('status', 'active')->first();
+                ->where('status', 'active')
+                ->first();
 
-            if (empty($subscription)) {
+            if (!$subscription) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Please subscribe to redeem rewards points.',
                 ], 404);
             }
+            
             $subscription->increment('job_user_limit', $totalCredit);
             $newJobLimit = $subscription->job_user_limit;
             

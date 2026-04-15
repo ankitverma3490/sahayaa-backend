@@ -245,8 +245,16 @@ class SubscriptionController extends Controller
                 ], 400);
             }
 
-            // Get subscription details
+            // CRITICAL FIX: Check if subscription exists
             $subscription = Subscription::find($subscriptionUser->subscription_id);
+            
+            if (!$subscription) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Subscription plan not found'
+                ], 404);
+            }
 
             // Calculate start and end dates
             $startDate = now();

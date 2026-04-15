@@ -32,22 +32,52 @@ class ResetSubscriptionUserLimit extends Command
      */
     public function handle()
     {
-        $users = User::where('status', 'active')->get();
-        foreach ($users as $user) {
-            $subscription = SubscriptionUser::where('user_id', $user->id)->where('status', 'active')->first();
-            if (!empty($subscription)) {
-                $sub = Subscription::where('id', $subscription->id)->first();
-                SubscriptionUser::where('status', 'active')
-                    ->where('user_id', $user->id)
-                    ->where('subscription_id', $sub->id)
-                    ->update([
-                        'user_limit' => 0
-                    ]);
-            }
-        }
         $this->info('Resetting subscription user limits...');
         
-        $this->info('User limits reset successfully.');
+        $users = User::where('status', 'active')->get();
+        $resetCount = 0;
+        $errors = [];
+        
+        foreach ($users as $user) {
+            try {
+                // Get user's active subscription
+                $subscriptionUser = SubscriptionUser::where('user_id', $user->id)
+                    ->where('status', 'active')
+                    ->first();
+                
+                if (!$subscriptionUser) {
+                    continue; // Skip if no active subscription
+                }
+                
+                // CRITICAL FIX: Check if subscription exists
+                $subscription = Subscription::find($subscriptionUser->subscription_id);
+                
+                if (!$subscription) {
+                    $this->error("Subscription not found for subscription_id: {$subscriptionUser->subscription_id}");
+                    continue;
+                }
+                
+                // Reset user_limit to 0
+                $subscriptionUser->update(['user_limit' => 0]);
+                
+                $resetCount++;
+                $this->info("Reset limit for user {$user->id}");
+                
+            } catch (\Exception $e) {
+                $errors[] = "Failed to reset limit for user {$user->id}: " . $e->getMessage();
+                $this->error("Error for user {$user->id}: " . $e->getMessage());
+                \Log::error("Subscription reset error for user {$user->id}: " . $e->getMessage());
+            }
+        }
+        
+        $this->info("User limits reset successfully. Reset: {$resetCount}, Errors: " . count($errors));
+        
+        if (!empty($errors)) {
+            \Log::error('Subscription reset errors: ', $errors);
+        }
+        
+        return 0;
+    }
 
         return Command::SUCCESS;
     }

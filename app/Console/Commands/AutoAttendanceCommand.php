@@ -32,7 +32,7 @@ class AutoAttendanceCommand extends Command
                 }
 
                 // Check if today is a working day for this staff
-                $workingDays = $user->userWorkInfo?->working_days ?? [];
+                $workingDays = array_map('strtolower', $user->userWorkInfo?->working_days ?? []);
                 if (!empty($workingDays) && !in_array($todayDayName, $workingDays)) {
                     $this->info("Today ({$todayDayName}) is not a working day for user {$user->id}, skipping.");
                     continue;

@@ -197,11 +197,17 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
     $users = \App\Models\User::with(['parentUserId', 'userWorkInfo'])->where('user_role_id', '2')->get();
 
     foreach ($users as $user) {
-        // Check auto attendance - parent ki ya apni setting
+        // Skip staff who haven't been hired yet (no parent/employer)
+        if (!$user->parent_user_id) {
+            $skipped[] = $user->name . ' (not hired yet)';
+            continue;
+        }
+
+        // Check auto attendance - parent (employer) ki setting check karein
         if ($user->parentUserId) {
             $autoEnabled = ($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1);
         } else {
-            $autoEnabled = ($user->auto_attendence == "1" || $user->auto_attendence == 1);
+            $autoEnabled = false;
         }
         if (!$autoEnabled) { $skipped[] = $user->name . ' (auto off)'; continue; }
 

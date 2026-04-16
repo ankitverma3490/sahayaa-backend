@@ -26,12 +26,16 @@ class AutoAttendanceCommand extends Command
 
         foreach ($users as $user) {
             // try {
-                // Check auto attendance - parent ki setting ya staff ki apni setting
+                // Skip staff who haven't been hired yet (no parent/employer assigned)
+                if (!$user->parent_user_id) {
+                    $this->info("User {$user->id} has no employer, skipping (not hired).");
+                    continue;
+                }
+
+                // Check auto attendance - parent ki setting hi check karein
                 $autoAttEnabled = false;
                 if ($user->parentUserId) {
                     $autoAttEnabled = ($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1);
-                } else {
-                    $autoAttEnabled = ($user->auto_attendence == "1" || $user->auto_attendence == 1);
                 }
                 if (!$autoAttEnabled) {
                     continue;

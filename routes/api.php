@@ -183,8 +183,11 @@ Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 
-// Public test route - browser se seedha kholo
-Route::get('/run-auto-attendance', function () {
+// Secret key protected - sirf tumhare liye
+Route::get('/run-auto-attendance/{secret}', function ($secret) {
+    if ($secret !== 'sahayya2026secure') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
     \Artisan::call('attendance:auto-mark');
     return response()->json([
         'success' => true,

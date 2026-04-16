@@ -5396,14 +5396,15 @@ private function updateExistingStaff(User $existingUser, Request $request)
             $user->referral_earnings = 0;
             $user->save();
 
+            // AI search uses 'user_limit' as usage counter and 'subscription_limit' as max cap
             // Decrease the used count to give back searches (but don't go below 0)
-            $newUsedCount = max(0, $subscription->job_user_limit - $creditsToAdd);
-            $subscription->job_user_limit = $newUsedCount;
+            $newUsedCount = max(0, $subscription->user_limit - $creditsToAdd);
+            $subscription->user_limit = $newUsedCount;
             $subscription->save();
 
             // Get plan limit to show remaining searches
             $plan = Subscription::find($subscription->subscription_id);
-            $remainingSearches = $plan ? ($plan->job_limit - $newUsedCount) : 0;
+            $remainingSearches = $plan ? ($plan->subscription_limit - $newUsedCount) : 0;
 
             return response()->json([
                 'success' => true,

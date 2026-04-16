@@ -182,6 +182,17 @@ Route::post('customer/login', [UserController::class, 'loginCustomer']);
 Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+
+// Public test route - browser se seedha kholo
+Route::get('/run-auto-attendance', function () {
+    \Artisan::call('attendance:auto-mark');
+    return response()->json([
+        'success' => true,
+        'message' => '✅ Auto attendance lag gayi!',
+        'date' => now()->toDateString(),
+        'day' => strtolower(now()->format('l')),
+    ]);
+});
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
 Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
 Route::post('subscriptions/role', [SubscriptionController::class,'subscriptionByRole']);
@@ -502,17 +513,5 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
     Route::post('/advance-withdraw', [SalaryController::class, 'advanceWithdraw']);
 
-    // Manual trigger for auto attendance (testing)
-    Route::get('/trigger-auto-attendance', function () {
-        \Artisan::call('attendance:auto-mark');
-        $output = \Artisan::output();
-        return response()->json([
-            'success' => true,
-            'message' => 'Auto attendance triggered successfully',
-            'output' => $output,
-            'date' => now()->toDateString(),
-            'day' => strtolower(now()->format('l')),
-        ]);
-    });
 });
 

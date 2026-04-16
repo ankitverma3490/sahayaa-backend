@@ -188,12 +188,52 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
     if ($secret !== 'sahayya2026secure') {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
-    \Artisan::call('attendance:auto-mark');
+
+    $today = \Carbon\Carbon::now()->toDateString();
+    $todayDayName = strtolower(\Carbon\Carbon::now()->format('l'));
+    $marked = [];
+    $skipped = [];
+
+    $users = \App\Models\User::with(['parentUserId', 'userWorkInfo'])->where('user_role_id', '2')->get();
+
+    foreach ($users as $user) {
+        // Check auto attendance - parent ki ya apni setting
+        if ($user->parentUserId) {
+            $autoEnabled = ($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1);
+        } else {
+            $autoEnabled = ($user->auto_attendence == "1" || $user->auto_attendence == 1);
+        }
+        if (!$autoEnabled) { $skipped[] = $user->name . ' (auto off)'; continue; }
+
+        // Working days check
+        $workingDays = array_map('strtolower', $user->userWorkInfo?->working_days ?? []);
+        if (!empty($workingDays) && !in_array($todayDayName, $workingDays)) {
+            $skipped[] = $user->name . ' (not working day)'; continue;
+        }
+
+        // Already marked check
+        $exists = \App\Models\Attendance::where('staff_id', $user->id)->where('date', $today)->first();
+        if ($exists) { $skipped[] = $user->name . ' (already marked)'; continue; }
+
+        // Mark attendance
+        \App\Models\Attendance::create([
+            'staff_id' => $user->id,
+            'date' => $today,
+            'check_in_time' => '07:00:00',
+            'status' => 'present',
+            'description' => 'Auto-marked by system',
+            'processed_by' => 1
+        ]);
+        $marked[] = $user->name;
+    }
+
     return response()->json([
         'success' => true,
         'message' => '✅ Auto attendance lag gayi!',
-        'date' => now()->toDateString(),
-        'day' => strtolower(now()->format('l')),
+        'date' => $today,
+        'day' => $todayDayName,
+        'marked' => $marked,
+        'skipped' => $skipped,
     ]);
 });
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);

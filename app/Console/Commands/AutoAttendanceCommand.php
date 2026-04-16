@@ -26,8 +26,14 @@ class AutoAttendanceCommand extends Command
 
         foreach ($users as $user) {
             // try {
-                // Check if parent has auto attendance enabled
-                if (!$user->parentUserId || !($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1)) {
+                // Check auto attendance - parent ki setting ya staff ki apni setting
+                $autoAttEnabled = false;
+                if ($user->parentUserId) {
+                    $autoAttEnabled = ($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1);
+                } else {
+                    $autoAttEnabled = ($user->auto_attendence == "1" || $user->auto_attendence == 1);
+                }
+                if (!$autoAttEnabled) {
                     continue;
                 }
 

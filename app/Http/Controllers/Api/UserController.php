@@ -5359,34 +5359,17 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            // Get all uncredited referral rewards for this user as referrer
-            $rewards = ReferralReward::where('referrer_id', $user->id)
-                ->where('is_credited', false)
-                ->get();
-            
-            if ($rewards->isEmpty()) {
+            // Check available referral earnings
+            $availableEarnings = (float) ($user->referral_earnings ?? 0);
+
+            if ($availableEarnings <= 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No uncredited referral rewards found',
-                ], 404);
+                    'message' => 'No referral earnings available to redeem.',
+                ], 400);
             }
-            
-            $totalCredit = 0;
-            $count = 0;
-            $points = setting('points_per_action');
-            $rate = $points['value'] ?? 10;
-            foreach ($rewards as $reward) {
-                $credit = (int) ($reward->reward_amount / $rate);
-                if ($credit > 0) {
-                    $totalCredit += $credit;
-                    $reward->is_credited = true;
-                    $reward->credited_at = now();
-                    $reward->save();
-                    $count++;
-                }
-            }
-            
-            // Find the user's active subscription and add credit to job_user_limit
+
+            // Find the user's active subscription
             $subscription = SubscriptionUser::where('user_id', $user->id)
                 ->where('status', 'active')->first();
 
@@ -5394,18 +5377,34 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 return response()->json([
                     'success' => false,
                     'message' => 'Please subscribe to redeem rewards points.',
-                ], 404);
+                ], 400);
             }
-            $subscription->increment('job_user_limit', $totalCredit);
-            $newJobLimit = $subscription->job_user_limit;
-            
+
+            // Each 10 points = 1 AI limit increase
+            $points = setting('points_per_action');
+            $rate = $points['value'] ?? 10;
+            $limitToAdd = (int) ($availableEarnings / $rate);
+
+            if ($limitToAdd <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not enough points to redeem.',
+                ], 400);
+            }
+
+            // Deduct earnings and increase AI limit
+            $user->referral_earnings = 0;
+            $user->save();
+
+            $subscription->increment('job_user_limit', $limitToAdd);
+            $newJobLimit = $subscription->fresh()->job_user_limit;
 
             return response()->json([
                 'success' => true,
-                'message' => 'Referral credit applied successfully',
+                'message' => 'Referral credit redeemed successfully! Your AI limit has been increased.',
                 'data' => [
-                    'rewards_credited' => $count,
-                    'total_credit_added' => $totalCredit,
+                    'points_redeemed' => $availableEarnings,
+                    'limit_added' => $limitToAdd,
                     'new_job_user_limit' => $newJobLimit,
                 ]
             ]);

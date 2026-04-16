@@ -5380,32 +5380,39 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 ], 400);
             }
 
-            // Each 10 points = 1 AI limit increase
+            // Each X points = 1 AI search credit
             $points = setting('points_per_action');
             $rate = $points['value'] ?? 10;
-            $limitToAdd = (int) ($availableEarnings / $rate);
+            $creditsToAdd = (int) ($availableEarnings / $rate);
 
-            if ($limitToAdd <= 0) {
+            if ($creditsToAdd <= 0) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Not enough points to redeem.',
                 ], 400);
             }
 
-            // Deduct earnings and increase AI limit
+            // Deduct earnings and give back AI searches by reducing used count
             $user->referral_earnings = 0;
             $user->save();
 
-            $subscription->increment('job_user_limit', $limitToAdd);
-            $newJobLimit = $subscription->fresh()->job_user_limit;
+            // Decrease the used count to give back searches (but don't go below 0)
+            $newUsedCount = max(0, $subscription->job_user_limit - $creditsToAdd);
+            $subscription->job_user_limit = $newUsedCount;
+            $subscription->save();
+
+            // Get plan limit to show remaining searches
+            $plan = Subscription::find($subscription->subscription_id);
+            $remainingSearches = $plan ? ($plan->job_limit - $newUsedCount) : 0;
 
             return response()->json([
                 'success' => true,
-                'message' => 'Referral credit redeemed successfully! Your AI limit has been increased.',
+                'message' => 'Referral credit redeemed successfully! You have received ' . $creditsToAdd . ' AI search credits.',
                 'data' => [
                     'points_redeemed' => $availableEarnings,
-                    'limit_added' => $limitToAdd,
-                    'new_job_user_limit' => $newJobLimit,
+                    'credits_added' => $creditsToAdd,
+                    'searches_used' => $newUsedCount,
+                    'searches_remaining' => $remainingSearches,
                 ]
             ]);
         } catch (\Exception $e) {

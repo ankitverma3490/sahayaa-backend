@@ -1,0 +1,2 @@
+[phases.build]
+cmds = ["composer install --optimize-autoloader --no-dev --ignore-platform-reqs"]

@@ -388,14 +388,6 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
     });
 
-    // Alias routes for new frontend (subscription/* instead of subscriptionuser/*)
-    Route::prefix('subscription')->group(function () {
-        Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
-        Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
-        Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
-        Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
-        Route::post('/subscribe', [SubscriptionController::class, 'subscribeFree']);
-    });
 
 
     Route::prefix('housersold/attendance')->group(function () {
@@ -423,6 +415,15 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
 
 Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/logout', [UserController::class, 'logout']);
+
+    // Alias routes for new frontend (subscription/* without /admin prefix)
+    Route::prefix('subscription')->group(function () {
+        Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
+        Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+        Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
+        Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
+        Route::post('/subscribe', [SubscriptionController::class, 'subscribeFree']);
+    });
 
     Route::get('/settings/notification', [SettingController::class, 'handleNotification']);
     Route::post('/settings/notification', [SettingController::class, 'handleNotification']);

@@ -5329,6 +5329,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                         'reward_amount' => $reward->reward_amount,
                         'reward_type' => $reward->reward_type,
                         'is_credited' => $reward->is_credited,
+                        'status' => $reward->is_credited ? 'completed' : 'pending',
                         'credited_at' => $reward->credited_at,
                         'created_at' => $reward->created_at,
                     ];

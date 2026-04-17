@@ -457,4 +457,47 @@ class SubscriptionController extends Controller
             'message' => 'Subscriptions fetched successfully'
         ]);
     }
+
+    /**
+     * Subscribe user to a free plan directly (no payment needed)
+     * Used by staff auto-subscribe flow on signup
+     */
+    public function subscribeFree(Request $request)
+    {
+        $user = Auth::guard('api')->user();
+
+        $subscriptionId = $request->input('subscriptionId') ?? $request->input('subscription_id');
+        if (!$subscriptionId) {
+            return response()->json(['status' => false, 'message' => 'subscription_id is required'], 422);
+        }
+
+        $subscription = Subscription::find($subscriptionId);
+        if (!$subscription) {
+            return response()->json(['status' => false, 'message' => 'Subscription not found'], 404);
+        }
+
+        // Cancel any existing active subscription
+        SubscriptionUser::where('user_id', $user->id)->where('status', 'active')->update(['status' => 'cancelled']);
+
+        $startDate = now();
+        $endDate = now()->addDays($subscription->validity ?? 30);
+
+        $subscriptionUser = SubscriptionUser::create([
+            'user_id'          => $user->id,
+            'subscription_id'  => $subscription->id,
+            'payment_status'   => 'free',
+            'payment_mode'     => 'free',
+            'status'           => 'active',
+            'start_date'       => $startDate,
+            'end_date'         => $endDate,
+            'user_limit'       => 0,
+            'job_user_limit'   => 0,
+        ]);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Subscribed to free plan successfully.',
+            'data'    => $subscriptionUser,
+        ]);
+    }
 }

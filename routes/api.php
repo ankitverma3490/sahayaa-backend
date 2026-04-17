@@ -388,6 +388,15 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
     });
 
+    // Alias routes for new frontend (subscription/* instead of subscriptionuser/*)
+    Route::prefix('subscription')->group(function () {
+        Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
+        Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+        Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
+        Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
+        Route::post('/subscribe', [SubscriptionController::class, 'subscribeFree']);
+    });
+
 
     Route::prefix('housersold/attendance')->group(function () {
         Route::get('/', [AttendanceController::class, 'index'])->name('attendance.index');

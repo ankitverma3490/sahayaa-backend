@@ -183,6 +183,38 @@ Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 
+// Debug: check all staff DB data
+Route::get('/debug-staff-data', function () {
+    $staff = \App\Models\User::with(['userWorkInfo'])
+        ->where('user_role_id', '2')
+        ->get()
+        ->map(function($u) {
+            $employer = null;
+            $empId = $u->added_by ?? $u->parent_user_id ?? null;
+            if ($empId) {
+                $emp = \App\Models\User::find($empId);
+                $employer = $emp ? ['id'=>$emp->id,'name'=>$emp->name,'auto_attendence'=>$emp->auto_attendence] : null;
+            }
+            $attendance17 = \App\Models\Attendance::where('staff_id',$u->id)->where('date','2026-04-17')->first();
+            $attendance18 = \App\Models\Attendance::where('staff_id',$u->id)->where('date','2026-04-18')->first();
+            return [
+                'id'             => $u->id,
+                'name'           => $u->name,
+                'role_id'        => $u->user_role_id,
+                'is_active'      => $u->is_active,
+                'is_deleted'     => $u->is_deleted,
+                'is_staff_added' => $u->is_staff_added,
+                'added_by'       => $u->added_by,
+                'parent_user_id' => $u->parent_user_id,
+                'employer'       => $employer,
+                'working_days'   => $u->userWorkInfo?->working_days,
+                'att_apr17'      => $attendance17?->status ?? 'NOT MARKED',
+                'att_apr18'      => $attendance18?->status ?? 'NOT MARKED',
+            ];
+        });
+    return response()->json(['staff' => $staff, 'total' => $staff->count()]);
+});
+
 // Secret key protected - sirf tumhare liye
 Route::get('/run-auto-attendance/{secret}', function ($secret) {
     if ($secret !== 'sahayya2026secure') {

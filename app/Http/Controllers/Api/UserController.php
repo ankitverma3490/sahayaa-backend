@@ -44,7 +44,7 @@ class UserController extends Controller
     public function signUp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'string|max:255',
+            'name' => 'required|string|max:255',
             'email' => 'nullable|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
             'business_name' => 'string|max:255|nullable',
@@ -66,10 +66,15 @@ class UserController extends Controller
         $response = $this->sendOtp(str_replace('+', '', $to),$otp);
         // dd($response);
         if ($user) {
-            $user->update([
+            // Update existing user's name if provided
+            $updateData = [
                 'verification_code' => $otp,
                 'verification_code_sent_time' => now(),
-            ]);
+            ];
+            if ($request->filled('name')) {
+                $updateData['name'] = $request->name;
+            }
+            $user->update($updateData);
         } else {
             $user = User::create([
                 'name' => $request->name,
@@ -286,7 +291,7 @@ fclose($filename);
 public function signUpCustomer(Request $request)
 { 
     $validator = Validator::make($request->all(), [
-        'name'         => 'nullable|string|max:255',
+        'name'         => 'required|string|max:255',
         //'email'        => 'nullable|email|unique:users,email',
         'phone_number' => 'required|string|max:20',
         'location'     => 'nullable|string|max:255',
@@ -328,7 +333,7 @@ public function signUpCustomer(Request $request)
             ]);
         } else {
             $user = User::create([
-                'name'                          => $request->name ?? 'User',
+                'name'                          => $request->name,
                 'email'                         => $request->email ?? '',
                 'phone_number'                  => $request->phone_number,
                 'location'                      => $request->location,

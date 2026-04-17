@@ -189,26 +189,31 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    $today = \Carbon\Carbon::now()->toDateString();
-    $todayDayName = strtolower(\Carbon\Carbon::now()->format('l'));
+    // Use IST timezone for correct date/day
+    $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
+    $todayDayName = strtolower(\Carbon\Carbon::now('Asia/Kolkata')->format('l'));
     $marked = [];
     $skipped = [];
 
-    $users = \App\Models\User::with(['parentUserId', 'userWorkInfo'])->where('user_role_id', '2')->get();
+    // Load employer via BOTH added_by and parent_user_id (dashboard uses added_by)
+    $users = \App\Models\User::with(['userWorkInfo'])
+        ->where('user_role_id', '2')
+        ->where('is_active', 1)
+        ->where('is_deleted', 0)
+        ->where('is_staff_added', 1)
+        ->get();
 
     foreach ($users as $user) {
-        // Skip staff who haven't been hired yet (no parent/employer)
-        if (!$user->parent_user_id) {
+        // Employer = added_by (primary) or parent_user_id (fallback)
+        $employerId = $user->added_by ?? $user->parent_user_id ?? null;
+        if (!$employerId) {
             $skipped[] = $user->name . ' (not hired yet)';
             continue;
         }
 
-        // Check auto attendance - parent (employer) ki setting check karein
-        if ($user->parentUserId) {
-            $autoEnabled = ($user->parentUserId->auto_attendence == "1" || $user->parentUserId->auto_attendence == 1);
-        } else {
-            $autoEnabled = false;
-        }
+        // Load employer and check auto_attendence
+        $employer = \App\Models\User::find($employerId);
+        $autoEnabled = $employer && ($employer->auto_attendence == "1" || $employer->auto_attendence == 1 || $employer->auto_attendence === true);
         if (!$autoEnabled) { $skipped[] = $user->name . ' (auto off)'; continue; }
 
         // Working days check

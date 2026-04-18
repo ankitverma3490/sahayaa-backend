@@ -183,7 +183,21 @@ Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 
-// Debug: check all staff DB data
+// Check raw attendance table for today
+Route::get('/debug-attendance-today', function () {
+    $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
+    $records = \Illuminate\Support\Facades\DB::table('attendances')
+        ->whereDate('date', $today)
+        ->get();
+    $staff95 = \App\Models\User::where('added_by', 95)->orWhere('parent_user_id', 95)->get(['id','name','added_by','parent_user_id','is_staff_added']);
+    return response()->json([
+        'today_ist' => $today,
+        'attendance_records_today' => $records,
+        'staff_of_employer_95' => $staff95,
+    ]);
+});
+
+// Check raw attendance table for today
 Route::get('/debug-staff-data', function () {
     $staff = \App\Models\User::with(['userWorkInfo'])
         ->where('user_role_id', '2')

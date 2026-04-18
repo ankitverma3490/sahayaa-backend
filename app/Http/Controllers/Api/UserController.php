@@ -1467,25 +1467,38 @@ public function updateProfileCustomer(Request $request)
         // ✅ Handle profile picture
         if ($request->hasFile('profile_picture')) {
             $directory = "uploads/user_profile_images";
-            // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-
-            // $image = $request->file('profile_picture');
-            // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            // $image->move(public_path($directory), $fileName);
-            // $path = $directory . '/' . $fileName;
-
-            // if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
-            //     unlink(public_path($user->profile_picture));
-            // }
             $path = $this->uploadCloudary($request,"profile_picture",$directory);
             $data['image'] = $path;
         }
 
+        // ✅ Build safe user update data — only columns that exist in users table
+        $userUpdateData = array_filter([
+            'name'       => $request->name,
+            'first_name' => $request->first_name,
+            'last_name'  => $request->last_name,
+            'email'      => $request->email,
+            'gender'     => $request->gender,
+            'dob'        => $request->dob,
+            'location'   => $request->location,
+            'lat'        => $request->lat,
+            'long'       => $request->long,
+        ], fn($v) => !is_null($v));
+
+        // Handle auto_attendence separately so value 0 is NOT removed by array_filter
+        if ($request->has('auto_attendence')) {
+            $userUpdateData['auto_attendence'] = (int) $request->auto_attendence;
+        }
+
+        // Attach uploaded image path if present
+        if (isset($data['image'])) {
+            $userUpdateData['image'] = $data['image'];
+        }
+
         // ✅ Update user profile
         if ($isEdit != 1) {
-            $data['step'] = 2;
+            $userUpdateData['step'] = 2;
         }
-        $user->update($data);
+        $user->update($userUpdateData);
 
         // ✅ Merge Work Info logic
         $workValidated = $request->validate([

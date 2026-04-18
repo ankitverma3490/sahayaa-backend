@@ -183,20 +183,43 @@ Route::get('/designations-list', [UserController::class, 'designationsIndex']);
 
 Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 
-// Check raw attendance table for today
+// Deep DB inspection
 Route::get('/debug-attendance-today', function () {
     try {
-        $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
-        $records = \App\Models\Attendance::whereDate('date', $today)->get(['id','staff_id','date','status','description']);
-        $staff95 = \App\Models\User::where('added_by', 95)->get(['id','name','added_by','is_staff_added']);
+        $nowIST    = \Carbon\Carbon::now('Asia/Kolkata')->toDateTimeString();
+        $nowUTC    = \Carbon\Carbon::now()->toDateTimeString();
+        $todayIST  = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
+        $todayUTC  = \Carbon\Carbon::now()->toDateString();
+
+        // All attendance last 3 days
+        $recentAtt = \App\Models\Attendance::where('date', '>=', '2026-04-16')
+            ->orderBy('date')->orderBy('id')
+            ->get(['id','staff_id','date','status','description','created_at']);
+
+        // All hired staff (is_staff_added=1) with their employer info
+        $hiredStaff = \App\Models\User::with(['userWorkInfo'])
+            ->where('user_role_id', 2)
+            ->where('is_staff_added', 1)
+            ->whereNotNull('added_by')
+            ->get()
+            ->map(fn($u) => [
+                'id'          => $u->id,
+                'name'        => $u->name,
+                'added_by'    => $u->added_by,
+                'emp_auto'    => \App\Models\User::find($u->added_by)?->auto_attendence,
+                'working_days'=> $u->userWorkInfo?->working_days,
+            ]);
+
         return response()->json([
-            'today_ist' => $today,
-            'total_attendance_today' => $records->count(),
-            'attendance_records' => $records,
-            'staff_of_employer_95' => $staff95,
+            'server_time_IST' => $nowIST,
+            'server_time_UTC' => $nowUTC,
+            'today_IST'       => $todayIST,
+            'today_UTC'       => $todayUTC,
+            'recent_attendance_apr16_18' => $recentAtt,
+            'hired_staff'     => $hiredStaff,
         ]);
     } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
+        return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
     }
 });
 

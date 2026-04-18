@@ -997,21 +997,20 @@ public function updateProfile(Request $request)
             'gender' => 'nullable|string|in:male,female,other',
             'dob' => 'nullable|date',
             'addresses' => 'nullable|array',
-            'addresses.*.street' => 'required_with:addresses|string',
-            'addresses.*.city' => 'required_with:addresses|string',
-            'addresses.*.state' => 'required_with:addresses|string',
-            'addresses.*.pincode' => 'required_with:addresses|string',
+            'addresses.*.street' => 'nullable|string',
+            'addresses.*.city' => 'nullable|string',
+            'addresses.*.state' => 'nullable|string',
+            'addresses.*.pincode' => 'nullable|string',
             'addresses.*.is_primary' => 'nullable|boolean',
             'residence_type' => 'nullable|string|max:255',
             'number_of_rooms' => 'nullable|integer|min:1',
-            // 'languages_spoken' => 'nullable|array',
             'adults_count' => 'nullable|integer|min:0',
             'children_count' => 'nullable|integer|min:0',
             'elderly_count' => 'nullable|integer|min:0',
             'special_requirements' => 'nullable|string|max:1000',
             'pet_details' => 'nullable|array',
-            'pet_details.*.pet_type' => 'required_with:pet_details|string|max:255',
-            'pet_details.*.pet_count' => 'required_with:pet_details|integer|min:1',
+            'pet_details.*.pet_type' => 'nullable|string|max:255',
+            'pet_details.*.pet_count' => 'nullable|integer|min:1',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'languages_spoken' => 'nullable|array',
             'auto_attendence' => 'nullable|boolean'
@@ -1024,18 +1023,15 @@ public function updateProfile(Request $request)
         // ✅ Profile picture upload
         if ($request->hasFile('profile_picture')) {
             $folderPath = "uploads/user_profile_images";
-            // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-            // $image = $request->file('profile_picture');
-            // $fileName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-            // $image->move(public_path($directory), $fileName);
-            // $path = $directory . '/' . $fileName;
-            // if ($user->image && file_exists(public_path($user->image))) unlink(public_path($user->image));
+            $path = null; // initialize to avoid undefined variable if upload fails
             try {
                 $path = $this->uploadCloudary($request,"profile_picture",$folderPath);
             } catch (\Throwable $th) {
-                //throw $th;
+                \Log::error('Profile picture upload failed: ' . $th->getMessage());
             }
-            $data['image'] = $path;
+            if ($path) {
+                $data['image'] = $path;
+            }
         }
         try {
             if ($request->hasFile('aadhar_front')) {
@@ -1105,7 +1101,16 @@ if($isEdit == 1){
         if ($request->has('addresses')) {
             $user->addresses()->delete();
             foreach ($request->addresses as $address) {
-                $user->addresses()->create($address);
+                // Skip completely empty addresses
+                $hasData = !empty(array_filter([
+                    $address['street'] ?? '',
+                    $address['city'] ?? '',
+                    $address['state'] ?? '',
+                    $address['pincode'] ?? '',
+                ]));
+                if ($hasData) {
+                    $user->addresses()->create($address);
+                }
             }
             if ($isEdit != 1) {
                 $user->update(['step' => $user->user_role_id == 2 ? 4 : 3]);

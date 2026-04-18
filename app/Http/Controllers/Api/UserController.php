@@ -291,7 +291,7 @@ fclose($filename);
 public function signUpCustomer(Request $request)
 { 
     $validator = Validator::make($request->all(), [
-        'name'         => 'required|string|max:255',
+        'name'         => 'nullable|string|max:255',
         //'email'        => 'nullable|email|unique:users,email',
         'phone_number' => 'required|string|max:20',
         'location'     => 'nullable|string|max:255',
@@ -333,7 +333,7 @@ public function signUpCustomer(Request $request)
             ]);
         } else {
             $user = User::create([
-                'name'                          => $request->name,
+                'name'                          => $request->name ?? 'User',
                 'email'                         => $request->email ?? '',
                 'phone_number'                  => $request->phone_number,
                 'location'                      => $request->location,

@@ -59,23 +59,23 @@ class SettingController extends Controller
         $request->validate([
             'value' => 'required|in:0,1',
         ]);
-                $user->is_attendance = $request->value;
+        $user->auto_attendence = $request->value;
         $user->save();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Auto-present setting updated successfully',
             'data' => [
                 'user_id' => $user->id,
-                'is_attendance' => $user->is_attendance,
+                'auto_attendence' => $user->auto_attendence,
             ],
         ]);
     }
-        return response()->json([
+    return response()->json([
         'success' => true,
         'data' => [
             'user_id' => $user->id,
-            'is_attendance' => $user->is_attendance ?? '0', // default to 0 if null
+            'auto_attendence' => $user->auto_attendence ?? '0', // default to 0 if null
         ],
     ]);
 }

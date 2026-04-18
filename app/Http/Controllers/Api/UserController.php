@@ -1046,17 +1046,6 @@ public function updateProfile(Request $request)
 
         try {
             if ($request->hasFile('aadhar_back')) {
-                // $aadharBackPath = $request->file('aadhar_back')->store('staff/aadhar', 'public');
-                $aadharBackPath = $this->uploadCloudary($request,"aadhar_back","staff/aadhar");
-                $data['aadhar_back'] = $aadharBackPath;
-            }
-        } catch (\Exception $e) {
-            Log::error('Aadhar back photo upload failed');
-        }
-
-        try {
-            if ($request->hasFile('aadhar_back')) {
-                // $aadharBackPath = $request->file('aadhar_back')->store('staff/aadhar', 'public');
                 $aadharBackPath = $this->uploadCloudary($request,"aadhar_back","staff/aadhar");
                 $data['aadhar_back'] = $aadharBackPath;
             }

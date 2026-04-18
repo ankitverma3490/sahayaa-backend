@@ -59,24 +59,13 @@ class AttendanceController extends Controller
 
         DB::beginTransaction();
 
-        // try {
-            // $existing = Attendance::where('staff_id', $request->staff_id)
-            //     ->where('date', $request->date)
-            //     ->first();
-
-            // if ($existing) {
-            //     return response()->json([
-            //         'status' => false,
-            //         'message' => 'Attendance already exists for this staff on the selected date'
-            //     ], 400);
-            // }
-
             $attendanceData = [
-                'staff_id' => $request->staff_id,
-                'date' => $request->date,
                 'status' => $request->status,
                 'description' => $request->description,
-                'processed_by' => Auth::guard('api')->user()->id
+                'processed_by' => Auth::guard('api')->user()->id,
+                'check_in_time' => null,
+                'late_minutes' => null,
+                'leave_id' => null,
             ];
 
             if ($request->status == 'present' || $request->status == 'late') {
@@ -91,15 +80,19 @@ class AttendanceController extends Controller
                 $attendanceData['leave_id'] = $request->leave_id;
             }
 
-            $attendance = Attendance::create($attendanceData);
+            // Use updateOrCreate to prevent duplicate attendance records for same staff+date
+            $attendance = Attendance::updateOrCreate(
+                ['staff_id' => $request->staff_id, 'date' => $request->date],
+                $attendanceData
+            );
 
             DB::commit();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Attendance created successfully',
+                'message' => 'Attendance marked successfully',
                 'data' => $attendance
-            ], 201);
+            ], 200);
 
         // } catch (\Exception $e) {
         //     DB::rollBack();

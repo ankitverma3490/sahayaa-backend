@@ -1442,27 +1442,27 @@ public function updateProfileCustomer(Request $request)
         $isEdit = $request->input('is_edit', 0);
 
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'country' => 'nullable|string|max:100',
-            'zip_code' => 'nullable|string|max:20',
+            'name'            => 'sometimes|string|max:255',
+            'first_name'      => 'nullable|string|max:255',
+            'last_name'       => 'nullable|string|max:255',
+            'email'           => 'nullable|email|unique:users,email,' . $user->id,
+            'phone'           => 'nullable|string|max:20',
+            'gender'          => 'nullable|string|in:male,female,other',
+            'dob'             => 'nullable|string|max:20',
+            'location'        => 'nullable',
+            'lat'             => 'nullable',
+            'long'            => 'nullable',
+            'user_role_id'    => 'nullable',
+            'auto_attendence' => 'nullable|in:0,1',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'location' => 'nullable',
-            'lat' => 'nullable',
-            'long' => 'nullable',
-            'user_role_id' => 'nullable',
-            'languages_spoken' => 'nullable|array'
+            'languages_spoken'=> 'nullable|array',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
-        $data = $validator->validated();
+        $data = array_filter($validator->validated(), fn($v) => !is_null($v));
 
         // ✅ Handle profile picture
         if ($request->hasFile('profile_picture')) {
@@ -1499,10 +1499,50 @@ public function updateProfileCustomer(Request $request)
             'voice_note' => 'nullable|file|max:10240',
         ]);
         $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
-        UserHouseholdInformation::updateOrCreate(
-    ['user_id' => $user->id],     // condition
-    ['languages_spoken' => $request->languages_spoken] // fields to update
-);
+
+        // Update household information
+        $householdData = array_filter([
+            'residence_type'     => $request->residence_type,
+            'number_of_rooms'    => $request->number_of_rooms,
+            'languages_spoken'   => $request->languages_spoken,
+            'adults_count'       => $request->adults_count,
+            'children_count'     => $request->children_count,
+            'elderly_count'      => $request->elderly_count,
+            'special_requirements' => $request->special_requirements,
+        ], fn($v) => !is_null($v));
+        if (!empty($householdData)) {
+            UserHouseholdInformation::updateOrCreate(['user_id' => $user->id], $householdData);
+        }
+
+        // Update pet details
+        if ($request->has('pet_details') && is_array($request->pet_details)) {
+            \App\Models\UserPetDetail::where('user_id', $user->id)->delete();
+            foreach ($request->pet_details as $pet) {
+                if (!empty($pet['pet_type']) && !empty($pet['pet_count'])) {
+                    \App\Models\UserPetDetail::create([
+                        'user_id'   => $user->id,
+                        'pet_type'  => $pet['pet_type'],
+                        'pet_count' => $pet['pet_count'],
+                    ]);
+                }
+            }
+        }
+
+        // Update addresses
+        if ($request->has('addresses') && is_array($request->addresses)) {
+            \App\Models\UserAddress::where('user_id', $user->id)->delete();
+            foreach ($request->addresses as $addr) {
+                if (!empty(array_filter($addr))) {
+                    \App\Models\UserAddress::create([
+                        'user_id' => $user->id,
+                        'street'  => $addr['street'] ?? '',
+                        'city'    => $addr['city'] ?? '',
+                        'state'   => $addr['state'] ?? '',
+                        'pincode' => $addr['pincode'] ?? '',
+                    ]);
+                }
+            }
+        }
 
         $workData = [
             'primary_role' => $workValidated['primary_role'] ?? null,

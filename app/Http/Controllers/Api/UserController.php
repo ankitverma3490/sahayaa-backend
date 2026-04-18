@@ -1092,11 +1092,18 @@ public function updateProfile(Request $request)
         }
         
         if ($isEdit != 1) $data['step'] = 2;
-        $user->update($data);
-if($isEdit == 1){
-        // ✅ Include Work Info & Experience like before
-        $this->saveWorkAndExperience($user, $request, $isEdit);
-}
+
+        // Only update user-table fields (safe subset to avoid issues with extra array fields)
+        $userUpdateFields = array_intersect_key($data, array_flip([
+            'first_name', 'last_name', 'name', 'email', 'phone_number',
+            'gender', 'dob', 'auto_attendence', 'image', 'user_role_id', 'step'
+        ]));
+        $user->update($userUpdateFields);
+
+        // saveWorkAndExperience is only for staff (role 2), not household employers
+        if ($isEdit == 1 && $user->user_role_id == 2) {
+            $this->saveWorkAndExperience($user, $request, $isEdit);
+        }
         // ✅ Update addresses, pets, and household if not edit mode
         if ($request->has('addresses')) {
             $user->addresses()->delete();
@@ -1117,7 +1124,7 @@ if($isEdit == 1){
             }
         }
 
-        if ($request->hasAny(['residence_type', 'number_of_rooms',  'adults_count', 'children_count', 'elderly_count', 'special_requirements'])) {
+        if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements', 'languages_spoken'])) {
             $householdData = $request->only(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements','languages_spoken']);
             if ($user->householdInformation) $user->householdInformation()->update($householdData);
             else $user->householdInformation()->create($householdData);

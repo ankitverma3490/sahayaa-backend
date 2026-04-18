@@ -87,14 +87,18 @@ public function index(Request $request): JsonResponse
 
     public function store(Request $request): JsonResponse
     {   
-        $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
+        $subscription = SubscriptionUser::where('user_id', auth()->id())
+            ->where('status', 'active')
+            ->whereNull('deleted_at')
+            ->latest()
+            ->first();
         if (!$subscription) {
             return response()->json([
                 'success' => false,
                 'message' => 'No active subscription found.'
             ]);
         }
-        
+
         $plan = Subscription::find($subscription->subscription_id);
         if (!$plan) {
             return response()->json([
@@ -103,8 +107,8 @@ public function index(Request $request): JsonResponse
             ]);
         }
 
-        // ✅ Check limit
-        if ($subscription->job_user_limit >= $plan->job_limit) {
+        // Check limit only if plan has a job_limit set
+        if ($plan->job_limit && $subscription->job_user_limit >= $plan->job_limit) {
             return response()->json([
                 'success' => false,
                 'message' => 'Monthly Job limit exceeded.'

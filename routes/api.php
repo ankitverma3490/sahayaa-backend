@@ -185,16 +185,19 @@ Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 
 // Check raw attendance table for today
 Route::get('/debug-attendance-today', function () {
-    $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
-    $records = \Illuminate\Support\Facades\DB::table('attendance')
-        ->whereDate('date', $today)
-        ->get();
-    $staff95 = \App\Models\User::where('added_by', 95)->orWhere('parent_user_id', 95)->get(['id','name','added_by','parent_user_id','is_staff_added']);
-    return response()->json([
-        'today_ist' => $today,
-        'attendance_records_today' => $records,
-        'staff_of_employer_95' => $staff95,
-    ]);
+    try {
+        $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
+        $records = \App\Models\Attendance::whereDate('date', $today)->get(['id','staff_id','date','status','description']);
+        $staff95 = \App\Models\User::where('added_by', 95)->get(['id','name','added_by','is_staff_added']);
+        return response()->json([
+            'today_ist' => $today,
+            'total_attendance_today' => $records->count(),
+            'attendance_records' => $records,
+            'staff_of_employer_95' => $staff95,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 });
 
 // Check raw attendance table for today

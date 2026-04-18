@@ -186,7 +186,7 @@ Route::get('/subscriptions', [SubscriptionController::class, 'index']);
 // Check raw attendance table for today
 Route::get('/debug-attendance-today', function () {
     $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
-    $records = \Illuminate\Support\Facades\DB::table('attendances')
+    $records = \Illuminate\Support\Facades\DB::table('attendance')
         ->whereDate('date', $today)
         ->get();
     $staff95 = \App\Models\User::where('added_by', 95)->orWhere('parent_user_id', 95)->get(['id','name','added_by','parent_user_id','is_staff_added']);

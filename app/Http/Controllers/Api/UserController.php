@@ -44,7 +44,7 @@ class UserController extends Controller
     public function signUp(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:users,email',
             'phone_number' => 'required|string|max:20',
             'business_name' => 'string|max:255|nullable',
@@ -77,7 +77,7 @@ class UserController extends Controller
             $user->update($updateData);
         } else {
             $user = User::create([
-                'name' => $request->name,
+                'name' => $request->name ?? 'User',
                 'email' => $request->email,
                 'phone_number' => $request->phone_number,
                 'verification_code' => $otp,

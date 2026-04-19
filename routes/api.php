@@ -288,9 +288,15 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
         $autoEnabled = $employer && ($employer->auto_attendence == "1" || $employer->auto_attendence == 1 || $employer->auto_attendence === true);
         if (!$autoEnabled) { $skipped[] = $user->name . ' (auto off)'; continue; }
 
-        // Working days check
-        $workingDays = array_map('strtolower', $user->userWorkInfo?->working_days ?? []);
-        if (!empty($workingDays) && !in_array($todayDayName, $workingDays)) {
+        // Working days check — normalize to first-3-letters comparison so
+        // "Monday","Mon","monday","mon" all match. Default to Mon–Sat when null.
+        $rawDays = $user->userWorkInfo?->working_days;
+        if (empty($rawDays)) {
+            $rawDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        }
+        $workingDays3 = array_map(fn($d) => substr(strtolower($d), 0, 3), $rawDays);
+        $today3       = substr($todayDayName, 0, 3);
+        if (!in_array($today3, $workingDays3)) {
             $skipped[] = $user->name . ' (not working day)'; continue;
         }
 

@@ -51,9 +51,23 @@ class AutoAttendanceCommand extends Command
                     continue;
                 }
 
-                // Check if today is a working day for this staff
-                $workingDays = array_map('strtolower', $user->userWorkInfo?->working_days ?? []);
-                if (!empty($workingDays) && !in_array($todayDayName, $workingDays)) {
+                // Check if today is a working day for this staff.
+                // Normalize stored day names: handle both "Monday" and "Mon"
+                // by comparing only the first 3 lowercase letters, so
+                // "Monday","monday","Mon","mon" all resolve to "mon".
+                $rawDays = $user->userWorkInfo?->working_days;
+
+                // If working_days is not configured, default to Mon–Sat.
+                // This prevents auto-marking on Sunday (and other off-days)
+                // for staff whose schedule was never explicitly set.
+                if (empty($rawDays)) {
+                    $rawDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                }
+
+                $workingDays3 = array_map(fn($d) => substr(strtolower($d), 0, 3), $rawDays);
+                $today3       = substr($todayDayName, 0, 3); // e.g. "sun","mon"
+
+                if (!in_array($today3, $workingDays3)) {
                     $this->info("Today ({$todayDayName}) is not a working day for user {$user->id}, skipping.");
                     continue;
                 }

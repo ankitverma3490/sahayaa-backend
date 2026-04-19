@@ -294,20 +294,22 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
             $skipped[] = $user->name . ' (not working day)'; continue;
         }
 
-        // Already marked check
-        $exists = \App\Models\Attendance::where('staff_id', $user->id)->where('date', $today)->first();
-        if ($exists) { $skipped[] = $user->name . ' (already marked)'; continue; }
-
-        // Mark attendance
-        \App\Models\Attendance::create([
-            'staff_id' => $user->id,
-            'date' => $today,
-            'check_in_time' => '07:00:00',
-            'status' => 'present',
-            'description' => 'Auto-marked by system',
-            'processed_by' => 1
-        ]);
-        $marked[] = $user->name;
+        // Use updateOrCreate so repeated hits on this route can never create
+        // duplicate attendance rows for the same (staff_id, date).
+        $att = \App\Models\Attendance::updateOrCreate(
+            ['staff_id' => $user->id, 'date' => $today],
+            [
+                'check_in_time' => '07:00:00',
+                'status'        => 'present',
+                'description'   => 'Auto-marked by system',
+                'processed_by'  => 1,
+            ]
+        );
+        if ($att->wasRecentlyCreated) {
+            $marked[] = $user->name;
+        } else {
+            $skipped[] = $user->name . ' (already marked)';
+        }
     }
 
     return response()->json([
@@ -319,6 +321,46 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
         'skipped' => $skipped,
     ]);
 });
+// One-shot: clean duplicate attendance rows AND add unique index.
+// Safe to call multiple times (migration guards against re-adding index).
+Route::get('/fix-attendance-duplicates/{secret}', function ($secret) {
+    if ($secret !== 'sahayya2026secure') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    try {
+        // Count dupes before
+        $before = \DB::select('
+            SELECT COUNT(*) as cnt FROM attendance a1
+            INNER JOIN attendance a2 ON a1.staff_id=a2.staff_id AND a1.date=a2.date AND a1.id>a2.id
+        ');
+        $dupesBefore = $before[0]->cnt ?? 0;
+
+        // Delete dupes (keep lowest id per staff+date)
+        \DB::statement('
+            DELETE a1 FROM attendance a1
+            INNER JOIN attendance a2 ON a1.staff_id=a2.staff_id AND a1.date=a2.date AND a1.id>a2.id
+        ');
+
+        // Add unique index if missing
+        $indexes = collect(\DB::select('SHOW INDEX FROM attendance'))
+            ->pluck('Key_name')->unique()->toArray();
+        $indexAdded = false;
+        if (!in_array('attendance_staff_id_date_unique', $indexes)) {
+            \DB::statement('ALTER TABLE attendance ADD UNIQUE attendance_staff_id_date_unique (staff_id, date)');
+            $indexAdded = true;
+        }
+
+        return response()->json([
+            'success'           => true,
+            'duplicates_deleted'=> (int) $dupesBefore,
+            'unique_index_added'=> $indexAdded,
+            'message'           => 'Attendance duplicates cleaned + unique index in place.',
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['success'=>false, 'error'=>$e->getMessage()], 500);
+    }
+});
+
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
 Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
 Route::post('subscriptions/role', [SubscriptionController::class,'subscriptionByRole']);

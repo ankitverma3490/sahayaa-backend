@@ -219,56 +219,78 @@ class StaffController extends Controller
 
     public function getAiData(Request $request)
     {
+        // Query is optional - if empty, return all staff without AI filtering
         $request->validate([
-            'query' => 'required|string'
+            'query' => 'nullable|string'
         ]);
 
-        $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
+        $queryText = trim((string) $request->input('query', ''));
 
-        if (!$subscription) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No active subscription found.'
-            ]);
-        }
-
-        $plan = Subscription::find($subscription->subscription_id);
-
-
-        if (!$plan) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Subscription plan not found.'
-            ]);
-        }
-        
-        // ✅ Check limit
-        if ($subscription->user_limit >= $plan->subscription_limit) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Monthly AI limit exceeded.'
-            ]);
-        }
-        
         try {
+            // 🔹 Base query - all staff with their work info and addresses
+            $baseQuery = User::with(['userWorkInfo', 'addresses'])
+                ->where('user_role_id', 2);
+
+            // If no query text, just return all staff (no AI, no subscription needed)
+            if ($queryText === '') {
+                $data = $baseQuery->get();
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'data' => $data,
+                ]);
+            }
+
+            // 🔹 AI path - check subscription
+            $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
+            $plan = $subscription ? Subscription::find($subscription->subscription_id) : null;
+
+            // Subscription limit check - fall back to non-AI list instead of hard failure
+            $canUseAi = $subscription && $plan
+                && $subscription->user_limit < $plan->subscription_limit;
+
+            if (!$canUseAi) {
+                // Still return staff list; just skip AI filtering
+                $data = $baseQuery->get();
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => !$subscription
+                        ? 'No active subscription - showing all staff.'
+                        : 'AI search limit reached - showing all staff.',
+                    'data' => $data,
+                ]);
+            }
 
             // 🔹 AI Generate Filters
-            $ai = new AiFilterService();
-            $filters = $ai->generateFilters($request->all());
+            try {
+                $ai = new AiFilterService();
+                $filters = $ai->generateFilters($request->all());
+            } catch (\Throwable $aiErr) {
+                \Log::warning('AI filter service failed, falling back to all staff: ' . $aiErr->getMessage());
+                $filters = null;
+            }
 
             if (!is_array($filters)) {
+                // AI returned invalid data - return all staff as fallback
+                $data = $baseQuery->get();
                 return response()->json([
-                    'success' => false,
-                    'message' => 'AI returned invalid format'
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'AI filter unavailable - showing all staff.',
+                    'data' => $data,
                 ]);
             }
 
             // 🔹 Apply Filters
-            $query = User::with('userWorkInfo')
-                ->where('user_role_id', 2);
+            $query = $baseQuery;
 
             if (!empty($filters['name'])) {
-                $query->where('name', 'like', '%' . $filters['name'] . '%');
+                $query->where(function ($q) use ($filters) {
+                    $q->where('name', 'like', '%' . $filters['name'] . '%')
+                      ->orWhere('first_name', 'like', '%' . $filters['name'] . '%')
+                      ->orWhere('last_name', 'like', '%' . $filters['name'] . '%');
+                });
             }
 
             if (!empty($filters['email'])) {
@@ -286,7 +308,6 @@ class StaffController extends Controller
             if (!empty($filters['location'])) {
                 $query->where('location', $filters['location']);
             }
-
 
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
 
@@ -311,23 +332,43 @@ class StaffController extends Controller
 
             $data = $query->get();
 
+            // If AI filters were too strict and nothing found, fall back to unfiltered list
+            if ($data->isEmpty()) {
+                $data = User::with(['userWorkInfo', 'addresses'])
+                    ->where('user_role_id', 2)
+                    ->get();
+            }
+
             // ✅ Increment only after success
             $subscription->increment('user_limit');
 
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
-                'remaining_limit' =>
-                    $plan->subscription_limit - ($subscription->used_limit + 1),
+                'remaining_limit' => $plan->subscription_limit - ($subscription->user_limit + 1),
                 'data' => $data
             ]);
 
         } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
+            \Log::error('getAiData failed: ' . $e->getMessage());
+            // Last-resort fallback - try to return all staff so UI isn't empty
+            try {
+                $data = User::with(['userWorkInfo', 'addresses'])
+                    ->where('user_role_id', 2)
+                    ->get();
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'AI search failed - showing all staff.',
+                    'data' => $data,
+                ]);
+            } catch (\Throwable $th) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to load staff. Please try again.',
+                    'error' => $e->getMessage()
+                ]);
+            }
         }
     }
 

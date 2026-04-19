@@ -1087,54 +1087,113 @@ public function updateProfile(Request $request)
             'first_name', 'last_name', 'name', 'email', 'phone_number',
             'gender', 'dob', 'auto_attendence', 'image', 'user_role_id', 'step'
         ]));
-        $user->update($userUpdateFields);
+
+        try {
+            if (!empty($userUpdateFields)) {
+                $user->update($userUpdateFields);
+            }
+        } catch (\Throwable $th) {
+            \Log::error('updateProfile user->update failed: ' . $th->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update basic profile fields',
+                'error' => $th->getMessage()
+            ], 500);
+        }
 
         // saveWorkAndExperience is only for staff (role 2), not household employers
         if ($isEdit == 1 && $user->user_role_id == 2) {
-            $this->saveWorkAndExperience($user, $request, $isEdit);
-        }
-        // ✅ Update addresses, pets, and household if not edit mode
-        if ($request->has('addresses')) {
-            $user->addresses()->delete();
-            foreach ($request->addresses as $address) {
-                // Skip completely empty addresses
-                $hasData = !empty(array_filter([
-                    $address['street'] ?? '',
-                    $address['city'] ?? '',
-                    $address['state'] ?? '',
-                    $address['pincode'] ?? '',
-                ]));
-                if ($hasData) {
-                    $user->addresses()->create($address);
-                }
+            try {
+                $this->saveWorkAndExperience($user, $request, $isEdit);
+            } catch (\Throwable $th) {
+                \Log::error('saveWorkAndExperience failed: ' . $th->getMessage());
+                // non-fatal
             }
-            if ($isEdit != 1) {
-                $user->update(['step' => $user->user_role_id == 2 ? 4 : 3]);
+        }
+        // ✅ Update addresses, pets, and household
+        if ($request->has('addresses')) {
+            try {
+                $user->addresses()->delete();
+                foreach ($request->addresses as $address) {
+                    if (!is_array($address)) continue;
+                    // Skip completely empty addresses
+                    $hasData = !empty(array_filter([
+                        $address['street'] ?? '',
+                        $address['city'] ?? '',
+                        $address['state'] ?? '',
+                        $address['pincode'] ?? '',
+                    ]));
+                    if ($hasData) {
+                        // Only pass safe/fillable keys
+                        $safe = array_intersect_key($address, array_flip([
+                            'street', 'city', 'state', 'pincode', 'is_primary'
+                        ]));
+                        $user->addresses()->create($safe);
+                    }
+                }
+                if ($isEdit != 1) {
+                    $user->update(['step' => $user->user_role_id == 2 ? 4 : 3]);
+                }
+            } catch (\Throwable $th) {
+                \Log::error('updateProfile addresses save failed: ' . $th->getMessage());
+                // non-fatal - don't fail the whole request
             }
         }
 
         if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements', 'languages_spoken'])) {
-            $householdData = $request->only(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements','languages_spoken']);
-            if ($user->householdInformation) $user->householdInformation()->update($householdData);
-            else $user->householdInformation()->create($householdData);
-            if ($isEdit != 1) $user->update(['step' => 4]);
+            try {
+                $householdData = $request->only(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements','languages_spoken']);
+                // Cast counts to int so empty strings don't break integer columns
+                foreach (['number_of_rooms', 'adults_count', 'children_count', 'elderly_count'] as $k) {
+                    if (array_key_exists($k, $householdData)) {
+                        $householdData[$k] = $householdData[$k] === '' || $householdData[$k] === null
+                            ? null
+                            : (int) $householdData[$k];
+                    }
+                }
+                if ($user->householdInformation) $user->householdInformation()->update($householdData);
+                else $user->householdInformation()->create($householdData);
+                if ($isEdit != 1) $user->update(['step' => 4]);
+            } catch (\Throwable $th) {
+                \Log::error('updateProfile household info save failed: ' . $th->getMessage());
+                // non-fatal
+            }
         }
 
         if ($request->has('pet_details')) {
-            $user->petDetails()->delete();
-            foreach ($request->pet_details as $petDetail) {
-                $user->petDetails()->create($petDetail);
+            try {
+                $user->petDetails()->delete();
+                foreach ($request->pet_details as $petDetail) {
+                    if (!is_array($petDetail)) continue;
+                    $type = trim((string)($petDetail['pet_type'] ?? ''));
+                    $count = $petDetail['pet_count'] ?? '';
+                    if ($type === '' || $count === '') continue;
+                    $user->petDetails()->create([
+                        'pet_type' => $type,
+                        'pet_count' => (int) $count,
+                    ]);
+                }
+                if ($isEdit != 1) $user->update(['step' => 4]);
+            } catch (\Throwable $th) {
+                \Log::error('updateProfile pet_details save failed: ' . $th->getMessage());
+                // non-fatal
             }
-            if ($isEdit != 1) $user->update(['step' => 4]);
         }
         if ($request->has('user_role_id')) {
-            $user->update(['user_role_id' => $request->user_role_id]);
+            try {
+                $user->update(['user_role_id' => $request->user_role_id]);
+            } catch (\Throwable $th) {
+                \Log::error('updateProfile user_role_id update failed: ' . $th->getMessage());
+            }
         }
 
         if ($request->has('auto_attendence')) {
-            $user->update(["auto_attendence" => $request->auto_attendence]);
+            try {
+                $user->update(["auto_attendence" => $request->auto_attendence]);
+            } catch (\Throwable $th) {
+                \Log::error('updateProfile auto_attendence update failed: ' . $th->getMessage());
+            }
         }
-        
 
         $user->load(['addresses', 'petDetails', 'householdInformation','userWorkInfo']);
         return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
@@ -1144,7 +1203,7 @@ public function updateProfile(Request $request)
         try {
              file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Error: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
         } catch (\Exception $writeErr) {}
-        
+
         return response()->json(['success' => false, 'message' => 'Failed to update profile', 'error' => $e->getMessage()], 500);
     }
 }

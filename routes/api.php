@@ -367,6 +367,57 @@ Route::get('/fix-attendance-duplicates/{secret}', function ($secret) {
     }
 });
 
+// One-shot: delete attendance records for a given date that belong to staff
+// whose working_days don't include that day (or whose working_days are null →
+// default Mon-Sat, so Sunday is off-day).
+Route::get('/fix-wrong-day-attendance/{secret}', function ($secret) {
+    if ($secret !== 'sahayya2026secure') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    try {
+        $deleted = [];
+        // Get ALL attendance records
+        $records = \App\Models\Attendance::with('staff.userWorkInfo')
+            ->where('description', 'like', '%Auto-marked%')
+            ->get();
+
+        foreach ($records as $att) {
+            $date   = \Carbon\Carbon::parse($att->date);
+            $dayNum = (int) $date->format('N'); // 1=Mon … 7=Sun
+            $dayNames = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+            $dayName  = $dayNames[$dayNum - 1];
+            $day3     = substr($dayName, 0, 3); // 'sun','mon', etc.
+
+            $rawDays = $att->staff?->userWorkInfo?->working_days;
+            if (empty($rawDays)) {
+                // Default: Mon–Sat. Sunday (day3='sun') should be deleted.
+                $allowedDays3 = ['mon','tue','wed','thu','fri','sat'];
+            } else {
+                $allowedDays3 = array_map(fn($d) => substr(strtolower($d), 0, 3), $rawDays);
+            }
+
+            if (!in_array($day3, $allowedDays3)) {
+                $deleted[] = [
+                    'id'       => $att->id,
+                    'staff_id' => $att->staff_id,
+                    'date'     => $att->date->toDateString(),
+                    'day'      => $dayName,
+                ];
+                $att->delete();
+            }
+        }
+
+        return response()->json([
+            'success'  => true,
+            'deleted'  => count($deleted),
+            'records'  => $deleted,
+            'message'  => 'Wrong-day auto-attendance records removed.',
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+    }
+});
+
 Route::get('/subscriptions/show/{id}', [SubscriptionController::class, 'show']);
 Route::get('/subscription-list', [UserController::class, 'getSubscriptionList']);
 Route::post('subscriptions/role', [SubscriptionController::class,'subscriptionByRole']);

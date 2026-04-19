@@ -3674,8 +3674,32 @@ public function addStaff(Request $request)
     $logAction = 'STAFF_ADD';
     
     try {
-        // Log the start of the process 
-        // Validate the request
+        // ── PRE-VALIDATION: check by Aadhar OR phone FIRST ──────────────────
+        // If the person already exists in the system (same aadhar OR same phone),
+        // we skip straight to the re-hire path so the phone unique rule never
+        // blocks a legitimate re-hire.
+        $existingByAadhar = User::where('aadhar_number', $request->aadhar_number)->first();
+        $existingByPhone  = User::where('phone_number', $request->phone_number)->first();
+
+        // If found by aadhar → re-hire regardless of phone
+        if ($existingByAadhar) {
+            $existingByAadhar->update(['user_role_id' => 2]);
+            DB::commit();
+            return $this->updateExistingStaff($existingByAadhar, $request);
+        }
+
+        // If found by phone only (no aadhar match) → could be a different person.
+        // Still try to re-hire: treat as the same person being re-added.
+        // If it turns out to be a conflict the employer will see the updated record.
+        if ($existingByPhone) {
+            $existingByPhone->update(['user_role_id' => 2]);
+            DB::commit();
+            return $this->updateExistingStaff($existingByPhone, $request);
+        }
+        // ────────────────────────────────────────────────────────────────────
+
+        // New person — run full validation (phone unique is safe now because
+        // we already handled the existing-user cases above).
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -3689,9 +3713,6 @@ public function addStaff(Request $request)
             'city' => 'required|string|max:255',
             'state' => 'required|string|max:255',
             'pincode' => 'required|string|max:10',
-            // Emergency contact
-            // 'emergency_contact_name' => 'required|string|max:255',
-            // 'emergency_contact_number' => 'required|string|max:15',
             // Work details
             'role_designation' => 'array',
             'joining_date' => 'nullable|date',
@@ -3719,23 +3740,6 @@ public function addStaff(Request $request)
                 'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
-        }
-        // Check if Aadhar number already exists
-        try {
-            $existingUser = User::where('aadhar_number', $request->aadhar_number)->first();
-            if ($existingUser) {
-                $existingUser->update([
-                    'user_role_id' => 2
-                ]);
-                return $this->updateExistingStaff($existingUser, $request);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error checking existing Aadhar number', [
-                'action' => $logAction,
-                'error' => $e->getMessage(),
-                'timestamp' => now()->toDateTimeString()
-            ]);
-            throw $e;
         }
 
         \Log::info('No existing staff found with Aadhar number, creating new staff record', [

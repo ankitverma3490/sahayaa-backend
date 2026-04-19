@@ -5378,15 +5378,6 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            // Check if user has completed profile (has proper name)
-            if (empty($user->name) || $user->name === 'User' || trim($user->name) === '') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Please complete your profile before applying referral code',
-                    'error_code' => 'PROFILE_INCOMPLETE'
-                ], 400);
-            }
-
             // Check if already referred
             if (!empty($user->referred_by)) {
                 return response()->json([

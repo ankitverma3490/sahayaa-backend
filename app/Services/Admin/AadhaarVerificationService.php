@@ -25,18 +25,31 @@ class AadhaarVerificationService
      */
     protected function generateJwtToken()
     {
-        // JWT token generation logic
-        // For now, using the provided token format
-        $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
-        $payload = base64_encode(json_encode([
-            'partnerId' => $this->partnerCode,
+        // Generate JWT token with correct partner code ESP00120
+        // Format: header.payload.signature
+        
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+        $payload = json_encode([
+            'partnerId' => $this->partnerCode, // ESP00120
             'timestamp' => time()
-        ]));
+        ]);
         
-        $signature = hash_hmac('sha256', "$header.$payload", $this->tokenKey, true);
-        $signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+        // Base64 URL encode
+        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
         
-        return "$header.$payload.$signature";
+        // Create signature
+        $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $this->tokenKey, true);
+        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+        
+        $jwt = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+        
+        Log::info('Generated JWT Token', [
+            'partner_code' => $this->partnerCode,
+            'token' => $jwt
+        ]);
+        
+        return $jwt;
     }
 
     /**

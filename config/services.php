@@ -56,6 +56,12 @@ return [
         'auth_token'   => env('SMSCOUNTRY_AUTH_TOKEN'),
         'sender_id'  => env('SMSCOUNTRY_SENDER'),
         'notify_url' => env('SMSCOUNTRY_NOTIFY_URL'),
+    ],
+
+    'aadhaar' => [
+        'base_url' => env('AADHAAR_API_BASE_URL', 'https://api.digiverification.com'),
+        'partner_code' => env('AADHAAR_PARTNER_CODE', 'ESP00120'),
+        'token_key' => env('AADHAAR_TOKEN_KEY', '62eedbdf05b47a026ef0fe708d387ae352294c26'),
     ]
     
 ];

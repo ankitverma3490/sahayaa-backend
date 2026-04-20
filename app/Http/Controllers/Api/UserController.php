@@ -634,43 +634,60 @@ public function getProfile(Request $request)
         }
 
         $user = User::find($request->user_id ?? Auth::guard('api')->user()->id);
-        // if ($user->is_deleted == 1) {
-        //     return response()->json([
-        //         'error' => 'This account has been deleted. Please contact support.'
-        //     ], 403);
-        // }
+        
+        if (!$user->aadhar_reference_id) {
+            return response()->json(['error' => 'No OTP request found. Please request OTP first.'], 422);
+        }
 
-        if ($user->aadhar__verify_otp != $request->otp) {
-                return response()->json(['error' => 'Invalid otp'], 422);
-            }
-
-        // Check if OTP matches the static code (123456)
+        try {
+            $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
+            $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
             
-            // Check if OTP is expired (10 minutes validity)
-            $expirationTime = 10; // minutes
-            // if (now()->diffInMinutes($user->aadhar_number_otp_expire_at) > $expirationTime) {
-            //     return response()->json(['error' => 'Verification code has expired'], 422);
-            // }
-
+            if (!$verifyResult['success']) {
+                return response()->json([
+                    'error' => $verifyResult['message'] ?? 'Invalid OTP'
+                ], 422);
+            }
+            
+            // Update user with verified Aadhaar details
+            $aadhaarData = $verifyResult['aadhaar_data'];
+            
             $user->update([
                 'aadhar__verify' => 1,
-                'aadhar__verify_otp' => null,
+                'aadhar__verify_at' => now(),
+                'aadhar_reference_id' => null,
                 'aadhar_number_otp_expire_at' => null,
-                'aadhar_number_otp_expire_at' => now(),
+                'aadhar_name' => $aadhaarData['name'] ?? $user->aadhar_name,
             ]);
-        //  dd($user);
-
-            // Create Passport token
-            // $token = $user->createToken('AuthToken')->accessToken;
-
-            // Login user into api guard
+            
+            // Optionally update user profile with Aadhaar data
+            if (empty($user->name) || $user->name === 'Staff Member' || $user->name === 'User') {
+                $user->name = $aadhaarData['name'] ?? $user->name;
+            }
+            
+            if (empty($user->dob) && !empty($aadhaarData['dob'])) {
+                $user->dob = $aadhaarData['dob'];
+            }
+            
+            if (empty($user->gender) && !empty($aadhaarData['gender'])) {
+                $user->gender = strtolower($aadhaarData['gender']);
+            }
+            
+            $user->save();
 
             return response()->json([
-                'message' => 'Verify in successfully',
+                'message' => 'Aadhaar verified successfully',
                 'user' => $user,
+                'aadhaar_details' => $aadhaarData
             ]);
-
-        return response()->json(['error' => 'Invalid verification code'], 422);
+            
+        } catch (\Exception $e) {
+            \Log::error('Aadhaar Verify Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to verify OTP',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
 
@@ -2540,6 +2557,8 @@ public function saveAadharAndSendOtp(Request $request)
             'aadhar_number' => 'required|digits:12',
         ]);
 
+        $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
+
         // =============================
         // CASE 1: STAFF ADDING NEW STAFF
         // =============================
@@ -2556,39 +2575,60 @@ public function saveAadharAndSendOtp(Request $request)
             }
             
             if ($existingUser) {
-                  $existingUser->aadhar__verify_otp = '123456';
-            $existingUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
-$existingUser->save();
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Aadhaar already registered. Existing user details fetched.',
-                    'data' => User::with(['addresses','petDetails','lastExp','householdInformation','kycInformation','userWorkInfo','addedByUser', 'addedByUser.addresses',
+                // Send real OTP via API
+                $otpResult = $aadhaarService->sendOtp($request->aadhar_number);
+                
+                if ($otpResult['success']) {
+                    $existingUser->aadhar_reference_id = $otpResult['reference_id'];
+                    $existingUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+                    $existingUser->save();
+                    
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Aadhaar already registered. OTP sent to registered mobile.',
+                        'reference_id' => $otpResult['reference_id'],
+                        'data' => User::with(['addresses','petDetails','lastExp','householdInformation','kycInformation','userWorkInfo','addedByUser', 'addedByUser.addresses',
     'addedByUser.petDetails',
     'addedByUser.lastExp',
     'addedByUser.householdInformation',
     'addedByUser.kycInformation',
     'addedByUser.userWorkInfo'])->find($existingUser->id),
-                ], 200);
+                    ], 200);
+                } else {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $otpResult['message'] ?? 'Failed to send OTP'
+                    ], 400);
+                }
             }
 
             // ==========================================
-            // Aadhaar NOT registered → CREATE NEW USER
+            // Aadhaar NOT registered → Send OTP first
             // ==========================================
+            $otpResult = $aadhaarService->sendOtp($request->aadhar_number);
+            
+            if (!$otpResult['success']) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $otpResult['message'] ?? 'Failed to send OTP'
+                ], 400);
+            }
+            
             $newUser = new User();
             $newUser->name = 'Staff Member';
             $newUser->aadhar_number = $request->aadhar_number;
-            $newUser->aadhar__verify_otp = '123456';
+            $newUser->aadhar_reference_id = $otpResult['reference_id'];
             $newUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
             $newUser->aadhar__verify = false;
             $newUser->is_staff_added = 1; // Mark as staff added
-            // $newUser->added_by = $authUser->id; // Set who added this staff
-              $newUser->step = 4;
+            $newUser->step = 4;
             $newUser->user_role_id = 2;
             $newUser->save();
 
             return response()->json([
                 'status' => true,
-                'message' => 'New staff user created with Aadhaar & OTP sent',
+                'message' => 'OTP sent to Aadhaar registered mobile number',
+                'reference_id' => $otpResult['reference_id'],
                 'data' => [
                     'user_id' => $newUser->id,
                     'aadhar_number' => $newUser->aadhar_number,
@@ -2611,14 +2651,24 @@ $existingUser->save();
                 ], 400);
             }
 
-            // Resend OTP only
-            $user->aadhar__verify_otp = '123456';
+            // Resend OTP via real API
+            $otpResult = $aadhaarService->sendOtp($request->aadhar_number);
+            
+            if (!$otpResult['success']) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $otpResult['message'] ?? 'Failed to send OTP'
+                ], 400);
+            }
+            
+            $user->aadhar_reference_id = $otpResult['reference_id'];
             $user->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
             $user->save();
 
             return response()->json([
                 'status' => true,
-                'message' => 'OTP resent successfully',
+                'message' => 'OTP sent successfully',
+                'reference_id' => $otpResult['reference_id'],
             ], 200);
         }
 
@@ -2631,9 +2681,19 @@ $existingUser->save();
             ->first();
 
         if ($existingUser) {
+            // Send OTP for existing user
+            $otpResult = $aadhaarService->sendOtp($request->aadhar_number);
+            
+            if ($otpResult['success']) {
+                $existingUser->aadhar_reference_id = $otpResult['reference_id'];
+                $existingUser->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
+                $existingUser->save();
+            }
+            
             return response()->json([
                 'status' => true,
-                'message' => 'Aadhaar already registered. Existing user details fetched.',
+                'message' => 'Aadhaar already registered. OTP sent.',
+                'reference_id' => $otpResult['reference_id'] ?? null,
                 'data' => User::with(['addresses','petDetails','lastExp','householdInformation','kycInformation','userWorkInfo','addedByUser', 'addedByUser.addresses',
     'addedByUser.petDetails',
     'addedByUser.lastExp',
@@ -2647,8 +2707,17 @@ $existingUser->save();
         // ==========================================
         // SAVE NEW AADHAAR FOR CURRENT USER
         // ==========================================
+        $otpResult = $aadhaarService->sendOtp($request->aadhar_number);
+        
+        if (!$otpResult['success']) {
+            return response()->json([
+                'status' => false,
+                'message' => $otpResult['message'] ?? 'Failed to send OTP'
+            ], 400);
+        }
+        
         $user->aadhar_number      = $request->aadhar_number;
-        $user->aadhar__verify_otp = '123456';
+        $user->aadhar_reference_id = $otpResult['reference_id'];
         $user->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
         $user->aadhar__verify     = false;
         $user->aadhar__verify_at  = null;
@@ -2656,7 +2725,8 @@ $existingUser->save();
 
         return response()->json([
             'status' => true,
-            'message' => 'Aadhaar number saved and OTP sent successfully',
+            'message' => 'OTP sent to Aadhaar registered mobile number',
+            'reference_id' => $otpResult['reference_id'],
             'data' => [
                 'aadhar_number' => $user->aadhar_number,
             ]
@@ -2785,23 +2855,32 @@ $existingUser->save();
                 ], 400);
             }
             
-            // Generate new OTP
-            $user->aadhar__verify_otp = '123456'; // Fixed OTP for testing
+            // Send OTP via real API
+            $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
+            $otpResult = $aadhaarService->sendOtp($user->aadhar_number);
+            
+            if (!$otpResult['success']) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $otpResult['message'] ?? 'Failed to send OTP'
+                ], 400);
+            }
+            
+            $user->aadhar_reference_id = $otpResult['reference_id'];
             $user->aadhar_number_otp_expire_at = Carbon::now()->addMinutes(10);
             $user->save();
-            
-            // In production, send OTP via SMS/Email here
             
             return response()->json([
                 'status' => true,
                 'message' => 'OTP resent successfully',
+                'reference_id' => $otpResult['reference_id'],
                 'data' => [
                     'aadhar_number' => $user->aadhar_number,
-                    'otp' => '123456' // Only for testing, remove in production
                 ]
             ], 200);
             
         } catch (\Exception $e) {
+            \Log::error('Aadhaar Resend OTP Error: ' . $e->getMessage());
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to resend OTP',

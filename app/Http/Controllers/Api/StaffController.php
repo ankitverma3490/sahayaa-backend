@@ -459,7 +459,7 @@ class StaffController extends Controller
             */
 
             $ai = new AiFilterService();
-            $filters = $ai->generateFilters($request->all());
+            $filters = $ai->generateFilters($request->all(), 'job');
 
             if (!is_array($filters)) {
                 return response()->json([

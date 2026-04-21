@@ -4634,6 +4634,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
             $staffQuery = User::where('is_staff_added', 1)
                 ->where('added_by', Auth::guard('api')->user()->id)
                 ->where('user_role_id',2)
+                ->where('is_deleted', 0) // Exclude terminated staff
+                ->where('is_active', 1) // Only active staff
                 ->with(['addresses', 'userWorkInfo', 'addedByUser'])
                 ->orderBy('created_at', 'desc');
 

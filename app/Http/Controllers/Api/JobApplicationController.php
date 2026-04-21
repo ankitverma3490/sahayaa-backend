@@ -246,6 +246,29 @@ class JobApplicationController extends Controller
                 'is_advance' => $request->boolean('is_advance'),
                 'application_status' => 'pending',
             ]);
+            
+            // Get job details
+            $job = Job::find($jobId);
+            
+            // Send notification to house owner
+            if ($job && $job->created_by) {
+                Notification::create([
+                    'user_id' => $job->created_by,
+                    'title' => 'New Job Application',
+                    'message' => $user->name . ' has applied for the job: ' . $job->title,
+                    'type' => 'job_application',
+                    'is_read' => 0
+                ]);
+            }
+            
+            // Send notification to staff
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'Application Submitted',
+                'message' => 'Your application for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
+                'type' => 'job_application',
+                'is_read' => 0
+            ]);
 
             return response()->json([
                 'status' => 'success',
@@ -288,12 +311,28 @@ class JobApplicationController extends Controller
         }
 
         $application->update(['application_status' => $request->application_status]);
+        
+        // Get job and user details
+        $job = Job::find($application->job_id);
+        $staff = User::find($application->user_id);
+        
         if ($request->application_status == "accepted") {
             $user = User::find($application->user_id);
             $user->update([
                 'is_staff_added' => 1,
                 'added_by' => Auth::guard('api')->user()->id
             ]);
+            
+            // Send notification to staff
+            if ($staff) {
+                Notification::create([
+                    'user_id' => $staff->id,
+                    'title' => 'Application Accepted',
+                    'message' => 'Congratulations! Your application for ' . ($job ? $job->title : 'the job') . ' has been accepted',
+                    'type' => 'job_application_accepted',
+                    'is_read' => 0
+                ]);
+            }
         }
 
         if ($request->application_status == "rejected") {
@@ -303,6 +342,17 @@ class JobApplicationController extends Controller
                 'is_staff_added' => 0,
                 'added_by' => null
             ]);
+            
+            // Send notification to staff
+            if ($staff) {
+                Notification::create([
+                    'user_id' => $staff->id,
+                    'title' => 'Application Rejected',
+                    'message' => 'Your application for ' . ($job ? $job->title : 'the job') . ' has been rejected',
+                    'type' => 'job_application_rejected',
+                    'is_read' => 0
+                ]);
+            }
         }
 
         return response()->json([
@@ -361,6 +411,31 @@ class JobApplicationController extends Controller
             "reason" => $request->reason,
             "status" => "pending"
         ]);
+        
+        // Get job and house owner details
+        $job = Job::find($request->job_id);
+        $staff = Auth::guard('api')->user();
+        
+        // Send notification to house owner
+        if ($job && $job->created_by) {
+            Notification::create([
+                'user_id' => $job->created_by,
+                'title' => 'Job Quit Request',
+                'message' => $staff->name . ' has requested to quit the job: ' . $job->title,
+                'type' => 'job_quit',
+                'is_read' => 0
+            ]);
+        }
+        
+        // Send notification to staff
+        Notification::create([
+            'user_id' => $userId,
+            'title' => 'Quit Request Submitted',
+            'message' => 'Your quit request for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
+            'type' => 'job_quit',
+            'is_read' => 0
+        ]);
+        
         return response()->json([
             "message" => "Quit request submitted successfully",
             "data" => $quit

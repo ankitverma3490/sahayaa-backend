@@ -5444,14 +5444,17 @@ private function updateExistingStaff(User $existingUser, Request $request)
      */
     public function applyReferralCode(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'referral_code' => 'required|string|exists:users,referral_code',
+        // Trim and uppercase the referral code
+        $referralCode = strtoupper(trim($request->referral_code ?? ''));
+        
+        $validator = Validator::make(['referral_code' => $referralCode], [
+            'referral_code' => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid referral code',
+                'message' => 'Referral code is required',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -5476,8 +5479,15 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 ], 400);
             }
 
-            // Get referrer
-            $referrer = User::where('referral_code', $request->referral_code)->first();
+            // Get referrer - case insensitive search
+            $referrer = User::whereRaw('UPPER(referral_code) = ?', [$referralCode])->first();
+            
+            if (!$referrer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid referral code'
+                ], 400);
+            }
 
             if ($referrer->id === $user->id) {
                 return response()->json([

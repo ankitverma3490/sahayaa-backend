@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Salary;
 use App\Models\User;
+use App\Models\Notification;
 
 
 class AdminSalaryController extends Controller
@@ -56,8 +57,23 @@ class AdminSalaryController extends Controller
         }
         
         $salary = Salary::findOrFail($id);
+        $oldStatus = $salary->status;
         $salary->status = $request->status;
         $salary->save();
+        
+        // Send notification to staff when salary is marked as paid
+        if ($request->status === 'paid' && $oldStatus !== 'paid') {
+            $staff = User::find($salary->staff_id);
+            if ($staff) {
+                Notification::create([
+                    'user_id' => $staff->id,
+                    'title' => 'Salary Paid',
+                    'message' => 'Your salary of ₹' . number_format($salary->net_salary, 2) . ' has been paid',
+                    'type' => 'salary_paid',
+                    'is_read' => 0
+                ]);
+            }
+        }
         
         return response()->json([
             'status' => true,
@@ -102,6 +118,20 @@ class AdminSalaryController extends Controller
             'status' => $request->status,
             'payment_date' => now()->toDateString(),
         ]);
+        
+        // Send notification to staff if salary is marked as paid
+        if ($request->status === 'paid') {
+            $staff = User::find($request->staff_id);
+            if ($staff) {
+                Notification::create([
+                    'user_id' => $staff->id,
+                    'title' => 'Salary Paid',
+                    'message' => 'Your salary of ₹' . number_format($netSalary, 2) . ' has been paid',
+                    'type' => 'salary_paid',
+                    'is_read' => 0
+                ]);
+            }
+        }
         
         // ✅ Update Advance Withdraw Amount (IMPORTANT)
         if ($request->advance_payment && $request->advance_payment > 0) {

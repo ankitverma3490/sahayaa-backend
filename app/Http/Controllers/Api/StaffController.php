@@ -306,7 +306,16 @@ class StaffController extends Controller
             }
 
             if (!empty($filters['location'])) {
-                $query->where('location', $filters['location']);
+                $query->whereHas('addresses', function ($q) use ($filters) {
+                    $q->where('city', 'like', '%' . $filters['location'] . '%')
+                      ->orWhere('state', 'like', '%' . $filters['location'] . '%');
+                });
+            }
+
+            if (!empty($filters['role'])) {
+                $query->whereHas('userWorkInfo', function ($q) use ($filters) {
+                    $q->where('primary_role', 'like', '%' . $filters['role'] . '%');
+                });
             }
 
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
@@ -331,13 +340,6 @@ class StaffController extends Controller
             }
 
             $data = $query->get();
-
-            // If AI filters were too strict and nothing found, fall back to unfiltered list
-            if ($data->isEmpty()) {
-                $data = User::with(['userWorkInfo', 'addresses'])
-                    ->where('user_role_id', 2)
-                    ->get();
-            }
 
             // ✅ Increment only after success
             $subscription->increment('user_limit');

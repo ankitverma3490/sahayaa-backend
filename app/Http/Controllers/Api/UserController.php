@@ -5462,15 +5462,6 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            // Check if user has completed profile (has proper name)
-            if (empty($user->name) || $user->name === 'User' || trim($user->name) === '') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Please complete your profile before applying referral code',
-                    'error_code' => 'PROFILE_INCOMPLETE'
-                ], 400);
-            }
-
             // Check if already referred
             if (!empty($user->referred_by)) {
                 return response()->json([
@@ -5534,19 +5525,27 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            $referrals = ReferralReward::with('referred:id,name,phone_number,image,created_at')
+            $referrals = ReferralReward::with('referred:id,name,first_name,last_name,phone_number,image,created_at')
                 ->where('referrer_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($reward) {
+                    $referred = $reward->referred;
+                    $fullName = null;
+                    if ($referred) {
+                        $fullName = trim(($referred->first_name ?? '') . ' ' . ($referred->last_name ?? ''));
+                        if (empty($fullName) || $fullName === 'User') {
+                            $fullName = $referred->name ?? 'User';
+                        }
+                    }
                     return [
                         'id' => $reward->id,
-                        'referred_user' => $reward->referred ? [
-                            'id' => $reward->referred->id,
-                            'name' => $reward->referred->name,
-                            'phone_number' => $reward->referred->phone_number,
-                            'image' => $reward->referred->image,
-                            'joined_at' => $reward->referred->created_at,
+                        'referred_user' => $referred ? [
+                            'id' => $referred->id,
+                            'name' => $fullName,
+                            'phone_number' => $referred->phone_number,
+                            'image' => $referred->image,
+                            'joined_at' => $referred->created_at,
                         ] : null,
                         'reward_amount' => $reward->reward_amount,
                         'reward_type' => $reward->reward_type,

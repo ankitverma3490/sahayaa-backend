@@ -42,9 +42,20 @@ class AiFilterService
                 No markdown.
                 No explanation.';
         } else {
-            $systemPrompt = 'Convert user request into JSON filters for staff table.
+            $systemPrompt = 'Convert user request into JSON filters for staff search.
                 Available fields:
-                name, email, phone_number, gender, salary, status.
+                - name (string): Staff name
+                - gender (string): "male" or "female"
+                - role (string): Job role/title (e.g. "Driver", "Cook", "Maid", "House Cleaner", "Baby Sitter", "Nanny", "Chef")
+                - location (string): City or area name
+                - salary (object): Salary range with operators like {"gt": 5000, "lt": 20000}
+                - status (string): Employment status
+
+                IMPORTANT: For role-based searches, always extract the job role into the "role" field.
+                Example: "Experienced Male Driver" -> {"role": "Driver", "gender": "male"}
+                Example: "female cook in Mumbai" -> {"role": "Cook", "gender": "female", "location": "Mumbai"}
+                Example: "Professional Housekeeper" -> {"role": "House Cleaner"}
+
                 Return ONLY valid JSON.
                 No markdown.
                 No explanation.';

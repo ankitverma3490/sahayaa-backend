@@ -8,6 +8,7 @@ use App\Models\Termination;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Notification;
+use App\Models\User;
 
 class TerminationController extends Controller
 {
@@ -56,13 +57,19 @@ class TerminationController extends Controller
         
         $termination = Termination::create($request->all());
 
+        // Remove staff from this household's list only (not globally - staff can still work elsewhere)
+        User::where('id', $request->user_id)->update([
+            'is_staff_added' => 0,
+            'added_by' => null,
+        ]);
+
         Notification::create([
             'user_id' => $termination->user_id,
             'title' => 'Termination Request',
             'message' => 'Your termination request has been submitted.',
             'status' => 'unread',
         ]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Termination created successfully',

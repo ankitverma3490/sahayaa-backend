@@ -498,8 +498,12 @@ class StaffController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            $query = Job::query();
-            // dd($filters,$query->get());
+            // Only show open/active jobs
+            $query = Job::where('status', 'open');
+
+            // Keep title for fallback if all filters return 0 results
+            $titleFilter = $filters['title'] ?? null;
+
             /*
             |--------------------------------------------------------------------------
             | Text Filters
@@ -613,6 +617,7 @@ class StaffController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            // Boolean fields only applied if explicitly set to true (not inferred)
             $booleanFields = [
                 'childcare_experience',
                 'cooking_required',
@@ -622,8 +627,8 @@ class StaffController extends Controller
             ];
 
             foreach ($booleanFields as $field) {
-                if (isset($filters[$field])) {
-                    $query->where($field, $filters[$field] ? 1 : 0);
+                if (isset($filters[$field]) && $filters[$field] === true) {
+                    $query->where($field, 1);
                 }
             }
 
@@ -638,6 +643,13 @@ class StaffController extends Controller
             }
 
             $data = $query->get();
+
+            // If strict filters returned nothing, fall back to title-only on open jobs
+            if ($data->isEmpty() && $titleFilter) {
+                $data = Job::where('status', 'open')
+                    ->where('title', 'like', '%' . $titleFilter . '%')
+                    ->get();
+            }
 
             // ✅ Increase usage
             $subscription->increment('user_limit');

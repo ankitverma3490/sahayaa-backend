@@ -46,7 +46,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:users,email',
-            'phone_number' => 'required|string|max:20',
+            'phone_number' => 'required|string|max:20|unique:users,phone_number,NULL,id,is_deleted,0',
             'business_name' => 'string|max:255|nullable',
         ]);
 
@@ -57,41 +57,26 @@ class UserController extends Controller
         // Format phone number to E.164
         $to = '+91' . ltrim($request->phone_number, '0');
 
-        // Check if phone number already exists
-        $user = User::where('phone_number', $request->phone_number)->where('is_deleted', 0)->first();
-
-        // Static OTP for all numbers (for now)
-        // $verificationCode = '123456';
+        // Generate OTP
         $otp = rand(100000, 999999);
         $response = $this->sendOtp(str_replace('+', '', $to),$otp);
-        // dd($response);
-        if ($user) {
-            // Update existing user's name if provided
-            $updateData = [
-                'verification_code' => $otp,
-                'verification_code_sent_time' => now(),
-            ];
-            if ($request->filled('name')) {
-                $updateData['name'] = $request->name;
-            }
-            $user->update($updateData);
-        } else {
-            $user = User::create([
-                'name' => $request->name ?? 'User',
-                'email' => $request->email,
-                'phone_number' => $request->phone_number,
-                'verification_code' => $otp,
-                'verification_code_sent_time' => now(),
-                'user_role_id' => $request->role_id,
-            ]);
+        
+        // Create new user (validation ensures phone is unique)
+        $user = User::create([
+            'name' => $request->name ?? 'User',
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'verification_code' => $otp,
+            'verification_code_sent_time' => now(),
+            'user_role_id' => $request->role_id,
+        ]);
 
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => 'User Registered',
-                'message' => 'Wel come to the our team.',
-                'status' => 'unread',
-            ]);
-        }
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'User Registered',
+            'message' => 'Wel come to the our team.',
+            'status' => 'unread',
+        ]);
 
 
         return response()->json([
@@ -293,7 +278,7 @@ public function signUpCustomer(Request $request)
     $validator = Validator::make($request->all(), [
         'name'         => 'nullable|string|max:255',
         //'email'        => 'nullable|email|unique:users,email',
-        'phone_number' => 'required|string|max:20',
+        'phone_number' => 'required|string|max:20|unique:users,phone_number,NULL,id,is_deleted,0',
         'location'     => 'nullable|string|max:255',
         'lat'         => 'nullable',
         'long'        => 'nullable',
@@ -304,70 +289,23 @@ public function signUpCustomer(Request $request)
     // Format phone number to E.164
     $to = '91' . ltrim($request->phone_number, '0');
 
-    // Development/test numbers
-    $devNumbers = [
-        '+919782488408',
-      //  '+917976114618',
-        '+917020916535',
-        '+919001136061',
-        '+919509993036',
-     // Add your other test numbers here
-    ];
-
-    // Check if phone number already exists
-    $user = User::where('phone_number', $request->phone_number)->where('is_deleted',0)->first();
-    
-    // $verificationCode = "123456";
-    // // dd($to,$verificationCode);
-    // $code = $this->sendSms($to, $verificationCode);
-    // dd("ASdas",$code);
+    // Generate OTP
     $otp = rand(100000, 999999);
     $response = $this->sendOtp($to,$otp);
-    $verificationCode = $otp;
-    if (true) { // Force static OTP for all users (SMS Disabled)
-        
-        if ($user) {
-            $user->update([
-                'verification_code'           => $otp,
-                'verification_code_sent_time' => now(),
-            ]);
-        } else {
-            $user = User::create([
-                'name'                          => $request->name ?? 'User',
-                'email'                         => $request->email ?? '',
-                'phone_number'                  => $request->phone_number,
-                'location'                      => $request->location,
-                'lat'                           => $request->lat,
-                'long'                          => $request->long,
-                'user_role_id'                  => 3, // Assuming 3 is houseowner role
-                'verification_code'             => $verificationCode, //verificationCode,
-                'verification_code_sent_time'   => now(),
-                'country_code'                  => $request->country_code,
-            ]);
-        }
-    } else {
-        // Real number → generate random OTP
-        // $verificationCode = rand(100000, 999999);
-        if ($user) {
-            $user->update([
-                'verification_code'           => $verificationCode,
-                'verification_code_sent_time' => now(),
-            ]);
-        } else {
-            $user = User::create([
-                'name'                          => $request->name,
-                'email'                         => $request->email,
-                'phone_number'                  => $request->phone_number,
-                'location'                      => $request->location,
-                'lat'                           => $request->lat,
-                'long'                          => $request->long,
-                'user_role_id'                  => 3,
-                'verification_code'             => $verificationCode, //verificationCode,
-                'verification_code_sent_time'   => now(),
-                'country_code'                  => $request->country_code,
-            ]);
-        }
-    }
+    
+    // Create new user (validation ensures phone is unique)
+    $user = User::create([
+        'name'                          => $request->name ?? 'User',
+        'email'                         => $request->email ?? '',
+        'phone_number'                  => $request->phone_number,
+        'location'                      => $request->location,
+        'lat'                           => $request->lat,
+        'long'                          => $request->long,
+        'user_role_id'                  => 3, // Assuming 3 is houseowner role
+        'verification_code'             => $otp,
+        'verification_code_sent_time'   => now(),
+        'country_code'                  => $request->country_code,
+    ]);
 
     
 
@@ -1148,9 +1086,7 @@ public function updateProfile(Request $request)
                         $user->addresses()->create($safe);
                     }
                 }
-                if ($isEdit != 1) {
-                    $user->update(['step' => $user->user_role_id == 2 ? 4 : 3]);
-                }
+                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile addresses save failed: ' . $th->getMessage());
                 // non-fatal - don't fail the whole request
@@ -1170,7 +1106,7 @@ public function updateProfile(Request $request)
                 }
                 if ($user->householdInformation) $user->householdInformation()->update($householdData);
                 else $user->householdInformation()->create($householdData);
-                if ($isEdit != 1) $user->update(['step' => 4]);
+                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile household info save failed: ' . $th->getMessage());
                 // non-fatal
@@ -1190,7 +1126,7 @@ public function updateProfile(Request $request)
                         'pet_count' => (int) $count,
                     ]);
                 }
-                if ($isEdit != 1) $user->update(['step' => 4]);
+                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile pet_details save failed: ' . $th->getMessage());
                 // non-fatal
@@ -1213,6 +1149,32 @@ public function updateProfile(Request $request)
         }
 
         $user->load(['addresses', 'petDetails', 'householdInformation','userWorkInfo']);
+        
+        // Calculate and set final step based on data provided (only if not in edit mode)
+        if ($isEdit != 1) {
+            $finalStep = 2; // Default: basic info
+            
+            // Check what data was provided and set appropriate step
+            if ($request->has('addresses') && !empty($request->addresses)) {
+                $finalStep = $user->user_role_id == 2 ? 4 : 3;
+            }
+            
+            if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements', 'languages_spoken'])) {
+                $finalStep = 4;
+            }
+            
+            if ($request->has('pet_details') && !empty($request->pet_details)) {
+                $finalStep = 4;
+            }
+            
+            // Work experience is the highest step (only for staff role 2)
+            if ($user->user_role_id == 2 && ($request->has('primary_role') || $request->has('skills') || $request->has('total_experience'))) {
+                $finalStep = 6;
+            }
+            
+            $user->update(['step' => $finalStep]);
+        }
+        
         return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
 
     } catch (\Exception $e) {
@@ -1312,9 +1274,7 @@ private function saveWorkAndExperience($user, $request, $isEdit)
     ];
     LastWorkExperience::updateOrCreate(['id' => $expValidated['id'] ?? null, 'user_id' => $user->id], $expData);
 
-    if ($isEdit != 1) {
-        $user->update(['step' => 6]);
-    }
+    // Step will be set by parent function (updateProfile)
 }
 
 
@@ -1705,8 +1665,29 @@ public function updateProfileCustomer(Request $request)
 
         LastWorkExperience::updateOrCreate(['id' => $expValidated['id'] ?? null, 'user_id' => $user->id], $expData);
 
+        // Calculate and set final step based on data provided (only if not in edit mode)
         if ($isEdit != 1) {
-            $user->update(['step' => 6]);
+            $finalStep = 2; // Default: basic info
+            
+            // Check what data was provided and set appropriate step
+            if ($request->has('addresses') && !empty($request->addresses)) {
+                $finalStep = 3;
+            }
+            
+            if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements'])) {
+                $finalStep = 4;
+            }
+            
+            if ($request->has('pet_details') && !empty($request->pet_details)) {
+                $finalStep = 4;
+            }
+            
+            // Work experience is the highest step
+            if ($request->has('primary_role') || $request->has('skills') || $request->has('total_experience')) {
+                $finalStep = 6;
+            }
+            
+            $user->update(['step' => $finalStep]);
         }
 
         return response()->json([

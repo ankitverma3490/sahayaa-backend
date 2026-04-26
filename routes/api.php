@@ -477,6 +477,12 @@ Route::group(['prefix' => '/customer'], function() {
     Route::get('/promo-codes/{id}', [ServiceController::class, 'promoCodesList']);
     Route::get('/promo-code/highlighted', [ServiceController::class, 'promoCodesListHighlighted']);
     
+    // Referral routes for customers
+    Route::get('/referral/code', [UserController::class, 'getReferralCode']);
+    Route::post('/referral/apply', [UserController::class, 'applyReferralCode']);
+    Route::post('/referral/credit-apply', [UserController::class, 'applyReferCredit']);
+    Route::get('/referral/history', [UserController::class, 'getReferralHistory']);
+    
     Route::prefix('/cart')->group(function () {
         Route::post('/add', [CartController::class, 'addToCart']);
         Route::get('/', [CartController::class, 'getCart']);

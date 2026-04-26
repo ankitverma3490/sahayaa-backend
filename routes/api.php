@@ -753,9 +753,9 @@ Route::group(['middleware' => 'auth:api'], function() {
     // Employer routes
     Route::get('/advances', [AdvanceController::class, 'index']);                        // list advances
     Route::post('/advances', [AdvanceController::class, 'store']);                       // give advance
+    Route::get('/advances/pending-deduction/{staff_id}', [AdvanceController::class, 'getPendingDeduction']); // MUST be before {id} wildcard
     Route::get('/advances/{id}', [AdvanceController::class, 'show']);                   // single advance detail
     Route::post('/advances/{id}/deduct', [AdvanceController::class, 'deduct']);         // manual deduction
-    Route::get('/advances/pending-deduction/{staff_id}', [AdvanceController::class, 'getPendingDeduction']); // salary system
 
     // Staff routes
     Route::get('/my-advances', [AdvanceController::class, 'staffAdvances']);            // staff sees their advances

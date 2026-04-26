@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AdminSalaryController;
 use App\Http\Controllers\Api\TerminationController;
+use App\Http\Controllers\Api\AdvanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -747,6 +748,17 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
     Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
     Route::post('/advance-withdraw', [SalaryController::class, 'advanceWithdraw']);
+
+    // ── Advance & Deduction Management ──────────────────────────────
+    // Employer routes
+    Route::get('/advances', [AdvanceController::class, 'index']);                        // list advances
+    Route::post('/advances', [AdvanceController::class, 'store']);                       // give advance
+    Route::get('/advances/{id}', [AdvanceController::class, 'show']);                   // single advance detail
+    Route::post('/advances/{id}/deduct', [AdvanceController::class, 'deduct']);         // manual deduction
+    Route::get('/advances/pending-deduction/{staff_id}', [AdvanceController::class, 'getPendingDeduction']); // salary system
+
+    // Staff routes
+    Route::get('/my-advances', [AdvanceController::class, 'staffAdvances']);            // staff sees their advances
 
 });
 

@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\Salary;
 use App\Models\User;
 use App\Models\Notification;
+use App\Models\StaffAdvance;
+use App\Models\AdvanceTransaction;
+use Illuminate\Support\Facades\DB;
 
 
 class AdminSalaryController extends Controller
@@ -133,18 +136,51 @@ class AdminSalaryController extends Controller
             }
         }
         
-        // ✅ Update Advance Withdraw Amount (IMPORTANT)
-        if ($request->advance_payment && $request->advance_payment > 0) {
+        // ✅ Auto-deduct from StaffAdvance table (installment / full logic)
+        // Process oldest active advance first (FIFO)
+        $employerId = auth()->id();
+        $remainingToDeduct = (float)($request->advance_payment ?? 0);
 
+        if ($remainingToDeduct > 0) {
+            $activeAdvances = StaffAdvance::where('staff_id', $request->staff_id)
+                ->where('employer_id', $employerId)
+                ->where('status', 'active')
+                ->orderBy('created_at', 'asc') // oldest first
+                ->get();
+
+            foreach ($activeAdvances as $advance) {
+                if ($remainingToDeduct <= 0) break;
+
+                // How much to deduct from this advance
+                $deductFromThis = min($remainingToDeduct, (float)$advance->remaining_balance);
+                $balanceAfter   = $advance->remaining_balance - $deductFromThis;
+
+                // Record transaction
+                AdvanceTransaction::create([
+                    'advance_id'      => $advance->id,
+                    'staff_id'        => $advance->staff_id,
+                    'employer_id'     => $employerId,
+                    'deducted_amount' => $deductFromThis,
+                    'balance_after'   => $balanceAfter,
+                    'salary_id'       => $salary->id,
+                    'note'            => 'Salary deduction (' . ucfirst($advance->deduction_type) . ')',
+                ]);
+
+                // Update advance balance
+                $advance->remaining_balance = $balanceAfter;
+                if ($balanceAfter <= 0) {
+                    $advance->status = 'closed';
+                }
+                $advance->save();
+
+                $remainingToDeduct -= $deductFromThis;
+            }
+
+            // Also update legacy advance_withdraw_amount on users table
             $user = User::find($request->staff_id);
-            
             if ($user) {
-                // Deduct advance
-                $user->advance_withdraw_amount =
-                    max(0, $user->advance_withdraw_amount - $request->advance_payment);
-
-                $user->advance_withdraw_added_by = auth()->user()->id;
-
+                $user->advance_withdraw_amount = max(0, $user->advance_withdraw_amount - ($request->advance_payment ?? 0));
+                $user->advance_withdraw_added_by = $employerId;
                 $user->save();
             }
         }

@@ -5349,7 +5349,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
             $jobApplications = DB::table('job_applications')
             ->where('user_id', $user->id)
-            ->where('application_status', "accepted")
+            ->whereIn('application_status', ['accepted', 'approved', 'active', 'hired'])
             ->get();
 
    

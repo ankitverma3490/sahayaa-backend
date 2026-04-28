@@ -571,10 +571,31 @@ public function getProfile(Request $request)
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $user = User::find($request->user_id ?? Auth::guard('api')->user()->id);
+        \Log::info('Aadhaar Verify Request Input:', [
+            'user_id' => $request->user_id,
+            'auth_user_id' => Auth::guard('api')->check() ? Auth::guard('api')->user()->id : 'not_authed',
+            'has_otp' => $request->has('otp')
+        ]);
+
+        $targetUserId = $request->user_id ?? (Auth::guard('api')->check() ? Auth::guard('api')->id() : null);
+
+        if (!$targetUserId) {
+            return response()->json(['error' => 'Authentication required or user_id missing.'], 401);
+        }
+
+        $user = User::find($targetUserId);
         
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
         if (!$user->aadhar_reference_id) {
-            return response()->json(['error' => 'No OTP request found. Please request OTP first.'], 422);
+            return response()->json([
+                'error' => 'No OTP request found for this user.',
+                'debug_user_id' => $user->id,
+                'debug_name' => $user->name,
+                'message' => 'Please request a new OTP first.'
+            ], 422);
         }
 
         try {

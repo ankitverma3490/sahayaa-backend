@@ -121,29 +121,31 @@ class SalaryController extends Controller
             ], 404);
         }
 
-        // Try to get salary from accepted job application first
-        $acceptedApplication = JobApplication::where('user_id', $user_id)
-            ->where('application_status', 'accepted')
-            ->first();
-
-        // If no accepted job application, get salary from UserWorkInfo (staff update form)
-        if (!$acceptedApplication) {
-            $userWorkInfo = UserWorkInfo::where('user_id', $user_id)->first();
-            if (!$userWorkInfo || !$userWorkInfo->salary) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'User does not have any accepted job applications and no salary information is available'
-                ], 400);
-            }
-
-            // Use salary from UserWorkInfo
+        // Prioritize salary from UserWorkInfo (set by house owner)
+        $userWorkInfo = UserWorkInfo::where('user_id', $user_id)->first();
+        
+        if ($userWorkInfo && $userWorkInfo->salary) {
+            // Use salary from UserWorkInfo as primary source of truth
             $baseSalary = (float) $userWorkInfo->salary;
             $jobCompensation = $baseSalary;
+            $salarySource = 'staff_record';
         } else {
-            // Use salary from accepted job application
-            $job = $acceptedApplication->job;
-            $jobCompensation = $job->compensation ?? 0.00;
-            $baseSalary = (float) $jobCompensation;
+            // Fallback to accepted job application
+            $acceptedApplication = JobApplication::where('user_id', $user_id)
+                ->where('application_status', 'accepted')
+                ->first();
+
+            if ($acceptedApplication) {
+                $job = $acceptedApplication->job;
+                $jobCompensation = $job->compensation ?? 0.00;
+                $baseSalary = (float) $jobCompensation;
+                $salarySource = 'job_application';
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Salary information not found. Please set salary in staff profile.'
+                ], 400);
+            }
         }
 
         // Get last month payment
@@ -169,7 +171,7 @@ class SalaryController extends Controller
                     'monthly_salary' => $baseSalary,
                     'period' => date('F Y'),
                     'pay_frequency' => $payFrequency,
-                    'source' => $acceptedApplication ? 'job_application' : 'staff_record'
+                    'source' => $salarySource ?? 'unknown'
                 ],
                 'adjustments' => [
                     'performance_bonus' => 0.00,
@@ -231,12 +233,15 @@ class SalaryController extends Controller
             ], 404);
         }
         $validator = Validator::make($request->all(), [
-            'base_salary' => 'required|numeric|min:0',
-            'performance_bonus' => 'required|numeric|min:0',
-            'overtime_pay' => 'required|numeric|min:0',
-            // 'tax_deduction' => 'required|numeric',
-            'advance_payment' => 'required|numeric',
-            'payment_method' => 'required|in:Cash,UPI,Bank Transfer'
+            'base_salary' => 'nullable|numeric|min:0',
+            'basic_salary' => 'nullable|numeric|min:0',
+            'performance_bonus' => 'nullable|numeric|min:0',
+            'performative_allowance' => 'nullable|numeric|min:0',
+            'overtime_pay' => 'nullable|numeric|min:0',
+            'over_time_allowance' => 'nullable|numeric|min:0',
+            'advance_payment' => 'nullable|numeric',
+            'payment_method' => 'nullable|in:Cash,UPI,Bank Transfer',
+            'payment_mode' => 'nullable|string'
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -245,12 +250,14 @@ class SalaryController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-        $baseSalary = $request->base_salary;
-        $performanceBonus = $request->performance_bonus;
-        $overtimePay = $request->overtime_pay;
-        $taxDeduction = $request->tax_deduction;
-        $advancePayment = $request->advance_payment;
-        $netSalary = $baseSalary + $performanceBonus + $overtimePay + $taxDeduction + $advancePayment;
+        $baseSalary = $request->base_salary ?? $request->basic_salary ?? 0;
+        $performanceBonus = $request->performance_bonus ?? $request->performative_allowance ?? 0;
+        $overtimePay = $request->overtime_pay ?? $request->over_time_allowance ?? 0;
+        $taxDeduction = $request->tax_deduction ?? $request->tax ?? 0;
+        $advancePayment = $request->advance_payment ?? 0;
+        $paymentMode = $request->payment_method ?? $request->payment_mode ?? 'Cash';
+        
+        $netSalary = $baseSalary + $performanceBonus + $overtimePay - $taxDeduction - $advancePayment;
         $paymentId = 'PAY_' . strtoupper(uniqid());
         $orderId = 'SAL_' . strtoupper(uniqid());
         $transactionId = 'TXN_' . strtoupper(uniqid());
@@ -260,8 +267,8 @@ class SalaryController extends Controller
             'amount' => $netSalary,
             'payment_id' => $paymentId,
             'order_id' => $orderId,
-            'status' => 'pending',
-            'payment_mode' => $request->payment_method,
+            'status' => $request->status ?? 'paid',
+            'payment_mode' => $paymentMode,
             'base_salary' => $baseSalary,
             'performance_bonus' => $performanceBonus,
             'overtime_pay' => $overtimePay,
@@ -278,9 +285,9 @@ class SalaryController extends Controller
             'order_number' => $orderId,
             'reference_id' => $paymentId,
             'amount' => $netSalary,
-            'currency' => 'USD',
-            'payment_mode' => $request->payment_method,
-            'payment_status' => 'pending',
+            'currency' => 'INR',
+            'payment_mode' => $paymentMode,
+            'payment_status' => $request->status ?? 'paid',
             'created_by' => Auth::guard('api')->user()->id,
             'payment_response' => json_encode([
                 'base_salary' => $baseSalary,
@@ -293,6 +300,65 @@ class SalaryController extends Controller
             ]),
             'for_entry' => 'salary_payment'
         ]);
+
+        // ✅ Also Create record in 'salaries' table for unified history/admin visibility
+        \App\Models\Salary::create([
+            'staff_id' => $user_id,
+            'houseowner_id' => Auth::guard('api')->user()->id,
+            'basic_salary' => $baseSalary,
+            'performative_allowance' => $performanceBonus,
+            'over_time_allowance' => $overtimePay,
+            'tax' => $taxDeduction,
+            'advance_payment' => $advancePayment,
+            'net_salary' => $netSalary,
+            'payment_mode' => $paymentMode,
+            'status' => $request->status ?? 'paid',
+            'payment_date' => now()->toDateString(),
+        ]);
+
+        // ✅ Auto-deduct from StaffAdvance table (FIFO)
+        $employerId = Auth::guard('api')->user()->id;
+        $remainingToDeduct = (float)$advancePayment;
+
+        if ($remainingToDeduct > 0) {
+            $activeAdvances = \App\Models\StaffAdvance::where('staff_id', $user_id)
+                ->where('employer_id', $employerId)
+                ->where('status', 'active')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            foreach ($activeAdvances as $advance) {
+                if ($remainingToDeduct <= 0) break;
+
+                $deductFromThis = min($remainingToDeduct, (float)$advance->remaining_balance);
+                $balanceAfter   = $advance->remaining_balance - $deductFromThis;
+
+                \App\Models\AdvanceTransaction::create([
+                    'advance_id'      => $advance->id,
+                    'staff_id'        => $advance->staff_id,
+                    'employer_id'     => $employerId,
+                    'deducted_amount' => $deductFromThis,
+                    'balance_after'   => $balanceAfter,
+                    'payment_id'      => $payment->id, // link to payment record
+                    'note'            => 'Salary deduction (' . ucfirst($advance->deduction_type) . ')',
+                ]);
+
+                $advance->remaining_balance = $balanceAfter;
+                if ($balanceAfter <= 0) {
+                    $advance->status = 'closed';
+                }
+                $advance->save();
+
+                $remainingToDeduct -= $deductFromThis;
+            }
+
+            // Update user aggregate field
+            if ($user) {
+                $user->advance_withdraw_amount = max(0, $user->advance_withdraw_amount - $advancePayment);
+                $user->advance_withdraw_added_by = $employerId;
+                $user->save();
+            }
+        }
         $salaryData = [
             'staff_member' => [
                 'id' => $user->id,
@@ -318,8 +384,15 @@ class SalaryController extends Controller
                 'payment_id' => $paymentId,
                 'order_id' => $orderId,
                 'transaction_id' => $transactionId,
-                'status' => 'pending'
-            ]
+                'status' => $request->status ?? 'paid'
+            ],
+            // Backward compatibility for Salary.js
+            'basic_salary' => (float) $baseSalary,
+            'performative_allowance' => (float) $performanceBonus,
+            'over_time_allowance' => (float) $overtimePay,
+            'tax' => (float) $taxDeduction,
+            'advance_payment' => (float) $advancePayment,
+            'net_salary' => (float) $netSalary,
         ];
 
         return response()->json([
@@ -397,9 +470,14 @@ public function getEarningsSummary(Request $request)
             $totalAdvancePayment = $currentMonthPayments->sum('advance_payment');
             $totalNetSalary = $currentMonthPayments->sum('net_salary');
 
-            // If no payments for current month, use job compensation as base
+            // If no payments for current month, use prioritized base salary
             if ($currentMonthPayments->isEmpty()) {
-                $totalBaseSalary = $job['compensation'] ?? 0;
+                $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
+                if ($userWorkInfo && $userWorkInfo->salary) {
+                    $totalBaseSalary = (float) $userWorkInfo->salary;
+                } else {
+                    $totalBaseSalary = $job['compensation'] ?? 0;
+                }
                 $totalNetSalary = $totalBaseSalary;
             }
 
@@ -999,15 +1077,20 @@ private function getWorkingDays($startDate, $endDate)
 
             $totalEarnings = $currentMonthPayments->sum('net_salary');
             
-            // If no payments found, get base salary from accepted job
+            // If no payments found, get base salary from prioritized sources
             if ($currentMonthPayments->isEmpty()) {
-                $acceptedJob = JobApplication::where('user_id', $user->id)
-                    ->where('application_status', 'accepted')
-                    ->with('job')
-                    ->first();
-                
-                if ($acceptedJob && $acceptedJob->job) {
-                    $totalEarnings = $acceptedJob->job->compensation ?? 0;
+                $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
+                if ($userWorkInfo && $userWorkInfo->salary) {
+                    $totalEarnings = (float) $userWorkInfo->salary;
+                } else {
+                    $acceptedJob = JobApplication::where('user_id', $user->id)
+                        ->where('application_status', 'accepted')
+                        ->with('job')
+                        ->first();
+                    
+                    if ($acceptedJob && $acceptedJob->job) {
+                        $totalEarnings = $acceptedJob->job->compensation ?? 0;
+                    }
                 }
             }
 

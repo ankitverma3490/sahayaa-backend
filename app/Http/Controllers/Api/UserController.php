@@ -2762,73 +2762,105 @@ public function saveAadharAndSendOtp(Request $request)
     public function verifyAadharOtp(Request $request)
     {
         try {
-            $user = Auth::guard('api')->user();
-            
-            // Validate the request
+            $authUser = Auth::guard('api')->user();
+
             $request->validate([
                 'otp' => 'required|digits:6'
             ]);
-            
-            // Check if Aadhar number exists
+
+            // If user_id sent (House Owner verifying staff), use that user's record
+            // Otherwise verify the logged-in user's own Aadhaar
+            if ($request->has('user_id') && $request->user_id) {
+                $user = User::find($request->user_id);
+                if (!$user) {
+                    return response()->json(['status' => false, 'message' => 'Staff user not found.'], 404);
+                }
+            } else {
+                $user = $authUser;
+            }
+
             if (!$user->aadhar_number) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Aadhar number not found. Please save Aadhar number first.'
                 ], 400);
             }
-            
-            // Check if OTP matches
-            if ($user->aadhar__verify_otp !== $request->otp) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid OTP'
-                ], 400);
-            }
-            
-            // Check if OTP is expired
-            if (Carbon::now()->gt($user->aadhar_number_otp_expire_at)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'OTP has expired'
-                ], 400);
-            }
-            
-            // Check if already verified
+
             if ($user->aadhar__verify) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Aadhar number is already verified'
                 ], 400);
             }
-            
-            // Verify Aadhar
+
+            // Use real API if reference_id exists
+            if ($user->aadhar_reference_id) {
+                $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
+                $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
+
+                if (!$verifyResult['success']) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $verifyResult['message'] ?? 'Invalid OTP. Please check and try again.',
+                        'error'   => $verifyResult['error'] ?? 'OTP verification failed'
+                    ], 400);
+                }
+
+                // Auto-fill details from Aadhaar if user record is incomplete
+                if (!empty($verifyResult['aadhaar_data'])) {
+                    $details = $verifyResult['aadhaar_data'];
+                    if (empty($user->name) || $user->name == 'Staff Member') $user->name = $details['name'] ?? $user->name;
+                    if (empty($user->gender) && !empty($details['gender'])) $user->gender = strtolower($details['gender']);
+                    if (empty($user->dob) && !empty($details['dob'])) $user->dob = $details['dob'];
+                }
+            } else {
+                // Fallback: local stored OTP (testing/legacy)
+                if (!$user->aadhar__verify_otp || $user->aadhar__verify_otp !== $request->otp) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invalid OTP. Please try again.'
+                    ], 400);
+                }
+                if ($user->aadhar_number_otp_expire_at && Carbon::now()->gt($user->aadhar_number_otp_expire_at)) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'OTP has expired. Please resend OTP.'
+                    ], 400);
+                }
+            }
+
+            // Mark verified
             $user->aadhar__verify = true;
             $user->aadhar__verify_at = Carbon::now();
-            $user->aadhar__verify_otp = null; // Clear OTP after verification
-            $user->aadhar_number_otp_expire_at = null; // Clear expiry time
+            $user->aadhar__verify_otp = null;
+            $user->aadhar_reference_id = null;
+            $user->aadhar_number_otp_expire_at = null;
             $user->save();
-            
+
+            $maskedAadhar = 'XXXX-XXXX-' . substr($user->aadhar_number, -4);
+
             return response()->json([
-                'status' => true,
+                'status'  => true,
                 'message' => 'Aadhar number verified successfully',
-                'data' => [
-                    'aadhar_number' => maskAadharNumber($user->aadhar_number),
-                    'verified_at' => $user->aadhar__verify_at->format('Y-m-d H:i:s')
+                'data'    => [
+                    'aadhar_number' => $maskedAadhar,
+                    'verified_at'   => $user->aadhar__verify_at->format('Y-m-d H:i:s'),
+                    'user'          => $user->fresh()
                 ]
             ], 200);
-            
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors'  => $e->errors()
             ], 422);
-            
         } catch (\Exception $e) {
+            \Log::error('Aadhaar Verify Error: ' . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Failed to verify Aadhar OTP',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }

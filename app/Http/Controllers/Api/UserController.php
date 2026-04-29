@@ -625,7 +625,23 @@ public function getProfile(Request $request)
             }
             
             if (empty($user->dob) && !empty($aadhaarData['dob'])) {
-                $user->dob = $aadhaarData['dob'];
+                // Convert date format from DD-MM-YYYY to YYYY-MM-DD for MySQL
+                try {
+                    $dob = $aadhaarData['dob'];
+                    // Check if date is in DD-MM-YYYY format
+                    if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $dob)) {
+                        $dateObj = \DateTime::createFromFormat('d-m-Y', $dob);
+                        if ($dateObj) {
+                            $user->dob = $dateObj->format('Y-m-d');
+                        }
+                    } else {
+                        // If already in correct format or other format, use as is
+                        $user->dob = $dob;
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Date conversion failed: ' . $e->getMessage());
+                    // Skip dob update if conversion fails
+                }
             }
             
             if (empty($user->gender) && !empty($aadhaarData['gender'])) {

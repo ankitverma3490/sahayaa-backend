@@ -631,12 +631,17 @@ public function getProfile(Request $request)
                     // Check if date is in DD-MM-YYYY format
                     if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $dob)) {
                         $dateObj = \DateTime::createFromFormat('d-m-Y', $dob);
-                        if ($dateObj) {
+                        if ($dateObj && $dateObj->format('d-m-Y') === $dob) {
+                            // Valid date conversion
                             $user->dob = $dateObj->format('Y-m-d');
+                        } else {
+                            \Log::warning('Invalid date format in Aadhaar data: ' . $dob);
                         }
-                    } else {
-                        // If already in correct format or other format, use as is
+                    } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob)) {
+                        // Already in YYYY-MM-DD format
                         $user->dob = $dob;
+                    } else {
+                        \Log::warning('Unrecognized date format in Aadhaar data: ' . $dob);
                     }
                 } catch (\Exception $e) {
                     \Log::warning('Date conversion failed: ' . $e->getMessage());

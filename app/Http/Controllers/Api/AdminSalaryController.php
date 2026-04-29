@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Notification;
 use App\Models\StaffAdvance;
 use App\Models\AdvanceTransaction;
+use App\Models\UserWorkInfo;
 use Illuminate\Support\Facades\DB;
 
 
@@ -121,6 +122,12 @@ class AdminSalaryController extends Controller
             'status' => $request->status,
             'payment_date' => now()->toDateString(),
         ]);
+
+        // ✅ CRITICAL FIX: Update UserWorkInfo with new base salary to ensure consistency
+        UserWorkInfo::updateOrCreate(
+            ['user_id' => $request->staff_id],
+            ['salary' => $request->basic_salary]
+        );
         
         // Send notification to staff if salary is marked as paid
         if ($request->status === 'paid') {

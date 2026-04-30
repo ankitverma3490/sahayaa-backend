@@ -198,9 +198,13 @@ class SalaryController extends Controller
         ];
 
         // Calculate net salary including adjustments
+        // ✅ CRITICAL FIX: Tax and advance should be SUBTRACTED, not added!
         $adjustments = $salaryData['salary_details']['adjustments'];
-        $netSalary = $baseSalary + $adjustments['performance_bonus'] + $adjustments['overtime_pay'] + 
-                    $adjustments['tax_deduction'] + $adjustments['advance_payment'];
+        $netSalary = $baseSalary 
+                    + $adjustments['performance_bonus'] 
+                    + $adjustments['overtime_pay'] 
+                    - $adjustments['tax_deduction']      // Subtract tax
+                    - $adjustments['advance_payment'];    // Subtract advance
         
         $salaryData['salary_details']['net_salary'] = $netSalary;
 

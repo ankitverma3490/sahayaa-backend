@@ -301,22 +301,28 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
             $skipped[] = $user->name . ' (not working day)'; continue;
         }
 
-        // Use updateOrCreate so repeated hits on this route can never create
-        // duplicate attendance rows for the same (staff_id, date).
-        $att = \App\Models\Attendance::updateOrCreate(
-            ['staff_id' => $user->id, 'date' => $today],
-            [
-                'check_in_time' => '07:00:00',
-                'status'        => 'present',
-                'description'   => 'Auto-marked by system',
-                'processed_by'  => 1,
-            ]
-        );
-        if ($att->wasRecentlyCreated) {
-            $marked[] = $user->name;
-        } else {
-            $skipped[] = $user->name . ' (already marked)';
+        // ✅ CRITICAL FIX: Only create attendance if it doesn't exist
+        // If manually marked (late, absent, etc.), don't overwrite it
+        $existingAtt = \App\Models\Attendance::where('staff_id', $user->id)
+            ->where('date', $today)
+            ->first();
+
+        if ($existingAtt) {
+            // Attendance already marked - respect manual changes
+            $skipped[] = $user->name . ' (already marked as ' . $existingAtt->status . ')';
+            continue;
         }
+
+        // Create new attendance record only if none exists
+        $att = \App\Models\Attendance::create([
+            'staff_id'      => $user->id,
+            'date'          => $today,
+            'check_in_time' => '07:00:00',
+            'status'        => 'present',
+            'description'   => 'Auto-marked by system',
+            'processed_by'  => 1,
+        ]);
+        $marked[] = $user->name;
     }
 
     return response()->json([

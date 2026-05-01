@@ -1240,7 +1240,8 @@ private function getWorkingDays($startDate, $endDate)
                 'user_id' => 'required|exists:users,id',
                 'amount' => 'required|numeric|min:0',
                 'should_deduct' => 'nullable|boolean',
-                'deduction_method' => 'nullable|string|in:monthly,one_time,installments'
+                'deduction_method' => 'nullable|string|in:monthly,one_time,installments',
+                'payment_mode' => 'nullable|string|in:cash,upi,bank_transfer'
             ]);
 
             // ✅ Find user
@@ -1256,6 +1257,7 @@ private function getWorkingDays($startDate, $endDate)
             // ✅ Check if advance should be deducted from salary
             $shouldDeduct = $request->input('should_deduct', true); // Default to true for backward compatibility
             $deductionMethod = $request->input('deduction_method', null);
+            $paymentMode = $request->input('payment_mode', 'cash');
 
             // ✅ Only update advance_withdraw_amount if deduction is enabled
             if ($shouldDeduct) {
@@ -1268,6 +1270,7 @@ private function getWorkingDays($startDate, $endDate)
                     'user_id' => $user->id,
                     'amount' => $request->amount,
                     'deduction_method' => $deductionMethod,
+                    'payment_mode' => $paymentMode,
                     'added_by' => auth()->user()->id
                 ]);
             } else {
@@ -1275,6 +1278,7 @@ private function getWorkingDays($startDate, $endDate)
                 \Log::info("Advance payment WITHOUT deduction", [
                     'user_id' => $user->id,
                     'amount' => $request->amount,
+                    'payment_mode' => $paymentMode,
                     'added_by' => auth()->user()->id
                 ]);
             }
@@ -1287,13 +1291,14 @@ private function getWorkingDays($startDate, $endDate)
             return response()->json([
                 'success' => true,
                 'message' => $shouldDeduct 
-                    ? "Advance payment processed. Amount will be deducted from salary ($deductionMethod)."
-                    : 'Advance payment processed without salary deduction.',
+                    ? "Advance payment processed via " . strtoupper($paymentMode) . ". Amount will be deducted from salary ($deductionMethod)."
+                    : "Advance payment processed via " . strtoupper($paymentMode) . " without salary deduction.",
                 'data' => [
                     'user_id' => $user->id,
                     'advance_withdraw_amount' => $user->advance_withdraw_amount,
                     'should_deduct' => $shouldDeduct,
-                    'deduction_method' => $deductionMethod
+                    'deduction_method' => $deductionMethod,
+                    'payment_mode' => $paymentMode
                 ]
             ]);
 

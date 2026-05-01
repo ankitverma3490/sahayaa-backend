@@ -1238,7 +1238,9 @@ private function getWorkingDays($startDate, $endDate)
             // ✅ Validation
             $request->validate([
                 'user_id' => 'required|exists:users,id',
-                'amount' => 'required|numeric|min:0'
+                'amount' => 'required|numeric|min:0',
+                'should_deduct' => 'nullable|boolean',
+                'deduction_method' => 'nullable|string|in:monthly,one_time,installments'
             ]);
 
             // ✅ Find user
@@ -1251,8 +1253,31 @@ private function getWorkingDays($startDate, $endDate)
                 ], 404);
             }
 
-            // ✅ Update amount (add or overwrite — your choice)
-            $user->advance_withdraw_amount += $request->amount;
+            // ✅ Check if advance should be deducted from salary
+            $shouldDeduct = $request->input('should_deduct', true); // Default to true for backward compatibility
+            $deductionMethod = $request->input('deduction_method', null);
+
+            // ✅ Only update advance_withdraw_amount if deduction is enabled
+            if ($shouldDeduct) {
+                $user->advance_withdraw_amount += $request->amount;
+                
+                // Store deduction method for future reference (if needed)
+                // You can add a new column 'advance_deduction_method' to users table if you want to track this
+                // For now, we just use it for validation and logging
+                \Log::info("Advance payment with deduction", [
+                    'user_id' => $user->id,
+                    'amount' => $request->amount,
+                    'deduction_method' => $deductionMethod,
+                    'added_by' => auth()->user()->id
+                ]);
+            } else {
+                // Advance given without deduction - just log it
+                \Log::info("Advance payment WITHOUT deduction", [
+                    'user_id' => $user->id,
+                    'amount' => $request->amount,
+                    'added_by' => auth()->user()->id
+                ]);
+            }
 
             // mark added by user
             $user->advance_withdraw_added_by = auth()->user()->id;
@@ -1261,10 +1286,14 @@ private function getWorkingDays($startDate, $endDate)
 
             return response()->json([
                 'success' => true,
-                'message' => 'Advance withdraw updated successfully',
+                'message' => $shouldDeduct 
+                    ? "Advance payment processed. Amount will be deducted from salary ($deductionMethod)."
+                    : 'Advance payment processed without salary deduction.',
                 'data' => [
                     'user_id' => $user->id,
-                    'advance_withdraw_amount' => $user->advance_withdraw_amount
+                    'advance_withdraw_amount' => $user->advance_withdraw_amount,
+                    'should_deduct' => $shouldDeduct,
+                    'deduction_method' => $deductionMethod
                 ]
             ]);
 

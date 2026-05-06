@@ -46,7 +46,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:users,email',
-            'phone_number' => 'required|string|max:20',
+            'phone_number' => 'required|string|max:20|unique:users,phone_number,NULL,id,is_deleted,0',
             'business_name' => 'string|max:255|nullable',
         ]);
 
@@ -57,41 +57,26 @@ class UserController extends Controller
         // Format phone number to E.164
         $to = '+91' . ltrim($request->phone_number, '0');
 
-        // Check if phone number already exists
-        $user = User::where('phone_number', $request->phone_number)->where('is_deleted', 0)->first();
-
-        // Static OTP for all numbers (for now)
-        // $verificationCode = '123456';
+        // Generate OTP
         $otp = rand(100000, 999999);
         $response = $this->sendOtp(str_replace('+', '', $to),$otp);
-        // dd($response);
-        if ($user) {
-            // Update existing user's name if provided
-            $updateData = [
-                'verification_code' => $otp,
-                'verification_code_sent_time' => now(),
-            ];
-            if ($request->filled('name')) {
-                $updateData['name'] = $request->name;
-            }
-            $user->update($updateData);
-        } else {
-            $user = User::create([
-                'name' => $request->name ?? 'User',
-                'email' => $request->email,
-                'phone_number' => $request->phone_number,
-                'verification_code' => $otp,
-                'verification_code_sent_time' => now(),
-                'user_role_id' => $request->role_id,
-            ]);
+        
+        // Create new user (validation ensures phone is unique)
+        $user = User::create([
+            'name' => $request->name ?? 'User',
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'verification_code' => $otp,
+            'verification_code_sent_time' => now(),
+            'user_role_id' => $request->role_id,
+        ]);
 
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => 'User Registered',
-                'message' => 'Wel come to the our team.',
-                'status' => 'unread',
-            ]);
-        }
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'User Registered',
+            'message' => 'Wel come to the our team.',
+            'status' => 'unread',
+        ]);
 
 
         return response()->json([
@@ -293,7 +278,7 @@ public function signUpCustomer(Request $request)
     $validator = Validator::make($request->all(), [
         'name'         => 'nullable|string|max:255',
         //'email'        => 'nullable|email|unique:users,email',
-        'phone_number' => 'required|string|max:20',
+        'phone_number' => 'required|string|max:20|unique:users,phone_number,NULL,id,is_deleted,0',
         'location'     => 'nullable|string|max:255',
         'lat'         => 'nullable',
         'long'        => 'nullable',
@@ -304,70 +289,23 @@ public function signUpCustomer(Request $request)
     // Format phone number to E.164
     $to = '91' . ltrim($request->phone_number, '0');
 
-    // Development/test numbers
-    $devNumbers = [
-        '+919782488408',
-      //  '+917976114618',
-        '+917020916535',
-        '+919001136061',
-        '+919509993036',
-     // Add your other test numbers here
-    ];
-
-    // Check if phone number already exists
-    $user = User::where('phone_number', $request->phone_number)->where('is_deleted',0)->first();
-    
-    // $verificationCode = "123456";
-    // // dd($to,$verificationCode);
-    // $code = $this->sendSms($to, $verificationCode);
-    // dd("ASdas",$code);
+    // Generate OTP
     $otp = rand(100000, 999999);
     $response = $this->sendOtp($to,$otp);
-    $verificationCode = $otp;
-    if (true) { // Force static OTP for all users (SMS Disabled)
-        
-        if ($user) {
-            $user->update([
-                'verification_code'           => $otp,
-                'verification_code_sent_time' => now(),
-            ]);
-        } else {
-            $user = User::create([
-                'name'                          => $request->name ?? 'User',
-                'email'                         => $request->email ?? '',
-                'phone_number'                  => $request->phone_number,
-                'location'                      => $request->location,
-                'lat'                           => $request->lat,
-                'long'                          => $request->long,
-                'user_role_id'                  => 3, // Assuming 3 is houseowner role
-                'verification_code'             => $verificationCode, //verificationCode,
-                'verification_code_sent_time'   => now(),
-                'country_code'                  => $request->country_code,
-            ]);
-        }
-    } else {
-        // Real number → generate random OTP
-        // $verificationCode = rand(100000, 999999);
-        if ($user) {
-            $user->update([
-                'verification_code'           => $verificationCode,
-                'verification_code_sent_time' => now(),
-            ]);
-        } else {
-            $user = User::create([
-                'name'                          => $request->name,
-                'email'                         => $request->email,
-                'phone_number'                  => $request->phone_number,
-                'location'                      => $request->location,
-                'lat'                           => $request->lat,
-                'long'                          => $request->long,
-                'user_role_id'                  => 3,
-                'verification_code'             => $verificationCode, //verificationCode,
-                'verification_code_sent_time'   => now(),
-                'country_code'                  => $request->country_code,
-            ]);
-        }
-    }
+    
+    // Create new user (validation ensures phone is unique)
+    $user = User::create([
+        'name'                          => $request->name ?? 'User',
+        'email'                         => $request->email ?? '',
+        'phone_number'                  => $request->phone_number,
+        'location'                      => $request->location,
+        'lat'                           => $request->lat,
+        'long'                          => $request->long,
+        'user_role_id'                  => 3, // Assuming 3 is houseowner role
+        'verification_code'             => $otp,
+        'verification_code_sent_time'   => now(),
+        'country_code'                  => $request->country_code,
+    ]);
 
     
 
@@ -633,10 +571,31 @@ public function getProfile(Request $request)
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $user = User::find($request->user_id ?? Auth::guard('api')->user()->id);
+        \Log::info('Aadhaar Verify Request Input:', [
+            'user_id' => $request->user_id,
+            'auth_user_id' => Auth::guard('api')->check() ? Auth::guard('api')->user()->id : 'not_authed',
+            'has_otp' => $request->has('otp')
+        ]);
+
+        $targetUserId = $request->user_id ?? (Auth::guard('api')->check() ? Auth::guard('api')->id() : null);
+
+        if (!$targetUserId) {
+            return response()->json(['error' => 'Authentication required or user_id missing.'], 401);
+        }
+
+        $user = User::find($targetUserId);
         
+        if (!$user) {
+            return response()->json(['error' => 'User not found.'], 404);
+        }
+
         if (!$user->aadhar_reference_id) {
-            return response()->json(['error' => 'No OTP request found. Please request OTP first.'], 422);
+            return response()->json([
+                'error' => 'No OTP request found for this user.',
+                'debug_user_id' => $user->id,
+                'debug_name' => $user->name,
+                'message' => 'Please request a new OTP first.'
+            ], 422);
         }
 
         try {
@@ -666,7 +625,28 @@ public function getProfile(Request $request)
             }
             
             if (empty($user->dob) && !empty($aadhaarData['dob'])) {
-                $user->dob = $aadhaarData['dob'];
+                // Convert date format from DD-MM-YYYY to YYYY-MM-DD for MySQL
+                try {
+                    $dob = $aadhaarData['dob'];
+                    // Check if date is in DD-MM-YYYY format
+                    if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $dob)) {
+                        $dateObj = \DateTime::createFromFormat('d-m-Y', $dob);
+                        if ($dateObj && $dateObj->format('d-m-Y') === $dob) {
+                            // Valid date conversion
+                            $user->dob = $dateObj->format('Y-m-d');
+                        } else {
+                            \Log::warning('Invalid date format in Aadhaar data: ' . $dob);
+                        }
+                    } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dob)) {
+                        // Already in YYYY-MM-DD format
+                        $user->dob = $dob;
+                    } else {
+                        \Log::warning('Unrecognized date format in Aadhaar data: ' . $dob);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Date conversion failed: ' . $e->getMessage());
+                    // Skip dob update if conversion fails
+                }
             }
             
             if (empty($user->gender) && !empty($aadhaarData['gender'])) {
@@ -1148,9 +1128,7 @@ public function updateProfile(Request $request)
                         $user->addresses()->create($safe);
                     }
                 }
-                if ($isEdit != 1) {
-                    $user->update(['step' => $user->user_role_id == 2 ? 4 : 3]);
-                }
+                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile addresses save failed: ' . $th->getMessage());
                 // non-fatal - don't fail the whole request
@@ -1170,7 +1148,7 @@ public function updateProfile(Request $request)
                 }
                 if ($user->householdInformation) $user->householdInformation()->update($householdData);
                 else $user->householdInformation()->create($householdData);
-                if ($isEdit != 1) $user->update(['step' => 4]);
+                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile household info save failed: ' . $th->getMessage());
                 // non-fatal
@@ -1190,7 +1168,7 @@ public function updateProfile(Request $request)
                         'pet_count' => (int) $count,
                     ]);
                 }
-                if ($isEdit != 1) $user->update(['step' => 4]);
+                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile pet_details save failed: ' . $th->getMessage());
                 // non-fatal
@@ -1213,6 +1191,32 @@ public function updateProfile(Request $request)
         }
 
         $user->load(['addresses', 'petDetails', 'householdInformation','userWorkInfo']);
+        
+        // Calculate and set final step based on data provided (only if not in edit mode)
+        if ($isEdit != 1) {
+            $finalStep = 2; // Default: basic info
+            
+            // Check what data was provided and set appropriate step
+            if ($request->has('addresses') && !empty($request->addresses)) {
+                $finalStep = $user->user_role_id == 2 ? 4 : 3;
+            }
+            
+            if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements', 'languages_spoken'])) {
+                $finalStep = 4;
+            }
+            
+            if ($request->has('pet_details') && !empty($request->pet_details)) {
+                $finalStep = 4;
+            }
+            
+            // Work experience is the highest step (only for staff role 2)
+            if ($user->user_role_id == 2 && ($request->has('primary_role') || $request->has('skills') || $request->has('total_experience'))) {
+                $finalStep = 6;
+            }
+            
+            $user->update(['step' => $finalStep]);
+        }
+        
         return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
 
     } catch (\Exception $e) {
@@ -1312,9 +1316,7 @@ private function saveWorkAndExperience($user, $request, $isEdit)
     ];
     LastWorkExperience::updateOrCreate(['id' => $expValidated['id'] ?? null, 'user_id' => $user->id], $expData);
 
-    if ($isEdit != 1) {
-        $user->update(['step' => 6]);
-    }
+    // Step will be set by parent function (updateProfile)
 }
 
 
@@ -1705,8 +1707,29 @@ public function updateProfileCustomer(Request $request)
 
         LastWorkExperience::updateOrCreate(['id' => $expValidated['id'] ?? null, 'user_id' => $user->id], $expData);
 
+        // Calculate and set final step based on data provided (only if not in edit mode)
         if ($isEdit != 1) {
-            $user->update(['step' => 6]);
+            $finalStep = 2; // Default: basic info
+            
+            // Check what data was provided and set appropriate step
+            if ($request->has('addresses') && !empty($request->addresses)) {
+                $finalStep = 3;
+            }
+            
+            if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements'])) {
+                $finalStep = 4;
+            }
+            
+            if ($request->has('pet_details') && !empty($request->pet_details)) {
+                $finalStep = 4;
+            }
+            
+            // Work experience is the highest step
+            if ($request->has('primary_role') || $request->has('skills') || $request->has('total_experience')) {
+                $finalStep = 6;
+            }
+            
+            $user->update(['step' => $finalStep]);
         }
 
         return response()->json([
@@ -2760,73 +2783,105 @@ public function saveAadharAndSendOtp(Request $request)
     public function verifyAadharOtp(Request $request)
     {
         try {
-            $user = Auth::guard('api')->user();
-            
-            // Validate the request
+            $authUser = Auth::guard('api')->user();
+
             $request->validate([
                 'otp' => 'required|digits:6'
             ]);
-            
-            // Check if Aadhar number exists
+
+            // If user_id sent (House Owner verifying staff), use that user's record
+            // Otherwise verify the logged-in user's own Aadhaar
+            if ($request->has('user_id') && $request->user_id) {
+                $user = User::find($request->user_id);
+                if (!$user) {
+                    return response()->json(['status' => false, 'message' => 'Staff user not found.'], 404);
+                }
+            } else {
+                $user = $authUser;
+            }
+
             if (!$user->aadhar_number) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Aadhar number not found. Please save Aadhar number first.'
                 ], 400);
             }
-            
-            // Check if OTP matches
-            if ($user->aadhar__verify_otp !== $request->otp) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid OTP'
-                ], 400);
-            }
-            
-            // Check if OTP is expired
-            if (Carbon::now()->gt($user->aadhar_number_otp_expire_at)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'OTP has expired'
-                ], 400);
-            }
-            
-            // Check if already verified
+
             if ($user->aadhar__verify) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Aadhar number is already verified'
                 ], 400);
             }
-            
-            // Verify Aadhar
+
+            // Use real API if reference_id exists
+            if ($user->aadhar_reference_id) {
+                $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
+                $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
+
+                if (!$verifyResult['success']) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $verifyResult['message'] ?? 'Invalid OTP. Please check and try again.',
+                        'error'   => $verifyResult['error'] ?? 'OTP verification failed'
+                    ], 400);
+                }
+
+                // Auto-fill details from Aadhaar if user record is incomplete
+                if (!empty($verifyResult['aadhaar_data'])) {
+                    $details = $verifyResult['aadhaar_data'];
+                    if (empty($user->name) || $user->name == 'Staff Member') $user->name = $details['name'] ?? $user->name;
+                    if (empty($user->gender) && !empty($details['gender'])) $user->gender = strtolower($details['gender']);
+                    if (empty($user->dob) && !empty($details['dob'])) $user->dob = $details['dob'];
+                }
+            } else {
+                // Fallback: local stored OTP (testing/legacy)
+                if (!$user->aadhar__verify_otp || $user->aadhar__verify_otp !== $request->otp) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Invalid OTP. Please try again.'
+                    ], 400);
+                }
+                if ($user->aadhar_number_otp_expire_at && Carbon::now()->gt($user->aadhar_number_otp_expire_at)) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'OTP has expired. Please resend OTP.'
+                    ], 400);
+                }
+            }
+
+            // Mark verified
             $user->aadhar__verify = true;
             $user->aadhar__verify_at = Carbon::now();
-            $user->aadhar__verify_otp = null; // Clear OTP after verification
-            $user->aadhar_number_otp_expire_at = null; // Clear expiry time
+            $user->aadhar__verify_otp = null;
+            $user->aadhar_reference_id = null;
+            $user->aadhar_number_otp_expire_at = null;
             $user->save();
-            
+
+            $maskedAadhar = 'XXXX-XXXX-' . substr($user->aadhar_number, -4);
+
             return response()->json([
-                'status' => true,
+                'status'  => true,
                 'message' => 'Aadhar number verified successfully',
-                'data' => [
-                    'aadhar_number' => maskAadharNumber($user->aadhar_number),
-                    'verified_at' => $user->aadhar__verify_at->format('Y-m-d H:i:s')
+                'data'    => [
+                    'aadhar_number' => $maskedAadhar,
+                    'verified_at'   => $user->aadhar__verify_at->format('Y-m-d H:i:s'),
+                    'user'          => $user->fresh()
                 ]
             ], 200);
-            
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors'  => $e->errors()
             ], 422);
-            
         } catch (\Exception $e) {
+            \Log::error('Aadhaar Verify Error: ' . $e->getMessage());
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Failed to verify Aadhar OTP',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
@@ -5369,7 +5424,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
             $jobApplications = DB::table('job_applications')
             ->where('user_id', $user->id)
-            ->where('application_status', "accepted")
+            ->whereIn('application_status', ['accepted', 'approved', 'active', 'hired'])
             ->get();
 
    
@@ -5465,15 +5520,6 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            // Check if user has completed profile (has proper name)
-            if (empty($user->name) || $user->name === 'User' || trim($user->name) === '') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Please complete your profile before applying referral code',
-                    'error_code' => 'PROFILE_INCOMPLETE'
-                ], 400);
-            }
-
             // Check if already referred
             if (!empty($user->referred_by)) {
                 return response()->json([
@@ -5537,19 +5583,27 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            $referrals = ReferralReward::with('referred:id,name,phone_number,image,created_at')
+            $referrals = ReferralReward::with('referred:id,name,first_name,last_name,phone_number,image,created_at')
                 ->where('referrer_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($reward) {
+                    $referred = $reward->referred;
+                    $fullName = null;
+                    if ($referred) {
+                        $fullName = trim(($referred->first_name ?? '') . ' ' . ($referred->last_name ?? ''));
+                        if (empty($fullName) || $fullName === 'User') {
+                            $fullName = $referred->name ?? 'User';
+                        }
+                    }
                     return [
                         'id' => $reward->id,
-                        'referred_user' => $reward->referred ? [
-                            'id' => $reward->referred->id,
-                            'name' => $reward->referred->name,
-                            'phone_number' => $reward->referred->phone_number,
-                            'image' => $reward->referred->image,
-                            'joined_at' => $reward->referred->created_at,
+                        'referred_user' => $referred ? [
+                            'id' => $referred->id,
+                            'name' => $fullName,
+                            'phone_number' => $referred->phone_number,
+                            'image' => $referred->image,
+                            'joined_at' => $referred->created_at,
                         ] : null,
                         'reward_amount' => $reward->reward_amount,
                         'reward_type' => $reward->reward_type,

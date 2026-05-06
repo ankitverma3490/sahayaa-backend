@@ -132,7 +132,7 @@ class AnalyticsController extends Controller
         
         // Profile Completion Status
         $profileCompleted = User::where('user_role_id', 3)
-            ->where('steps', 'completed')
+            ->where('step', 'completed')
             ->count();
         
         $profileInReview = $totalProviders - $profileCompleted;

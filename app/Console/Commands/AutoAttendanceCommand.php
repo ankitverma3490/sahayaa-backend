@@ -72,28 +72,31 @@ class AutoAttendanceCommand extends Command
                     continue;
                 }
 
-                // Use updateOrCreate on (staff_id, date) so parallel / repeated
-                // invocations never produce duplicate rows for the same day.
-                // (Until a DB unique index is in place, this is the safeguard.)
-                $attendance = Attendance::updateOrCreate(
-                    [
-                        'staff_id' => $user->id,
-                        'date'     => $today,
-                    ],
-                    [
-                        'check_in_time' => '07:00:00',
-                        'status'        => 'present',
-                        'description'   => 'Auto-marked by system at 7 AM',
-                        'processed_by'  => 1,
-                    ]
-                );
+                // ✅ CRITICAL FIX: Only create attendance if it doesn't exist
+                // If manually marked (late, absent, etc.), don't overwrite it
+                $existingAttendance = Attendance::where('staff_id', $user->id)
+                    ->where('date', $today)
+                    ->first();
 
-                if ($attendance->wasRecentlyCreated) {
-                    $markedCount++;
-                    $this->info("Auto-marked attendance for user {$user->id} - {$user->name}");
-                } else {
-                    $this->info("Attendance already existed for user {$user->id} on {$today}");
+                if ($existingAttendance) {
+                    // Attendance already marked (manually or by previous cron run)
+                    // Don't overwrite it - respect manual changes
+                    $this->info("Attendance already exists for user {$user->id} on {$today} (status: {$existingAttendance->status}), skipping auto-mark.");
+                    continue;
                 }
+
+                // Create new attendance record only if none exists
+                $attendance = Attendance::create([
+                    'staff_id'      => $user->id,
+                    'date'          => $today,
+                    'check_in_time' => '07:00:00',
+                    'status'        => 'present',
+                    'description'   => 'Auto-marked by system at 7 AM',
+                    'processed_by'  => 1,
+                ]);
+
+                $markedCount++;
+                $this->info("Auto-marked attendance for user {$user->id} - {$user->name}");
 
             } catch (\Exception $e) {
                 $errors[] = "Failed to mark attendance for user {$user->id}: " . $e->getMessage();

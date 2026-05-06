@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AdminSalaryController;
 use App\Http\Controllers\Api\TerminationController;
+use App\Http\Controllers\Api\AdvanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -300,22 +301,28 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
             $skipped[] = $user->name . ' (not working day)'; continue;
         }
 
-        // Use updateOrCreate so repeated hits on this route can never create
-        // duplicate attendance rows for the same (staff_id, date).
-        $att = \App\Models\Attendance::updateOrCreate(
-            ['staff_id' => $user->id, 'date' => $today],
-            [
-                'check_in_time' => '07:00:00',
-                'status'        => 'present',
-                'description'   => 'Auto-marked by system',
-                'processed_by'  => 1,
-            ]
-        );
-        if ($att->wasRecentlyCreated) {
-            $marked[] = $user->name;
-        } else {
-            $skipped[] = $user->name . ' (already marked)';
+        // ✅ CRITICAL FIX: Only create attendance if it doesn't exist
+        // If manually marked (late, absent, etc.), don't overwrite it
+        $existingAtt = \App\Models\Attendance::where('staff_id', $user->id)
+            ->where('date', $today)
+            ->first();
+
+        if ($existingAtt) {
+            // Attendance already marked - respect manual changes
+            $skipped[] = $user->name . ' (already marked as ' . $existingAtt->status . ')';
+            continue;
         }
+
+        // Create new attendance record only if none exists
+        $att = \App\Models\Attendance::create([
+            'staff_id'      => $user->id,
+            'date'          => $today,
+            'check_in_time' => '07:00:00',
+            'status'        => 'present',
+            'description'   => 'Auto-marked by system',
+            'processed_by'  => 1,
+        ]);
+        $marked[] = $user->name;
     }
 
     return response()->json([
@@ -475,6 +482,12 @@ Route::group(['prefix' => '/customer'], function() {
     Route::get('/wishlist', [ServiceController::class, 'wishlistList']);
     Route::get('/promo-codes/{id}', [ServiceController::class, 'promoCodesList']);
     Route::get('/promo-code/highlighted', [ServiceController::class, 'promoCodesListHighlighted']);
+    
+    // Referral routes for customers
+    Route::get('/referral/code', [UserController::class, 'getReferralCode']);
+    Route::post('/referral/apply', [UserController::class, 'applyReferralCode']);
+    Route::post('/referral/credit-apply', [UserController::class, 'applyReferCredit']);
+    Route::get('/referral/history', [UserController::class, 'getReferralHistory']);
     
     Route::prefix('/cart')->group(function () {
         Route::post('/add', [CartController::class, 'addToCart']);
@@ -755,6 +768,17 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::get('/earnings/summary', [SalaryController::class, 'getEarningsSummary']);
     Route::get('/earnings/summary/{job_id}', [SalaryController::class, 'getEarningsSummary']);
     Route::post('/advance-withdraw', [SalaryController::class, 'advanceWithdraw']);
+
+    // ── Advance & Deduction Management ──────────────────────────────
+    // Employer routes
+    Route::get('/advances', [AdvanceController::class, 'index']);                        // list advances
+    Route::post('/advances', [AdvanceController::class, 'store']);                       // give advance
+    Route::get('/advances/pending-deduction/{staff_id}', [AdvanceController::class, 'getPendingDeduction']); // MUST be before {id} wildcard
+    Route::get('/advances/{id}', [AdvanceController::class, 'show']);                   // single advance detail
+    Route::post('/advances/{id}/deduct', [AdvanceController::class, 'deduct']);         // manual deduction
+
+    // Staff routes
+    Route::get('/my-advances', [AdvanceController::class, 'staffAdvances']);            // staff sees their advances
 
 });
 

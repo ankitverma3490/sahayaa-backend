@@ -201,12 +201,6 @@ class SalaryController extends Controller
             ]
         ];
 
-<<<<<<< HEAD
-        // Calculate net salary including adjustments (Subtract deductions)
-        $adjustments = $salaryData['salary_details']['adjustments'];
-        $netSalary = $baseSalary + $adjustments['performance_bonus'] + $adjustments['overtime_pay'] - 
-                    abs($adjustments['tax_deduction']) - abs($adjustments['advance_payment']);
-=======
         // Calculate net salary including adjustments
         // ✅ CRITICAL FIX: Tax and advance should be SUBTRACTED, not added!
         $adjustments = $salaryData['salary_details']['adjustments'];
@@ -215,7 +209,6 @@ class SalaryController extends Controller
                     + $adjustments['overtime_pay'] 
                     - $adjustments['tax_deduction']      // Subtract tax
                     - $adjustments['advance_payment'];    // Subtract advance
->>>>>>> 2da1593822880d39d9e64ce602f9ae03d3f7bbb1
         
         $salaryData['salary_details']['net_salary'] = $netSalary;
 
@@ -265,12 +258,12 @@ class SalaryController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
-<<<<<<< HEAD
-        $baseSalary = $request->base_salary;
-        $performanceBonus = $request->performance_bonus;
-        $overtimePay = $request->overtime_pay;
-        $taxDeduction = abs($request->tax_deduction ?? 0);
+        $baseSalary = $request->base_salary ?? $request->basic_salary ?? 0;
+        $performanceBonus = $request->performance_bonus ?? $request->performative_allowance ?? 0;
+        $overtimePay = $request->overtime_pay ?? $request->over_time_allowance ?? 0;
+        $taxDeduction = abs($request->tax_deduction ?? $request->tax ?? 0);
         $advancePayment = abs($request->advance_payment ?? 0);
+        $paymentMode = $request->payment_method ?? $request->payment_mode ?? 'Cash';
 
         // Correct formula: Base + Bonus + Overtime - Tax - Advance
         $netSalary = $baseSalary + $performanceBonus + $overtimePay - $taxDeduction - $advancePayment;
@@ -287,8 +280,8 @@ class SalaryController extends Controller
                 'amount' => $netSalary,
                 'payment_id' => $paymentId,
                 'order_id' => $orderId,
-                'status' => 'pending',
-                'payment_mode' => $request->payment_method,
+                'status' => $request->status ?? 'paid',
+                'payment_mode' => $paymentMode,
                 'base_salary' => $baseSalary,
                 'performance_bonus' => $performanceBonus,
                 'overtime_pay' => $overtimePay,
@@ -340,35 +333,6 @@ class SalaryController extends Controller
             DB::rollBack();
             throw $e;
         }
-=======
-        $baseSalary = $request->base_salary ?? $request->basic_salary ?? 0;
-        $performanceBonus = $request->performance_bonus ?? $request->performative_allowance ?? 0;
-        $overtimePay = $request->overtime_pay ?? $request->over_time_allowance ?? 0;
-        $taxDeduction = $request->tax_deduction ?? $request->tax ?? 0;
-        $advancePayment = $request->advance_payment ?? 0;
-        $paymentMode = $request->payment_method ?? $request->payment_mode ?? 'Cash';
-        
-        $netSalary = $baseSalary + $performanceBonus + $overtimePay - $taxDeduction - $advancePayment;
-        $paymentId = 'PAY_' . strtoupper(uniqid());
-        $orderId = 'SAL_' . strtoupper(uniqid());
-        $transactionId = 'TXN_' . strtoupper(uniqid());
-        $payment = Payment::create([
-            'user_id' => Auth::guard('api')->user()->id,
-            'staff_id' => $user_id,
-            'amount' => $netSalary,
-            'payment_id' => $paymentId,
-            'order_id' => $orderId,
-            'status' => $request->status ?? 'paid',
-            'payment_mode' => $paymentMode,
-            'base_salary' => $baseSalary,
-            'performance_bonus' => $performanceBonus,
-            'overtime_pay' => $overtimePay,
-            'tax_deduction' => $taxDeduction,
-            'advance_payment' => $advancePayment,
-            'net_salary' => $netSalary,
-            'salary_period' => date('F-Y')
-        ]);
->>>>>>> 2da1593822880d39d9e64ce602f9ae03d3f7bbb1
         $transaction = Transaction::create([
             'user_id' => $user_id,
             'transaction_id' => $transactionId,

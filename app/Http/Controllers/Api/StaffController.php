@@ -307,24 +307,18 @@ class StaffController extends Controller
             }
 
             if (!empty($filters['location'])) {
-<<<<<<< HEAD
                 $query->where(function($q) use ($filters) {
                     $q->where('location', 'like', '%' . $filters['location'] . '%')
                       ->orWhereHas('addresses', function($sq) use ($filters) {
                           $sq->where('city', 'like', '%' . $filters['location'] . '%')
                             ->orWhere('state', 'like', '%' . $filters['location'] . '%');
                       });
-=======
-                $query->whereHas('addresses', function ($q) use ($filters) {
-                    $q->where('city', 'like', '%' . $filters['location'] . '%')
-                      ->orWhere('state', 'like', '%' . $filters['location'] . '%');
                 });
             }
 
             if (!empty($filters['role'])) {
                 $query->whereHas('userWorkInfo', function ($q) use ($filters) {
                     $q->where('primary_role', 'like', '%' . $filters['role'] . '%');
->>>>>>> 2da1593822880d39d9e64ce602f9ae03d3f7bbb1
                 });
             }
 

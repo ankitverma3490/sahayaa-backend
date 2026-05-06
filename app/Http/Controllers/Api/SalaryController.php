@@ -175,7 +175,11 @@ class SalaryController extends Controller
                     'performance_bonus' => 0.00,
                     'overtime_pay' => 0.00,
                     'tax_deduction' => 0.00,
-                    'advance_payment' => 0.00
+                    'advance_payment' => (float) \DB::table('staff_advances')
+                        ->where('staff_id', $user_id)
+                        ->where('employer_id', Auth::guard('api')->id())
+                        ->where('status', 'active')
+                        ->sum('remaining_balance')
                 ],
                 'last_month_salary' => $lastMonthPayment ? [
                     'payment_id' => $lastMonthPayment->payment_id,
@@ -195,10 +199,10 @@ class SalaryController extends Controller
             ]
         ];
 
-        // Calculate net salary including adjustments
+        // Calculate net salary including adjustments (Subtract deductions)
         $adjustments = $salaryData['salary_details']['adjustments'];
-        $netSalary = $baseSalary + $adjustments['performance_bonus'] + $adjustments['overtime_pay'] + 
-                    $adjustments['tax_deduction'] + $adjustments['advance_payment'];
+        $netSalary = $baseSalary + $adjustments['performance_bonus'] + $adjustments['overtime_pay'] - 
+                    abs($adjustments['tax_deduction']) - abs($adjustments['advance_payment']);
         
         $salaryData['salary_details']['net_salary'] = $netSalary;
 
@@ -248,28 +252,77 @@ class SalaryController extends Controller
         $baseSalary = $request->base_salary;
         $performanceBonus = $request->performance_bonus;
         $overtimePay = $request->overtime_pay;
-        $taxDeduction = $request->tax_deduction;
-        $advancePayment = $request->advance_payment;
-        $netSalary = $baseSalary + $performanceBonus + $overtimePay + $taxDeduction + $advancePayment;
+        $taxDeduction = abs($request->tax_deduction ?? 0);
+        $advancePayment = abs($request->advance_payment ?? 0);
+
+        // Correct formula: Base + Bonus + Overtime - Tax - Advance
+        $netSalary = $baseSalary + $performanceBonus + $overtimePay - $taxDeduction - $advancePayment;
+
         $paymentId = 'PAY_' . strtoupper(uniqid());
         $orderId = 'SAL_' . strtoupper(uniqid());
         $transactionId = 'TXN_' . strtoupper(uniqid());
-        $payment = Payment::create([
-            'user_id' => Auth::guard('api')->user()->id,
-            'staff_id' => $user_id,
-            'amount' => $netSalary,
-            'payment_id' => $paymentId,
-            'order_id' => $orderId,
-            'status' => 'pending',
-            'payment_mode' => $request->payment_method,
-            'base_salary' => $baseSalary,
-            'performance_bonus' => $performanceBonus,
-            'overtime_pay' => $overtimePay,
-            'tax_deduction' => $taxDeduction,
-            'advance_payment' => $advancePayment,
-            'net_salary' => $netSalary,
-            'salary_period' => date('F-Y')
-        ]);
+
+        DB::beginTransaction();
+        try {
+            $payment = Payment::create([
+                'user_id' => Auth::guard('api')->user()->id,
+                'staff_id' => $user_id,
+                'amount' => $netSalary,
+                'payment_id' => $paymentId,
+                'order_id' => $orderId,
+                'status' => 'pending',
+                'payment_mode' => $request->payment_method,
+                'base_salary' => $baseSalary,
+                'performance_bonus' => $performanceBonus,
+                'overtime_pay' => $overtimePay,
+                'tax_deduction' => $taxDeduction,
+                'advance_payment' => $advancePayment,
+                'net_salary' => $netSalary,
+                'salary_period' => date('F-Y')
+            ]);
+
+            // Handle Advance Deduction Logic
+            if ($advancePayment > 0) {
+                $remainingToDeduct = $advancePayment;
+                $activeAdvances = DB::table('staff_advances')
+                    ->where('staff_id', $user_id)
+                    ->where('employer_id', Auth::guard('api')->id())
+                    ->where('status', 'active')
+                    ->orderBy('given_date', 'asc')
+                    ->get();
+
+                foreach ($activeAdvances as $advance) {
+                    if ($remainingToDeduct <= 0) break;
+
+                    $deductFromThis = min($remainingToDeduct, $advance->remaining_balance);
+                    $newBalance = $advance->remaining_balance - $deductFromThis;
+
+                    DB::table('staff_advances')->where('id', $advance->id)->update([
+                        'remaining_balance' => $newBalance,
+                        'status' => $newBalance <= 0 ? 'closed' : 'active'
+                    ]);
+
+                    // Record transaction
+                    DB::table('advance_transactions')->insert([
+                        'advance_id' => $advance->id,
+                        'staff_id' => $user_id,
+                        'employer_id' => Auth::guard('api')->id(),
+                        'deducted_amount' => $deductFromThis,
+                        'balance_after' => $newBalance,
+                        'salary_id' => $payment->id,
+                        'note' => 'Auto-deducted from salary for ' . date('F Y'),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+
+                    $remainingToDeduct -= $deductFromThis;
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
         $transaction = Transaction::create([
             'user_id' => $user_id,
             'transaction_id' => $transactionId,
@@ -366,19 +419,42 @@ public function getEarningsSummary(Request $request)
             ->get();
 
         if ($applications->isEmpty()) {
-            return response()->json([
-                "status" => false,
-                "message" => "No approved jobs found",
-                "data" => []
-            ], 404);
+            // Check if user was directly added by someone
+            if ($user->addedByUser) {
+                // Create a "virtual" application object for consistent processing
+                $virtualApplication = new \stdClass();
+                $virtualApplication->id = 0;
+                $virtualApplication->updated_at = $user->created_at;
+                
+                // Create a virtual job object
+                $virtualJob = new \stdClass();
+                $virtualJob->id = null;
+                $virtualJob->title = $user->userWorkInfo->primary_role ?? "Staff Member";
+                $virtualJob->compensation = $user->userWorkInfo->salary ?? 0;
+                $virtualJob->city = $user->addedByUser->location ?? "";
+                $virtualJob->state = "";
+                $virtualJob->street_address = $user->addedByUser->location ?? "";
+                $virtualJob->commitment_type = "";
+                $virtualJob->compensation_type = "";
+                $virtualJob->creator = $user->addedByUser;
+                
+                $virtualApplication->job = $virtualJob;
+                $applications = collect([$virtualApplication]);
+            } else {
+                return response()->json([
+                    "status" => false,
+                    "message" => "No approved jobs found",
+                    "data" => []
+                ], 404);
+            }
         }
         
         $response = [];
         
         foreach ($applications as $application) {
-            $job = $application->job ? $application->job->toArray() : [];
-            $employer = $application->job && $application->job->creator 
-                ? $application->job->creator->toArray() 
+            $job = $application->job ? (array)$application->job : [];
+            $employer = $application->job && isset($application->job->creator) 
+                ? (array)$application->job->creator 
                 : [];
 
             // Get salary payments for this user and job

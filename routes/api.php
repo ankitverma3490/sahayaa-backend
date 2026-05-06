@@ -622,6 +622,14 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::get('/list', [UserController::class, 'getStaffList']);
         Route::get('/{id}', [UserController::class, 'getStaffDetails']);
         Route::post('/update/{id}', [UserController::class, 'updateStaff']);
+        
+        // Staff Availability & Hire Me
+        Route::post('/availability/update', [StaffController::class, 'updateAvailability']);
+        Route::get('/availability/status', [StaffController::class, 'getAvailabilityStatus']);
+        Route::post('/hire-me/opt-in', [StaffController::class, 'optInHireMe']);
+        Route::post('/hire-me/update', [StaffController::class, 'updateAvailability']);
+        Route::post('/hire-me/pause', [StaffController::class, 'pauseHireMe']);
+        Route::post('/hire-me/deactivate', [StaffController::class, 'deactivateHireMe']);
     });
 
     Route::get('/jobs/{id}', [JobController::class, 'show']);

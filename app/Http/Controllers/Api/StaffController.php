@@ -19,6 +19,7 @@ use App\Models\Job;
 use App\Models\Salary;
 use App\Models\SubscriptionUser;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\Schema;
 
 
 class StaffController extends Controller
@@ -306,13 +307,17 @@ class StaffController extends Controller
             }
 
             if (!empty($filters['location'])) {
-                $query->where('location', $filters['location']);
+                $query->where(function($q) use ($filters) {
+                    $q->where('location', 'like', '%' . $filters['location'] . '%')
+                      ->orWhereHas('addresses', function($sq) use ($filters) {
+                          $sq->where('city', 'like', '%' . $filters['location'] . '%')
+                            ->orWhere('state', 'like', '%' . $filters['location'] . '%');
+                      });
+                });
             }
 
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
-
                 $query->whereHas('userWorkInfo', function ($q) use ($filters) {
-
                     foreach ([
                         'gt' => '>',
                         '$gt' => '>',
@@ -322,7 +327,6 @@ class StaffController extends Controller
                         'lte' => '<=',
                         'eq' => '='
                     ] as $key => $operator) {
-
                         if (!empty($filters['salary'][$key])) {
                             $q->where('salary', $operator, $filters['salary'][$key]);
                         }
@@ -331,13 +335,6 @@ class StaffController extends Controller
             }
 
             $data = $query->get();
-
-            // If AI filters were too strict and nothing found, fall back to unfiltered list
-            if ($data->isEmpty()) {
-                $data = User::with(['userWorkInfo', 'addresses'])
-                    ->where('user_role_id', 2)
-                    ->get();
-            }
 
             // ✅ Increment only after success
             $subscription->increment('user_limit');
@@ -655,6 +652,129 @@ class StaffController extends Controller
             ]);
         }
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Staff Availability & Hire Me Methods
+    |--------------------------------------------------------------------------
+    */
+
+    public function updateAvailability(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+
+        $isAvailable = $request->input('is_available', false);
+        $isJobSeeking = $request->input('is_job_seeking', false);
+
+        // Update fields (using is_active as fallback if columns missing)
+        $updateData = [
+            'is_active' => $isAvailable ? 1 : 0,
+        ];
+
+        // Only update these if columns exist (we'll add them via migration)
+        if (Schema::hasColumn('users', 'is_available')) $updateData['is_available'] = $isAvailable;
+        if (Schema::hasColumn('users', 'is_job_seeking')) $updateData['is_job_seeking'] = $isJobSeeking;
+
+        $user->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Availability updated successfully',
+            'data' => [
+                'is_available' => $isAvailable,
+                'is_job_seeking' => $isJobSeeking,
+                'status' => $isAvailable ? 'active' : 'paused'
+            ]
+        ]);
+    }
+
+    public function getAvailabilityStatus()
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+
+        $isAvailable = Schema::hasColumn('users', 'is_available') ? (bool)$user->is_available : (bool)$user->is_active;
+        $isJobSeeking = Schema::hasColumn('users', 'is_job_seeking') ? (bool)$user->is_job_seeking : (bool)$user->is_active;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'is_available' => $isAvailable,
+                'is_job_seeking' => $isJobSeeking,
+                'status' => $isAvailable ? 'active' : 'paused'
+            ]
+        ]);
+    }
+
+    public function optInHireMe(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+
+        // Update profile with hire me details if provided
+        $updateData = [
+            'is_active' => 1,
+            'status' => 'active'
+        ];
+
+        if ($request->filled('city')) $updateData['current_city'] = $request->city;
+        if ($request->filled('experience')) $updateData['years_of_experience'] = $request->experience;
+
+        if (Schema::hasColumn('users', 'is_available')) $updateData['is_available'] = true;
+        if (Schema::hasColumn('users', 'is_job_seeking')) $updateData['is_job_seeking'] = true;
+
+        $user->update($updateData);
+
+        // Also update UserWorkInfo if role is provided
+        if ($request->filled('role')) {
+            UserWorkInfo::updateOrCreate(
+                ['user_id' => $user->id],
+                ['primary_role' => $request->role]
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'You are now listed for hire',
+            'data' => [
+                'status' => 'active',
+                'is_available' => true,
+                'is_job_seeking' => true
+            ]
+        ]);
+    }
+
+    public function pauseHireMe()
+    {
+        $user = Auth::user();
+        $user->update(['is_active' => 0, 'status' => 'paused']);
+        
+        if (Schema::hasColumn('users', 'is_available')) $user->update(['is_available' => false]);
+        if (Schema::hasColumn('users', 'is_job_seeking')) $user->update(['is_job_seeking' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile paused',
+            'data' => ['status' => 'paused']
+        ]);
+    }
+
+    public function deactivateHireMe()
+    {
+        $user = Auth::user();
+        $user->update(['is_active' => 0, 'status' => 'inactive']);
+
+        if (Schema::hasColumn('users', 'is_available')) $user->update(['is_available' => false]);
+        if (Schema::hasColumn('users', 'is_job_seeking')) $user->update(['is_job_seeking' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile deactivated',
+            'data' => ['status' => 'inactive']
+        ]);
+    }
+
 
 
 }

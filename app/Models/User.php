@@ -33,6 +33,8 @@ class User extends Authenticatable
         'password',
         'gender',
         'is_active',
+        'is_available',
+        'is_job_seeking',
         'added_by',
         'relation',
         'step',
@@ -102,7 +104,8 @@ class User extends Authenticatable
         'upi_id',
         'referral_code',
         'referred_by',
-        'referral_earnings'
+        'referral_earnings',
+        'referral_code_expires_at'
     ];
 
     /**
@@ -143,6 +146,7 @@ class User extends Authenticatable
         'languages_spoken' => 'array',
         'skills' => 'array',
         'auto_attendence' => 'boolean',
+        'referral_code_expires_at' => 'datetime',
     ];
 
     /*

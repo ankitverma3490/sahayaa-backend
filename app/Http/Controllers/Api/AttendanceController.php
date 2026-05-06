@@ -43,9 +43,9 @@ class AttendanceController extends Controller
             'staff_id' => 'required|exists:users,id',
             'date' => 'required|date',
             'status' => 'required|in:present,absent,late,holiday',
-            'check_in_time' => 'required_if:status,present,late|nullable',
-            'late_minutes' => 'required_if:status,late|nullable|integer|min:1',
-            'leave_id' => 'required_if:status,absent|nullable',
+            'check_in_time' => 'nullable',
+            'late_minutes' => 'nullable|integer|min:1',
+            'leave_id' => 'nullable',
             'description' => 'nullable|string'
         ]);
 
@@ -58,7 +58,7 @@ class AttendanceController extends Controller
         }
 
         DB::beginTransaction();
-
+        try {
             $attendanceData = [
                 'status' => $request->status,
                 'description' => $request->description,
@@ -69,7 +69,7 @@ class AttendanceController extends Controller
             ];
 
             if ($request->status == 'present' || $request->status == 'late') {
-                $attendanceData['check_in_time'] = $request->check_in_time;
+                $attendanceData['check_in_time'] = $request->check_in_time ?? '09:00:00';
             }
 
             if ($request->status == 'late') {
@@ -94,13 +94,13 @@ class AttendanceController extends Controller
                 'data' => $attendance
             ], 200);
 
-        // } catch (\Exception $e) {
-        //     DB::rollBack();
-        //     return response()->json([
-        //         'status' => false,
-        //         'message' => 'Failed to create attendance'
-        //     ], 500);
-        // }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create attendance: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function show($id): JsonResponse
@@ -126,9 +126,9 @@ class AttendanceController extends Controller
             'staff_id' => 'required|exists:users,id',
             'date' => 'required|date',
             'status' => 'required|in:present,absent,late,holiday',
-            'check_in_time' => 'required_if:status,present,late|nullable',
-            'late_minutes' => 'required_if:status,late|nullable|integer|min:1',
-            'leave_id' => 'required_if:status,absent|nullable',
+            'check_in_time' => 'nullable',
+            'late_minutes' => 'nullable|integer|min:1',
+            'leave_id' => 'nullable',
             'description' => 'nullable|string'
         ]);
 
@@ -173,7 +173,7 @@ class AttendanceController extends Controller
             ];
 
             if ($request->status == 'present') {
-                $attendanceData['check_in_time'] = $request->check_in_time;
+                $attendanceData['check_in_time'] = $request->check_in_time ?? '09:00:00';
             } else {
                 $attendanceData['check_in_time'] = null;
             }

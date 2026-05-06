@@ -32,6 +32,18 @@ public function index(Request $request): JsonResponse
                           ->where('user_id', $user->id)
                   ]);
               })
+              ->when($request->filled('role'), function ($query) use ($request) {
+                  $query->where(function($q) use ($request) {
+                      $q->where('title', 'LIKE', '%' . $request->role . '%')
+                        ->orWhere('description', 'LIKE', '%' . $request->role . '%');
+                  });
+              })
+              ->when($request->filled('city'), function ($query) use ($request) {
+                  $query->where('city', 'LIKE', '%' . $request->city . '%');
+              })
+              ->when($request->filled('state'), function ($query) use ($request) {
+                  $query->where('state', 'LIKE', '%' . $request->state . '%');
+              })
               ->orderBy('created_at', 'desc')
               ->get();
     

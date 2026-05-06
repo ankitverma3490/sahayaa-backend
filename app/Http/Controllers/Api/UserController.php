@@ -1233,7 +1233,7 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'skills' => 'nullable|array',
         'skills.*' => 'string|max:255',
         'languages_spoken' => 'nullable|array',
-        'total_experience' => 'nullable|string|max:255',
+        'total_experience' => 'nullable|numeric|min:0|max:10',
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file|max:10240',
@@ -3019,7 +3019,7 @@ public function addressUpdate(Request $request)
         'skills' => 'nullable|array',
         'skills.*' => 'string|max:255',
         'languages_spoken' => 'nullable|array',
-        'total_experience' => 'nullable|string|max:255',
+        'total_experience' => 'nullable|numeric|min:0|max:10',
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file', // 10MB max
@@ -5348,7 +5348,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
             $userDetails = User::with([
-                'addresses','lastExp','lastsalary','userWorkInfo','lastExp','leaveRequests'])->find($user->id);
+                'addresses','lastExp','lastsalary','userWorkInfo','lastExp','leaveRequests','addedByUser','addedByUser.householdInformation','addedByUser.addresses'
+            ])->find($user->id);
 
             $attendanceSummary = DB::table('attendance')
                 ->select('status', DB::raw('COUNT(*) as total'))
@@ -5404,8 +5405,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $user = Auth::guard('api')->user();
 
-            // Generate referral code if not exists
-            if (empty($user->referral_code)) {
+            // Generate/Refresh referral code if not exists, if expired, or if expiry date is missing (for old users)
+            if (empty($user->referral_code) || empty($user->referral_code_expires_at) || $user->referral_code_expires_at->isPast()) {
 
                 do {
                     $code = strtoupper(Str::random(8));
@@ -5414,6 +5415,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 );
 
                 $user->referral_code = $code;
+                $user->referral_code_expires_at = now()->addDays(30); // Valid for 30 days
                 $user->save();
             }
 
@@ -5424,6 +5426,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 'success' => true,
                 'data' => [
                     'referral_code' => $user->referral_code,
+                    'referral_code_expires_at' => $user->referral_code_expires_at ? $user->referral_code_expires_at->toDateTimeString() : null,
                     'referral_link' => config('app.url') . '/signup?ref=' . $user->referral_code,
                     'referral_count' => $referralCount,
                     'total_earnings' => $totalEarnings,
@@ -5482,11 +5485,11 @@ private function updateExistingStaff(User $existingUser, Request $request)
             // Get referrer - case insensitive search
             $referrer = User::whereRaw('UPPER(referral_code) = ?', [$referralCode])->first();
             
-            if (!$referrer) {
+            if (!$referrer || ($referrer->referral_code_expires_at && $referrer->referral_code_expires_at->isPast())) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid referral code'
-                ], 400);
+                    'message' => 'Invalid or expired referral code'
+                ], 404);
             }
 
             if ($referrer->id === $user->id) {

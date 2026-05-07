@@ -288,7 +288,7 @@ class SalaryController extends Controller
                 'tax_deduction' => $taxDeduction,
                 'advance_payment' => $advancePayment,
                 'net_salary' => $netSalary,
-                'salary_period' => date('F-Y')
+                'salary_period' => date('F Y')
             ]);
 
             // Handle Advance Deduction Logic
@@ -352,7 +352,7 @@ class SalaryController extends Controller
                 'tax_deduction' => $taxDeduction,
                 'advance_payment' => $advancePayment,
                 'net_salary' => $netSalary,
-                'period' => date('F-Y')
+                'period' => date('F Y')
             ]),
             'for_entry' => 'salary_payment'
         ]);
@@ -431,7 +431,7 @@ class SalaryController extends Controller
             'salary_details' => [
                 'base_salary' => [
                     'monthly_salary' => (float) $baseSalary,
-                    'period' => date('F-Y')
+                    'period' => date('F Y')
                 ],
                 'adjustments' => [
                     'performance_bonus' => (float) $performanceBonus,
@@ -544,7 +544,10 @@ public function getEarningsSummary(Request $request)
 
             // Get current month payments
             $currentMonthPayments = (clone $paymentsQuery)
-                ->where('salary_period', 'like', '%' . $monthName . '%')
+                ->where(function($q) use ($monthName) {
+                    $q->where('salary_period', 'like', '%' . $monthName . '%')
+                      ->orWhere('salary_period', 'like', '%' . str_replace(' ', '-', $monthName) . '%');
+                })
                 ->get();
 
             // Calculate totals for current month
@@ -573,9 +576,21 @@ public function getEarningsSummary(Request $request)
                 ->get()
                 ->map(function($payment) {
                     return [
+                        'id' => $payment->id,
                         'month' => $payment->salary_period,
+                        'date' => $payment->created_at->toDateTimeString(),
                         'paid_on' => $payment->updated_at->format('d/m/Y'),
-                        'amount' => $payment->net_salary
+                        'amount' => $payment->net_salary,
+                        'status' => $payment->status,
+                        'type' => 'salary',
+                        'payment_mode' => $payment->payment_mode,
+                        'base_salary' => $payment->base_salary,
+                        'performance_bonus' => $payment->performance_bonus,
+                        'overtime_pay' => $payment->overtime_pay,
+                        'tax_deduction' => $payment->tax_deduction,
+                        'advance_payment' => $payment->advance_payment,
+                        'payment_id' => $payment->payment_id,
+                        'order_id' => $payment->order_id
                     ];
                 });
             $startDate = date('Y-m-01', strtotime($month));

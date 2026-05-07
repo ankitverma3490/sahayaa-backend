@@ -75,6 +75,21 @@ class AiFilterService
             ],
         ]);
 
-        return json_decode($response->choices[0]->message->content, true);
+        $content = $response->choices[0]->message->content;
+        
+        // Sanitize: Remove markdown code blocks if present
+        if (str_contains($content, '```')) {
+            $content = preg_replace('/```(?:json)?\n?|```/', '', $content);
+        }
+        
+        $content = trim($content);
+        $decoded = json_decode($content, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            \Log::error('AI Filter JSON Decode Error: ' . json_last_error_msg(), ['content' => $content]);
+            return [];
+        }
+
+        return $decoded;
     }
 }

@@ -59,32 +59,43 @@ class AttendanceController extends Controller
 
         DB::beginTransaction();
         try {
+            $staffId = $request->input('staff_id');
+            $date = $request->input('date');
+            $status = $request->input('status') ?? 'present'; // Default to present if somehow null
+
             $attendanceData = [
-                'status' => $request->status,
-                'description' => $request->description ?? 'Manual update',
-                'processed_by' => Auth::id(), // More reliable than Auth::guard('api')->user()
+                'status' => $status,
+                'description' => $request->input('description') ?? 'Manual update',
+                'processed_by' => Auth::id() ?? 1, // Fallback to 1 if not auth (for testing/graceful fail)
                 'check_in_time' => null,
                 'late_minutes' => null,
                 'leave_id' => null,
             ];
 
-            if ($request->status == 'present' || $request->status == 'late') {
-                $attendanceData['check_in_time'] = $request->check_in_time ?? '09:00:00';
+            if ($status == 'present' || $status == 'late') {
+                $attendanceData['check_in_time'] = $request->input('check_in_time') ?? '09:00:00';
             }
 
-            if ($request->status == 'late') {
-                $attendanceData['late_minutes'] = $request->late_minutes ?? 0;
+            if ($status == 'late') {
+                $attendanceData['late_minutes'] = $request->input('late_minutes') ?? 0;
             }
 
-            if ($request->status == 'absent') {
-                $attendanceData['leave_id'] = $request->leave_id;
+            if ($status == 'absent') {
+                $attendanceData['leave_id'] = $request->input('leave_id');
             }
 
-            // Use updateOrCreate to prevent duplicate attendance records for same staff+date
-            $attendance = Attendance::updateOrCreate(
-                ['staff_id' => $request->staff_id, 'date' => $request->date],
-                $attendanceData
-            );
+            // Explicitly check for existing record to avoid updateOrCreate issues
+            $attendance = Attendance::where('staff_id', $staffId)
+                                   ->where('date', $date)
+                                   ->first();
+
+            if ($attendance) {
+                $attendance->update($attendanceData);
+            } else {
+                $attendanceData['staff_id'] = $staffId;
+                $attendanceData['date'] = $date;
+                $attendance = Attendance::create($attendanceData);
+            }
 
             DB::commit();
 
@@ -96,10 +107,11 @@ class AttendanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Attendance Store Error: ' . $e->getMessage(), ['request' => $request->all()]);
+            \Log::error('Attendance Deep Error: ' . $e->getMessage(), ['request' => $request->all()]);
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to create attendance: ' . $e->getMessage()
+                'message' => 'Failed: ' . $e->getMessage(),
+                'received_data' => $request->all() // Send back what was received to debug
             ], 500);
         }
     }

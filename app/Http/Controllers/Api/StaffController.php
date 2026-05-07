@@ -251,7 +251,6 @@ class StaffController extends Controller
                 && $subscription->user_limit < $plan->subscription_limit;
 
             if (!$canUseAi) {
-                // Still return staff list; just skip AI filtering
                 $data = $baseQuery->get();
                 return response()->json([
                     'success' => true,
@@ -264,42 +263,21 @@ class StaffController extends Controller
             }
 
             // 🔹 AI Generate Filters
-            try {
-                $ai = new AiFilterService();
-                $filters = $ai->generateFilters($request->all());
-            } catch (\Throwable $aiErr) {
-                \Log::warning('AI filter service failed, falling back to all staff: ' . $aiErr->getMessage());
-                $filters = null;
-            }
+            $aiFilterService = new AiFilterService();
+            $queryText = $request->query_text ?? $request->input('query') ?? '';
+            $filters = $aiFilterService->generateFilters(['query' => $queryText]);
+            
+            \Log::info('Applied AI Filters:', ['filters' => $filters, 'query' => $queryText]);
 
-            if (!is_array($filters)) {
-                // AI returned invalid data - return all staff as fallback
-                $data = $baseQuery->get();
-                return response()->json([
-                    'success' => true,
-                    'ai_filters' => null,
-                    'message' => 'AI filter unavailable - showing all staff.',
-                    'data' => $data,
-                ]);
-            }
-
-            // 🔹 Apply Filters
-            $query = $baseQuery;
+            $query = User::role('staff')->with(['userWorkInfo', 'addresses', 'kyc_information']);
+            $query->where('is_job_seeking', '!=', false);
 
             if (!empty($filters['name'])) {
-                $query->where(function ($q) use ($filters) {
-                    $q->where('name', 'like', '%' . $filters['name'] . '%')
-                      ->orWhere('first_name', 'like', '%' . $filters['name'] . '%')
-                      ->orWhere('last_name', 'like', '%' . $filters['name'] . '%');
+                $name = $filters['name'];
+                $query->where(function ($q) use ($name) {
+                    $q->where('first_name', 'like', '%' . $name . '%')
+                      ->orWhere('last_name', 'like', '%' . $name . '%');
                 });
-            }
-
-            if (!empty($filters['email'])) {
-                $query->where('email', 'like', '%' . $filters['email'] . '%');
-            }
-
-            if (!empty($filters['status'])) {
-                $query->where('status', $filters['status']);
             }
 
             if (!empty($filters['gender'])) {
@@ -307,57 +285,42 @@ class StaffController extends Controller
             }
 
             if (!empty($filters['location'])) {
-                $query->where(function($q) use ($filters) {
-                    $q->where('location', 'like', '%' . $filters['location'] . '%')
-                      ->orWhereHas('addresses', function($sq) use ($filters) {
-                          $sq->where('city', 'like', '%' . $filters['location'] . '%')
-                            ->orWhere('state', 'like', '%' . $filters['location'] . '%');
-                      });
+                $loc = $filters['location'];
+                $query->whereHas('addresses', function ($q) use ($loc) {
+                    $q->where('city', 'like', '%' . $loc . '%')
+                      ->orWhere('state', 'like', '%' . $loc . '%');
                 });
             } else {
-                // Default to user's city if no location specified in query
-                $user = auth()->user();
-                $userCity = $user->addresses()->first()?->city;
+                $userCity = auth()->user()->addresses()->first()?->city;
                 if ($userCity) {
-                    $query->whereHas('addresses', function($sq) use ($userCity) {
-                        $sq->where('city', 'like', '%' . $userCity . '%');
+                    $query->whereHas('addresses', function ($q) use ($userCity) {
+                        $q->where('city', 'like', '%' . $userCity . '%');
                     });
                 }
             }
 
             if (!empty($filters['role'])) {
-                $query->whereHas('userWorkInfo', function ($q) use ($filters) {
-                    $q->where('primary_role', 'like', '%' . $filters['role'] . '%');
+                $role = $filters['role'];
+                $query->whereHas('userWorkInfo', function ($q) use ($role) {
+                    $q->where('primary_role', 'like', '%' . $role . '%');
                 });
             }
 
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
-                $query->whereHas('userWorkInfo', function ($q) use ($filters) {
-                    foreach ([
-                        'gt' => '>',
-                        '$gt' => '>',
-                        'gte' => '>=',
-                        'lt' => '<',
-                        '$lt' => '<',
-                        'lte' => '<=',
-                        'eq' => '='
-                    ] as $key => $operator) {
-                        if (!empty($filters['salary'][$key])) {
-                            $q->where('salary', $operator, $filters['salary'][$key]);
-                        }
-                    }
+                $salary = $filters['salary'];
+                $query->whereHas('userWorkInfo', function ($q) use ($salary) {
+                    if (isset($salary['gt'])) $q->where('salary', '>', $salary['gt']);
+                    if (isset($salary['lt'])) $q->where('salary', '<', $salary['lt']);
                 });
             }
 
             $data = $query->get();
-
-            // ✅ Increment only after success
             $subscription->increment('user_limit');
 
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
-                'remaining_limit' => $plan->subscription_limit - ($subscription->user_limit + 1),
+                'remaining_limit' => $plan->subscription_limit - ($subscription->user_limit),
                 'data' => $data
             ]);
 

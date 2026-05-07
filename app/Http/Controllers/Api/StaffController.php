@@ -314,6 +314,15 @@ class StaffController extends Controller
                             ->orWhere('state', 'like', '%' . $filters['location'] . '%');
                       });
                 });
+            } else {
+                // Default to user's city if no location specified in query
+                $user = auth()->user();
+                $userCity = $user->addresses()->first()?->city;
+                if ($userCity) {
+                    $query->whereHas('addresses', function($sq) use ($userCity) {
+                        $sq->where('city', 'like', '%' . $userCity . '%');
+                    });
+                }
             }
 
             if (!empty($filters['role'])) {

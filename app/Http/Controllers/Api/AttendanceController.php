@@ -61,30 +61,27 @@ class AttendanceController extends Controller
         try {
             $staffId = $request->input('staff_id');
             $date = $request->input('date');
-            $status = $request->input('status') ?? 'present'; // Default to present if somehow null
+            $status = $request->input('status') ?? 'present';
 
+            // Safe defaults - NO NULLS for required or constrained columns
             $attendanceData = [
                 'status' => $status,
                 'description' => $request->input('description') ?? 'Manual update',
-                'processed_by' => Auth::id() ?? 1, // Fallback to 1 if not auth (for testing/graceful fail)
-                'check_in_time' => null,
-                'late_minutes' => null,
-                'leave_id' => null,
+                'processed_by' => Auth::id() ?? 1,
+                'check_in_time' => '09:00:00',
+                'late_minutes' => 0,
+                'leave_id' => null, // leave_id IS nullable in migration
             ];
-
-            if ($status == 'present' || $status == 'late') {
-                $attendanceData['check_in_time'] = $request->input('check_in_time') ?? '09:00:00';
-            }
-
-            if ($status == 'late') {
-                $attendanceData['late_minutes'] = $request->input('late_minutes') ?? 0;
-            }
 
             if ($status == 'absent') {
                 $attendanceData['leave_id'] = $request->input('leave_id');
             }
 
-            // Explicitly check for existing record to avoid updateOrCreate issues
+            if ($status == 'late') {
+                $attendanceData['late_minutes'] = (int)($request->input('late_minutes') ?? 0);
+            }
+
+            // Manually handle the record to be 100% sure
             $attendance = Attendance::where('staff_id', $staffId)
                                    ->where('date', $date)
                                    ->first();
@@ -107,11 +104,13 @@ class AttendanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Attendance Deep Error: ' . $e->getMessage(), ['request' => $request->all()]);
             return response()->json([
                 'status' => false,
-                'message' => 'Failed: ' . $e->getMessage(),
-                'received_data' => $request->all() // Send back what was received to debug
+                'message' => 'Critical Error: ' . $e->getMessage(),
+                'debug_info' => [
+                    'received' => $request->all(),
+                    'user_id' => Auth::id()
+                ]
             ], 500);
         }
     }

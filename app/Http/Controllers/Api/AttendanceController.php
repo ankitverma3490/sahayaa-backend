@@ -63,54 +63,50 @@ class AttendanceController extends Controller
             $date = $request->input('date');
             $status = $request->input('status') ?? 'present';
 
-            // Safe defaults - NO NULLS for required or constrained columns
             $attendanceData = [
                 'status' => $status,
                 'description' => $request->input('description') ?? 'Manual update',
                 'processed_by' => Auth::id() ?? 1,
                 'check_in_time' => '09:00:00',
-                'late_minutes' => 0,
-                'leave_id' => null, // leave_id IS nullable in migration
+                'late_minutes' => (int)($request->input('late_minutes') ?? 0),
+                'leave_id' => ($status == 'absent') ? $request->input('leave_id') : null,
+                'updated_at' => now(),
             ];
 
-            if ($status == 'absent') {
-                $attendanceData['leave_id'] = $request->input('leave_id');
-            }
+            // 🚀 BYPASS ELOQUENT - Use Direct DB Query to ensure data goes through
+            $exists = DB::table('attendance')
+                        ->where('staff_id', $staffId)
+                        ->where('date', $date)
+                        ->exists();
 
-            if ($status == 'late') {
-                $attendanceData['late_minutes'] = (int)($request->input('late_minutes') ?? 0);
-            }
-
-            // Manually handle the record to be 100% sure
-            $attendance = Attendance::where('staff_id', $staffId)
-                                   ->where('date', $date)
-                                   ->first();
-
-            if ($attendance) {
-                $attendance->update($attendanceData);
+            if ($exists) {
+                DB::table('attendance')
+                    ->where('staff_id', $staffId)
+                    ->where('date', $date)
+                    ->update($attendanceData);
+                $message = 'Attendance updated successfully';
             } else {
                 $attendanceData['staff_id'] = $staffId;
                 $attendanceData['date'] = $date;
-                $attendance = Attendance::create($attendanceData);
+                $attendanceData['created_at'] = now();
+                DB::table('attendance')->insert($attendanceData);
+                $message = 'Attendance marked successfully';
             }
 
             DB::commit();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Attendance marked successfully',
-                'data' => $attendance
+                'message' => $message,
+                'data' => $attendanceData
             ], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'status' => false,
-                'message' => 'Critical Error: ' . $e->getMessage(),
-                'debug_info' => [
-                    'received' => $request->all(),
-                    'user_id' => Auth::id()
-                ]
+                'message' => 'DB Direct Error: ' . $e->getMessage(),
+                'payload' => $request->all()
             ], 500);
         }
     }

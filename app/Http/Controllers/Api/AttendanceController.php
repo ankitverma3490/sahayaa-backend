@@ -61,8 +61,8 @@ class AttendanceController extends Controller
         try {
             $attendanceData = [
                 'status' => $request->status,
-                'description' => $request->description,
-                'processed_by' => Auth::guard('api')->user()->id,
+                'description' => $request->description ?? 'Manual update',
+                'processed_by' => Auth::id(), // More reliable than Auth::guard('api')->user()
                 'check_in_time' => null,
                 'late_minutes' => null,
                 'leave_id' => null,
@@ -73,7 +73,7 @@ class AttendanceController extends Controller
             }
 
             if ($request->status == 'late') {
-                $attendanceData['late_minutes'] = $request->late_minutes;
+                $attendanceData['late_minutes'] = $request->late_minutes ?? 0;
             }
 
             if ($request->status == 'absent') {
@@ -96,6 +96,7 @@ class AttendanceController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Attendance Store Error: ' . $e->getMessage(), ['request' => $request->all()]);
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create attendance: ' . $e->getMessage()

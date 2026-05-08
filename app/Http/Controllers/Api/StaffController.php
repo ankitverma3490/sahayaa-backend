@@ -375,6 +375,14 @@ class StaffController extends Controller
             'security' => ['security', 'guard', 'watchman'],
             'nurse' => ['nurse', 'nursing', 'caretaker'],
             'tutor' => ['tutor', 'teacher'],
+            'plumber' => ['plumber', 'plumbing'],
+            'electrician' => ['electrician', 'electrical'],
+            'carpenter' => ['carpenter', 'carpentry'],
+            'painter' => ['painter', 'painting'],
+            'sweeper' => ['sweeper', 'sweeping'],
+            'laundry' => ['laundry', 'washing', 'ironing'],
+            'dog walker' => ['dog walker', 'pet walker'],
+            'attendant' => ['attendant', 'helper', 'assistant'],
         ];
 
         $matchedRole = null;
@@ -395,8 +403,7 @@ class StaffController extends Controller
         }
 
         // Location keywords - words that are not role/stop words
-        $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female'];
-        $roleWords = array_keys($roleMap);
+        $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female', 'city'];
         $allRoleKeywords = array_merge(...array_values($roleMap));
         
         $words = array_filter(explode(' ', $queryLower), function($w) use ($stopWords, $allRoleKeywords) {

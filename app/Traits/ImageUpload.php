@@ -27,7 +27,7 @@ trait ImageUpload {
                     $file->getRealPath(),
                     [
                         'folder' => $folderPath,
-                        'resource_type' => 'image',
+                        'resource_type' => 'auto',
                     ]
                 );
                 $publicId = $upload->getPublicId();
@@ -100,7 +100,7 @@ trait ImageUpload {
                     $file->getRealPath(),
                     [
                         'folder' => $folderPath,
-                        'resource_type' => 'image',
+                        'resource_type' => 'auto',
                     ]
                 );
                 

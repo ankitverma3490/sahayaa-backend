@@ -43,6 +43,32 @@ class UserController extends Controller
 
     public function signUp(Request $request)
     {
+        $existingUser = User::where('phone_number', $request->phone_number)
+            ->where('is_deleted', 0)
+            ->first();
+
+        // If user exists and was added by an employer, let them "register" (verify)
+        if ($existingUser && $existingUser->is_staff_added == 1) {
+            // Format phone number to E.164
+            $to = '+91' . ltrim($request->phone_number, '0');
+
+            // Generate OTP
+            $otp = rand(100000, 999999);
+            $this->sendOtp(str_replace('+', '', $to), $otp);
+
+            // Update existing user with OTP
+            $existingUser->update([
+                'verification_code' => $otp,
+                'verification_code_sent_time' => now(),
+            ]);
+
+            return response()->json([
+                'message' => 'Verification code sent to your Phone Number (Pre-registered account found)',
+                'user_id' => $existingUser->id
+            ]);
+        }
+
+        // Normal validation for completely new users
         $validator = Validator::make($request->all(), [
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:users,email',
@@ -61,7 +87,7 @@ class UserController extends Controller
         $otp = rand(100000, 999999);
         $response = $this->sendOtp(str_replace('+', '', $to),$otp);
         
-        // Create new user (validation ensures phone is unique)
+        // Create new user
         $user = User::create([
             'name' => $request->name ?? 'User',
             'email' => $request->email,

@@ -233,10 +233,7 @@ class StaffController extends Controller
             // 🔹 Base query - all staff with their work info and addresses
             $baseQuery = User::with(['userWorkInfo', 'addresses', 'kyc_information'])
                 ->where('user_role_id', 2)
-                ->where(function($q) {
-                    $q->where('is_job_seeking', 1)
-                      ->orWhereNull('is_job_seeking');
-                });
+                ->where('is_job_seeking', 1);
 
             // If no query text, just return all staff (no AI, no subscription needed)
             if ($queryText === '') {
@@ -276,10 +273,7 @@ class StaffController extends Controller
             \Log::info('Applied AI Filters:', ['filters' => $filters, 'query' => $queryText]);
 
             $query = User::role('staff')->with(['userWorkInfo', 'addresses', 'kyc_information']);
-            $query->where(function($q) {
-                $q->where('is_job_seeking', 1)
-                  ->orWhereNull('is_job_seeking');
-            });
+            $query->where('is_job_seeking', 1);
 
             if (!empty($filters['name'])) {
                 $name = $filters['name'];

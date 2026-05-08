@@ -1217,7 +1217,7 @@ public function updateProfile(Request $request)
             $user->update(['step' => $finalStep]);
         }
         
-        return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user]);
+        return response()->json(['success' => true, 'message' => 'Profile updated successfully', 'data' => $user->fresh(['addresses', 'householdInformation', 'petDetails', 'userWorkInfo', 'kycInformation'])]);
 
     } catch (\Exception $e) {
         \Illuminate\Support\Facades\Log::error('Update Profile Fail: ' . $e->getMessage());
@@ -1735,7 +1735,7 @@ public function updateProfileCustomer(Request $request)
         return response()->json([
             'success' => true,
             'message' => $isEdit == 1 ? 'Profile edited successfully' : 'Profile updated successfully',
-            'data' => $user->fresh()
+            'data' => $user->fresh(['addresses', 'householdInformation', 'petDetails', 'userWorkInfo', 'kycInformation'])
         ]);
     } catch (\Exception $e) {
         return response()->json(['success' => false, 'message' => 'Failed to update profile', 'error' => $e->getMessage()], 500);

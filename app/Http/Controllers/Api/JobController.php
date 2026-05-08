@@ -25,12 +25,35 @@ public function index(Request $request): JsonResponse
     $user = Auth::guard('api')->user();
     
     $jobs = Job::withCount('applications')
-              ->when($user, function ($query) use ($user) {
+              ->when($user, function ($query) use ($user, $request) {
+                  // Add select for is_applied
                   $query->addSelect([
                       'is_applied' => JobApplication::selectRaw('COUNT(*)')
                           ->whereColumn('job_id', 'jobs.id')
                           ->where('user_id', $user->id)
                   ]);
+
+                  // Automatically filter by role and location if user is staff (role 2)
+                  // and no specific filters are provided in request
+                  if ($user->user_role_id == 2 && !$request->filled('role') && !$request->filled('city')) {
+                      // Get staff role and city
+                      $workInfo = $user->userWorkInfo;
+                      $primaryAddress = $user->addresses()->first();
+                      
+                      $staffRole = $workInfo ? $workInfo->primary_role : null;
+                      $staffCity = $primaryAddress ? $primaryAddress->city : null;
+
+                      if ($staffRole) {
+                          $query->where(function($q) use ($staffRole) {
+                              $q->where('title', 'LIKE', '%' . $staffRole . '%')
+                                ->orWhere('description', 'LIKE', '%' . $staffRole . '%');
+                          });
+                      }
+
+                      if ($staffCity) {
+                          $query->where('city', 'LIKE', '%' . $staffCity . '%');
+                      }
+                  }
               })
               ->when($request->filled('role'), function ($query) use ($request) {
                   $query->where(function($q) use ($request) {

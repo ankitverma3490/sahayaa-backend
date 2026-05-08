@@ -222,15 +222,21 @@ class StaffController extends Controller
     {
         // Query is optional - if empty, return all staff without AI filtering
         $request->validate([
-            'query' => 'nullable|string'
+            'query' => 'nullable|string',
+            'query_text' => 'nullable|string',
         ]);
 
-        $queryText = trim((string) $request->input('query', ''));
+        // Accept both 'query' and 'query_text' params
+        $queryText = trim((string) ($request->input('query_text') ?: $request->input('query', '')));
 
         try {
             // 🔹 Base query - all staff with their work info and addresses
-            $baseQuery = User::with(['userWorkInfo', 'addresses'])
-                ->where('user_role_id', 2);
+            $baseQuery = User::with(['userWorkInfo', 'addresses', 'kyc_information'])
+                ->where('user_role_id', 2)
+                ->where(function($q) {
+                    $q->where('is_job_seeking', 1)
+                      ->orWhereNull('is_job_seeking');
+                });
 
             // If no query text, just return all staff (no AI, no subscription needed)
             if ($queryText === '') {
@@ -251,26 +257,29 @@ class StaffController extends Controller
                 && $subscription->user_limit < $plan->subscription_limit;
 
             if (!$canUseAi) {
-                $data = $baseQuery->get();
+                // Even without AI, apply basic role/location filter from query text
+                $data = $this->applyBasicFilters($baseQuery, $queryText)->get();
                 return response()->json([
                     'success' => true,
                     'ai_filters' => null,
                     'message' => !$subscription
-                        ? 'No active subscription - showing all staff.'
-                        : 'AI search limit reached - showing all staff.',
+                        ? 'No active subscription - showing filtered staff.'
+                        : 'AI search limit reached - showing filtered staff.',
                     'data' => $data,
                 ]);
             }
 
             // 🔹 AI Generate Filters
             $aiFilterService = new AiFilterService();
-            $queryText = $request->query_text ?? $request->input('query') ?? '';
             $filters = $aiFilterService->generateFilters(['query' => $queryText]);
             
             \Log::info('Applied AI Filters:', ['filters' => $filters, 'query' => $queryText]);
 
             $query = User::role('staff')->with(['userWorkInfo', 'addresses', 'kyc_information']);
-            $query->where('is_job_seeking', '!=', false);
+            $query->where(function($q) {
+                $q->where('is_job_seeking', 1)
+                  ->orWhereNull('is_job_seeking');
+            });
 
             if (!empty($filters['name'])) {
                 $name = $filters['name'];
@@ -302,7 +311,8 @@ class StaffController extends Controller
             if (!empty($filters['role'])) {
                 $role = $filters['role'];
                 $query->whereHas('userWorkInfo', function ($q) use ($role) {
-                    $q->where('primary_role', 'like', '%' . $role . '%');
+                    $q->whereJsonContains('primary_role', $role)
+                      ->orWhere('primary_role', 'like', '%' . $role . '%');
                 });
             }
 
@@ -345,6 +355,63 @@ class StaffController extends Controller
                 ]);
             }
         }
+    }
+
+    /**
+     * Apply basic keyword filters without AI (fallback when no subscription)
+     */
+    private function applyBasicFilters($query, $queryText)
+    {
+        $queryLower = strtolower($queryText);
+        
+        // Common role keywords
+        $roleMap = [
+            'driver' => ['driver', 'driving', 'chauffeur'],
+            'cook' => ['cook', 'chef', 'cooking'],
+            'maid' => ['maid', 'house cleaner', 'cleaner', 'cleaning'],
+            'nanny' => ['nanny', 'babysitter', 'baby sitter', 'childcare'],
+            'housekeeper' => ['housekeeper', 'housekeeping'],
+            'gardener' => ['gardener', 'gardening'],
+            'security' => ['security', 'guard', 'watchman'],
+            'nurse' => ['nurse', 'nursing', 'caretaker'],
+            'tutor' => ['tutor', 'teacher'],
+        ];
+
+        $matchedRole = null;
+        foreach ($roleMap as $role => $keywords) {
+            foreach ($keywords as $kw) {
+                if (str_contains($queryLower, $kw)) {
+                    $matchedRole = $role;
+                    break 2;
+                }
+            }
+        }
+
+        if ($matchedRole) {
+            $query->whereHas('userWorkInfo', function ($q) use ($matchedRole) {
+                $q->whereJsonContains('primary_role', $matchedRole)
+                  ->orWhere('primary_role', 'like', '%' . $matchedRole . '%');
+            });
+        }
+
+        // Location keywords - words that are not role/stop words
+        $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female'];
+        $roleWords = array_keys($roleMap);
+        $allRoleKeywords = array_merge(...array_values($roleMap));
+        
+        $words = array_filter(explode(' ', $queryLower), function($w) use ($stopWords, $allRoleKeywords) {
+            return strlen($w) > 2 && !in_array($w, $stopWords) && !in_array($w, $allRoleKeywords);
+        });
+
+        if (!empty($words)) {
+            $locationWord = array_values($words)[0];
+            $query->whereHas('addresses', function ($q) use ($locationWord) {
+                $q->where('city', 'like', '%' . $locationWord . '%')
+                  ->orWhere('state', 'like', '%' . $locationWord . '%');
+            });
+        }
+
+        return $query;
     }
 
 

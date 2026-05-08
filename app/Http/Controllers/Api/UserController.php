@@ -5470,7 +5470,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 );
 
                 $user->referral_code = $code;
-                $user->referral_code_expires_at = now()->addDays(30); // Valid for 30 days
+                $user->referral_code_expires_at = now()->addDays(7); // Valid for 7 days
                 $user->save();
             }
 

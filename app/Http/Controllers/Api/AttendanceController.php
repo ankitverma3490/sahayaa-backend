@@ -95,6 +95,15 @@ class AttendanceController extends Controller
 
             DB::commit();
 
+            // Notify staff
+            Notification::create([
+                'user_id' => $staffId,
+                'title' => 'Attendance Update',
+                'message' => 'Your attendance for ' . $date . ' has been marked as ' . ucfirst($status),
+                'status' => 'unread',
+                'type' => 'attendance'
+            ]);
+
             return response()->json([
                 'status' => true,
                 'message' => $message,

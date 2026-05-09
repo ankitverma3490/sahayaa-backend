@@ -509,12 +509,25 @@ class JobApplicationController extends Controller
             "created_by" => $user->id
         ]);
 
+        // Notify staff
         Notification::create([
             'user_id' => $user->id,
-            'title' => 'Apply Leave',
-            'message' => 'Your have apply leave request successfully.',
+            'title' => 'Leave Applied',
+            'message' => 'Your leave request has been submitted successfully.',
             'status' => 'unread',
+            'type' => 'leave_application'
         ]);
+
+        // Notify house owner
+        if ($request->houseowner_id) {
+            Notification::create([
+                'user_id' => $request->houseowner_id,
+                'title' => 'New Leave Request',
+                'message' => $user->name . ' has applied for leave from ' . $request->start_date . ' to ' . $request->end_date,
+                'status' => 'unread',
+                'type' => 'leave_application'
+            ]);
+        }
 
         return response()->json([
             "status" => true,

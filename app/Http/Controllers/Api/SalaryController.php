@@ -19,6 +19,7 @@ use App\Models\SubscriptionUser;
 use Illuminate\Support\Facades\DB;
 use App\Models\Salary;
 use App\Models\Job;
+use App\Models\Notification;
 
 class SalaryController extends Controller
 {
@@ -240,6 +241,19 @@ class SalaryController extends Controller
                 'message' => 'Staff member not found'
             ], 404);
         }
+
+        // Double-click protection (Idempotency)
+        $currentPeriod = date('F Y');
+        if (Payment::where('staff_id', $user_id)
+            ->where('user_id', Auth::guard('api')->id())
+            ->where('salary_period', $currentPeriod)
+            ->where('created_at', '>=', now()->subSeconds(30))
+            ->exists()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Processing payment, please wait...'
+            ], 400);
+        }
         $validator = Validator::make($request->all(), [
             'base_salary' => 'nullable|numeric|min:0',
             'basic_salary' => 'nullable|numeric|min:0',
@@ -288,7 +302,7 @@ class SalaryController extends Controller
                 'tax_deduction' => $taxDeduction,
                 'advance_payment' => $advancePayment,
                 'net_salary' => $netSalary,
-                'salary_period' => date('F Y')
+                'salary_period' => $currentPeriod,
             ]);
 
             // Handle Advance Deduction Logic
@@ -329,6 +343,19 @@ class SalaryController extends Controller
                 }
             }
             DB::commit();
+
+            // 🚀 Notify staff member about salary payment
+            try {
+                Notification::create([
+                    'user_id' => $user_id,
+                    'title' => 'Salary Received',
+                    'message' => 'Your salary of ₹' . number_format($netSalary, 2) . ' for ' . $currentPeriod . ' has been paid by ' . Auth::guard('api')->user()->name . '.',
+                    'type' => 'salary_payment',
+                    'is_read' => 0
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Salary notification failed: ' . $e->getMessage());
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -1358,6 +1385,14 @@ private function getWorkingDays($startDate, $endDate)
             $user->advance_withdraw_added_by = $employerId;
             $user->save();
 
+            // ✅ Map frontend deduction types to backend enum values
+            $mappedDeductionType = 'manual';
+            if ($deductionMethod === 'one_time') {
+                $mappedDeductionType = 'full';
+            } elseif ($deductionMethod === 'installments' || $deductionMethod === 'monthly') {
+                $mappedDeductionType = 'installment';
+            }
+
             // ✅ Also create StaffAdvance record so staff can see it in My Advances
             try {
                 \App\Models\StaffAdvance::create([
@@ -1365,8 +1400,8 @@ private function getWorkingDays($startDate, $endDate)
                     'employer_id'        => $employerId,
                     'amount'             => $request->amount,
                     'remaining_balance'  => $shouldDeduct ? $request->amount : 0,
-                    'deduction_type'     => $deductionMethod ?? 'monthly',
-                    'installment_amount' => null,
+                    'deduction_type'     => $mappedDeductionType,
+                    'installment_amount' => $request->amount, // Default to full amount for installment_amount if installments
                     'given_date'         => now()->toDateString(),
                     'status'             => $shouldDeduct ? 'active' : 'closed',
                     'remarks'            => 'Paid via ' . strtoupper($paymentMode),
@@ -1374,6 +1409,19 @@ private function getWorkingDays($startDate, $endDate)
             } catch (\Exception $e) {
                 \Log::warning('StaffAdvance record creation failed: ' . $e->getMessage());
                 // non-fatal — advance_withdraw_amount already updated
+            }
+
+            // ✅ Create notification for staff
+            try {
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'title'   => 'Advance Payment Received',
+                    'message' => "You have received an advance of ₹" . number_format($request->amount, 2) . ($shouldDeduct ? ". This will be deducted from your salary ($deductionMethod)." : "."),
+                    'type'    => 'advance_payment',
+                    'is_read' => 0,
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Advance notification failed: ' . $e->getMessage());
             }
 
             return response()->json([

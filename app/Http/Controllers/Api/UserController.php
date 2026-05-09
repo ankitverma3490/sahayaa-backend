@@ -3174,6 +3174,7 @@ public function listSubcategories(Request $request)
 
     $data = [
         'name' => $validated['name'],
+        'is_active' => $request->input('is_active', 1),
     ];
 
     // If updating, get existing category
@@ -4716,7 +4717,6 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 ->where('added_by', Auth::guard('api')->user()->id)
                 ->where('user_role_id',2)
                 ->where('is_deleted', 0) // Exclude terminated staff
-                ->where('is_active', 1) // Only active staff
                 ->with(['addresses', 'userWorkInfo', 'addedByUser'])
                 ->orderBy('created_at', 'desc');
 

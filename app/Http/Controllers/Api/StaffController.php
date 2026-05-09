@@ -271,9 +271,11 @@ class StaffController extends Controller
             $filters = $aiFilterService->generateFilters(['query' => $queryText]);
             
             \Log::info('Applied AI Filters:', ['filters' => $filters, 'query' => $queryText]);
-
-            $query = User::role('staff')->with(['userWorkInfo', 'addresses', 'kyc_information']);
-            $query->where('is_job_seeking', 1);
+            
+            // ✅ Fix: Use user_role_id instead of non-existent role() scope
+            $query = User::where('user_role_id', 2)
+                ->with(['userWorkInfo', 'addresses', 'kyc_information'])
+                ->where('is_job_seeking', 1);
 
             if (!empty($filters['name'])) {
                 $name = $filters['name'];
@@ -318,6 +320,16 @@ class StaffController extends Controller
                 });
             }
 
+            // ✅ If query was provided but AI didn't find any filters, don't return everyone
+            if (empty($filters['role']) && empty($filters['name']) && empty($filters['location']) && empty($filters['gender']) && empty($filters['salary'])) {
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => $filters,
+                    'message' => 'No matching staff found for your query.',
+                    'data' => []
+                ]);
+            }
+
             $data = $query->get();
             $subscription->increment('user_limit');
 
@@ -330,24 +342,13 @@ class StaffController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('getAiData failed: ' . $e->getMessage());
-            // Last-resort fallback - try to return all staff so UI isn't empty
-            try {
-                $data = User::with(['userWorkInfo', 'addresses'])
-                    ->where('user_role_id', 2)
-                    ->get();
-                return response()->json([
-                    'success' => true,
-                    'ai_filters' => null,
-                    'message' => 'AI search failed - showing all staff.',
-                    'data' => $data,
-                ]);
-            } catch (\Throwable $th) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to load staff. Please try again.',
-                    'error' => $e->getMessage()
-                ]);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'AI search failed. Please try a simpler search or check your internet connection.',
+                'error' => $e->getMessage(),
+                'data' => [] // Return empty data on failure during search to avoid showing everyone
+            ]);
+        }
         }
     }
 
@@ -410,6 +411,9 @@ class StaffController extends Controller
                 $q->where('city', 'like', '%' . $locationWord . '%')
                   ->orWhere('state', 'like', '%' . $locationWord . '%');
             });
+        } elseif (!$matchedRole) {
+            // ✅ If no role and no location found in basic filter, force empty results
+            $query->where('id', 0); 
         }
 
         return $query;

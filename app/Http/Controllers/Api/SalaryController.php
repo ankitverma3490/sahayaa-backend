@@ -1344,39 +1344,37 @@ private function getWorkingDays($startDate, $endDate)
                 ], 404);
             }
 
-            // ✅ Check if advance should be deducted from salary
-            $shouldDeduct = $request->input('should_deduct', true); // Default to true for backward compatibility
-            $deductionMethod = $request->input('deduction_method', null);
+            $shouldDeduct = $request->input('should_deduct', true);
+            $deductionMethod = $request->input('deduction_method', 'monthly');
             $paymentMode = $request->input('payment_mode', 'cash');
+            $employerId = auth()->user()->id;
 
             // ✅ Only update advance_withdraw_amount if deduction is enabled
             if ($shouldDeduct) {
                 $user->advance_withdraw_amount += $request->amount;
-                
-                // Store deduction method for future reference (if needed)
-                // You can add a new column 'advance_deduction_method' to users table if you want to track this
-                // For now, we just use it for validation and logging
-                \Log::info("Advance payment with deduction", [
-                    'user_id' => $user->id,
-                    'amount' => $request->amount,
-                    'deduction_method' => $deductionMethod,
-                    'payment_mode' => $paymentMode,
-                    'added_by' => auth()->user()->id
-                ]);
-            } else {
-                // Advance given without deduction - just log it
-                \Log::info("Advance payment WITHOUT deduction", [
-                    'user_id' => $user->id,
-                    'amount' => $request->amount,
-                    'payment_mode' => $paymentMode,
-                    'added_by' => auth()->user()->id
-                ]);
             }
 
             // mark added by user
-            $user->advance_withdraw_added_by = auth()->user()->id;
-
+            $user->advance_withdraw_added_by = $employerId;
             $user->save();
+
+            // ✅ Also create StaffAdvance record so staff can see it in My Advances
+            try {
+                \App\Models\StaffAdvance::create([
+                    'staff_id'           => $user->id,
+                    'employer_id'        => $employerId,
+                    'amount'             => $request->amount,
+                    'remaining_balance'  => $shouldDeduct ? $request->amount : 0,
+                    'deduction_type'     => $deductionMethod ?? 'monthly',
+                    'installment_amount' => null,
+                    'given_date'         => now()->toDateString(),
+                    'status'             => $shouldDeduct ? 'active' : 'closed',
+                    'remarks'            => 'Paid via ' . strtoupper($paymentMode),
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('StaffAdvance record creation failed: ' . $e->getMessage());
+                // non-fatal — advance_withdraw_amount already updated
+            }
 
             return response()->json([
                 'success' => true,

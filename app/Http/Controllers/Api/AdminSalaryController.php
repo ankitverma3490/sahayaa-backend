@@ -140,6 +140,20 @@ class AdminSalaryController extends Controller
                     'type' => 'salary_paid',
                     'is_read' => 0
                 ]);
+                // Send FCM push notification
+                try {
+                    $deviceToken = \App\Models\UserDeviceToken::where('user_id', $staff->id)->value('device_token');
+                    if ($deviceToken) {
+                        $this->send_push_notification(
+                            $deviceToken, 'android',
+                            'Your salary of ₹' . number_format($netSalary, 2) . ' has been paid',
+                            'Salary Paid 💰', 'salary_paid',
+                            ['user_id' => (string)$staff->id]
+                        );
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('FCM salary notification failed: ' . $e->getMessage());
+                }
             }
         }
         

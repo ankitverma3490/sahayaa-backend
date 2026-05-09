@@ -332,6 +332,20 @@ class JobApplicationController extends Controller
                     'type' => 'job_application_accepted',
                     'is_read' => 0
                 ]);
+                // FCM push notification
+                try {
+                    $deviceToken = \App\Models\UserDeviceToken::where('user_id', $staff->id)->value('device_token');
+                    if ($deviceToken) {
+                        $this->send_push_notification(
+                            $deviceToken, 'android',
+                            'Congratulations! Your application for ' . ($job ? $job->title : 'the job') . ' has been accepted',
+                            'Application Accepted 🎉', 'job_application_accepted',
+                            ['user_id' => (string)$staff->id]
+                        );
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('FCM job accepted notification failed: ' . $e->getMessage());
+                }
             }
         }
 
@@ -352,6 +366,20 @@ class JobApplicationController extends Controller
                     'type' => 'job_application_rejected',
                     'is_read' => 0
                 ]);
+                // FCM push notification
+                try {
+                    $deviceToken = \App\Models\UserDeviceToken::where('user_id', $staff->id)->value('device_token');
+                    if ($deviceToken) {
+                        $this->send_push_notification(
+                            $deviceToken, 'android',
+                            'Your application for ' . ($job ? $job->title : 'the job') . ' has been rejected',
+                            'Application Update', 'job_application_rejected',
+                            ['user_id' => (string)$staff->id]
+                        );
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('FCM job rejected notification failed: ' . $e->getMessage());
+                }
             }
         }
 

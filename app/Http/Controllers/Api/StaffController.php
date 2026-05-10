@@ -761,12 +761,12 @@ class StaffController extends Controller
                 'success' => true,
                 'message' => 'Availability updated successfully',
                 'data' => [
-                    'is_available' => $isAvailable,
-                    'is_job_seeking' => $isJobSeeking,
+                    'is_available' => (bool)$isAvailable,
+                    'is_job_seeking' => (bool)$isJobSeeking,
                     'is_active' => (bool)$user->is_active,
                     'status' => $isAvailable ? 'active' : 'paused'
                 ]
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             \Log::error('updateAvailability error: ' . $e->getMessage());
             return response()->json([

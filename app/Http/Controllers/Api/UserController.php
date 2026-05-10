@@ -37,6 +37,8 @@ use App\Traits\ImageUpload;
 use App\Traits\SmsCountryTrait;
 use App\Models\SubscriptionUser;
 use App\Models\Subscription;
+use App\Models\JobApplication;
+
 class UserController extends Controller
 {
     use ImageUpload,SmsCountryTrait;

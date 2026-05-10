@@ -522,26 +522,41 @@ class StaffController extends Controller
     
     public function getStaffList(Request $request)
     {
-        $role = Role::where('slug', 'staff')->first();
-        $query = User::where('user_role_id', $role->id);
-        // 🔍 Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
-        }
+        try {
+            // user_role_id = 2 is staff — use direct ID instead of Role lookup to avoid null
+            $query = User::where('user_role_id', 2)
+                ->where('added_by', auth()->id());
 
-        // 🧩 User type / status filter
-        if ($request->filled('user_type')) {
-            $query->where('status', $request->user_type);
+            // 🔍 Search
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('name', 'like', "%{$search}%");
+                });
+            }
+
+            // 🧩 Status filter
+            if ($request->filled('user_type')) {
+                $query->where('status', $request->user_type);
+            }
+
+            $staff = $query->with(['userWorkInfo', 'addresses'])->latest()->paginate(50);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Staff retrieved successfully',
+                'data'    => $staff,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('getStaffList failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve staff list',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        $staff = $query->latest()->paginate(10);
-        return response()->json([
-            'success' => true,
-            'message' => 'Staff retrieved successfully',
-            'data'    => $staff,
-        ]);
     }
 
 

@@ -27,6 +27,7 @@ class UserWorkInfo extends Model
         'pay_frequency',
         'salary',
         'joining_date',
+        'preferred_work_location',
 
     ];
 

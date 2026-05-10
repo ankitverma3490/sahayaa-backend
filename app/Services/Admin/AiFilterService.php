@@ -47,15 +47,17 @@ class AiFilterService
                 - name (string): Staff name
                 - gender (string): "male" or "female"
                 - role (string): Job role/title (e.g. "Driver", "Cook", "Maid", "House Cleaner", "Baby Sitter", "Nanny", "Chef", "Plumber", "Electrician", "Carpenter", "Painter", "Gardener", "Security Guard", "Nurse", "Tutor", "Sweeper", "Laundry", "Dog Walker", "Attendant")
-                - location (string): City or area name
+                - location (string): City, area, or state name (EXTRACT EXACT CITY NAME)
                 - salary (object): Salary range with operators like {"gt": 5000, "lt": 20000}
                 - status (string): Employment status
 
                 IMPORTANT: For role-based searches, ALWAYS extract the job role into the "role" field.
+                IMPORTANT: For city/location searches, extract the city name (e.g., "Vizag", "Mumbai", "Delhi") and put it in the "location" field.
                 ALWAYS return role in LOWERCASE.
                 Use ONLY these canonical role names (lowercase):
                 driver, cook, chef, maid, house cleaner, nanny, baby sitter, housekeeper, gardener, security, nurse, tutor, plumber, electrician, carpenter, painter, sweeper, laundry, dog walker, attendant, pet caretaker
                 
+                Example: "I need a cook in vizag" -> {"role": "cook", "location": "vizag"}
                 Example: "Experienced Male Driver" -> {"role": "driver", "gender": "male"}
                 Example: "female cook in Mumbai" -> {"role": "cook", "gender": "female", "location": "Mumbai"}
                 Example: "Professional Housekeeper" -> {"role": "housekeeper"}

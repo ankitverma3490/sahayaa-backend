@@ -316,15 +316,30 @@ class StaffController extends Controller
 
             if (!empty($filters['location'])) {
                 $loc = $filters['location'];
-                $query->whereHas('addresses', function ($q) use ($loc) {
-                    $q->where('city', 'like', '%' . $loc . '%')
-                      ->orWhere('state', 'like', '%' . $loc . '%');
+                $query->where(function($q) use ($loc) {
+                    // Check current addresses
+                    $q->whereHas('addresses', function ($sub) use ($loc) {
+                        $sub->where('city', 'like', '%' . $loc . '%')
+                          ->orWhere('state', 'like', '%' . $loc . '%');
+                    })
+                    // OR check preferred work location
+                    ->orWhereHas('userWorkInfo', function ($sub) use ($loc) {
+                        $sub->where('preferred_work_location', 'like', '%' . $loc . '%');
+                    })
+                    // OR check User table current_city
+                    ->orWhere('current_city', 'like', '%' . $loc . '%');
                 });
             } else {
+                // If no location in query, try to show staff in employer's city first,
+                // but DON'T restrict strictly if the list is empty (can be broadened later)
                 $userCity = auth()->user()->addresses()->first()?->city;
                 if ($userCity) {
-                    $query->whereHas('addresses', function ($q) use ($userCity) {
-                        $q->where('city', 'like', '%' . $userCity . '%');
+                    $query->where(function($q) use ($userCity) {
+                        $q->whereHas('addresses', function ($sub) use ($userCity) {
+                            $sub->where('city', 'like', '%' . $userCity . '%');
+                        })->orWhereHas('userWorkInfo', function ($sub) use ($userCity) {
+                            $sub->where('preferred_work_location', 'like', '%' . $userCity . '%');
+                        });
                     });
                 }
             }
@@ -900,11 +915,15 @@ class StaffController extends Controller
 
         $user->update($updateData);
 
-        // Also update UserWorkInfo if role is provided
-        if ($request->filled('role')) {
+        // Also update UserWorkInfo if role or city is provided
+        if ($request->filled('role') || $request->filled('city')) {
+            $workInfoData = [];
+            if ($request->filled('role')) $workInfoData['primary_role'] = $request->role;
+            if ($request->filled('city')) $workInfoData['preferred_work_location'] = $request->city;
+
             UserWorkInfo::updateOrCreate(
                 ['user_id' => $user->id],
-                ['primary_role' => $request->role]
+                $workInfoData
             );
         }
 

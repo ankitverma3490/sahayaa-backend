@@ -1058,13 +1058,11 @@ public function updateProfile(Request $request)
         }
         try {
             if ($request->hasFile('aadhar_front')) {
-                // $aadharFrontPath = $request->file('aadhar_front')->store('staff/aadhar', 'public');
                 $aadharFrontPath = $this->uploadCloudary($request,"aadhar_front","staff/aadhar");
                 $data['aadhar_front'] = $aadharFrontPath;
-                
             }
         } catch (\Exception $e) {
-            Log::error('Aadhar front photo upload failed');
+            \Log::error('Aadhar front photo upload failed: ' . $e->getMessage());
         }
 
         try {
@@ -1073,17 +1071,16 @@ public function updateProfile(Request $request)
                 $data['aadhar_back'] = $aadharBackPath;
             }
         } catch (\Exception $e) {
-            Log::error('Aadhar back photo upload failed');
+            \Log::error('Aadhar back photo upload failed: ' . $e->getMessage());
         }
 
         try {
             if ($request->hasFile('verification_certificate')) {
-                // $policeClearancePath = $request->file('police_clearance_certificate')->store('staff/documents', 'public');
                 $policeClearancePath = $this->uploadCloudary($request,"verification_certificate","staff/documents");
                 $data['verification_certificate'] = $policeClearancePath;
             }
         } catch (\Exception $e) {
-            Log::error('Police clearance certificate upload failed');
+            \Log::error('Police clearance certificate upload failed: ' . $e->getMessage());
         }
 
         $jsonResponse = json_encode($request->user_role_id, JSON_PRETTY_PRINT);
@@ -1108,7 +1105,8 @@ public function updateProfile(Request $request)
         // Only update user-table fields (safe subset to avoid issues with extra array fields)
         $userUpdateFields = array_intersect_key($data, array_flip([
             'first_name', 'last_name', 'name', 'email', 'phone_number',
-            'gender', 'dob', 'auto_attendence', 'image', 'user_role_id', 'step'
+            'gender', 'dob', 'auto_attendence', 'image', 'user_role_id', 'step',
+            'verification_certificate', 'aadhar_front', 'aadhar_back'
         ]));
 
         try {

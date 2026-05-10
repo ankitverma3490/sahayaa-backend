@@ -7,19 +7,21 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Notification;
 use App\Models\Attendance;
 use App\Models\LeaveType;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use OpenAI\Laravel\Facades\OpenAI;
 use App\Services\Admin\AiFilterService;
-use Illuminate\Support\Facades\Auth;
 use App\Models\JobApplication;
 use App\Models\Job;
 use App\Models\Salary;
 use App\Models\SubscriptionUser;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Schema;
+use App\Models\UserWorkInfo;
 
 
 class StaffController extends Controller
@@ -194,7 +196,14 @@ class StaffController extends Controller
         // Get attendance records for that month
         $attendance = Attendance::whereBetween('date', [$startDate, $endDate])
             ->where('staff_id', $staff->id)
-            ->pluck('status', 'date'); // key = date, value = status
+            ->get()
+            ->mapWithKeys(function ($item) {
+                // Ensure the date key is a string in Y-m-d format to match CarbonPeriod iteration
+                $dateKey = $item->date instanceof \Carbon\Carbon 
+                    ? $item->date->format('Y-m-d') 
+                    : \Carbon\Carbon::parse($item->date)->format('Y-m-d');
+                return [$dateKey => $item->status];
+            });
 
         $period = CarbonPeriod::create($startDate, $endDate);
 
@@ -205,7 +214,7 @@ class StaffController extends Controller
 
             $result[] = [
                 'date' => $formattedDate,
-                'status' => $attendance->has($formattedDate)
+                'status' => isset($attendance[$formattedDate])
                     ? $attendance[$formattedDate]
                     : 'absent'
             ];
@@ -231,7 +240,7 @@ class StaffController extends Controller
 
         try {
             // 🔹 Base query - all staff with their work info and addresses
-            $baseQuery = User::with(['userWorkInfo', 'addresses', 'kyc_information'])
+            $baseQuery = User::with(['userWorkInfo', 'addresses', 'kycInformation'])
                 ->where('user_role_id', 2)
                 ->where('is_job_seeking', 1);
 
@@ -274,7 +283,7 @@ class StaffController extends Controller
             
             // ✅ Fix: Use user_role_id instead of non-existent role() scope
             $query = User::where('user_role_id', 2)
-                ->with(['userWorkInfo', 'addresses', 'kyc_information'])
+                ->with(['userWorkInfo', 'addresses', 'kycInformation'])
                 ->where('is_job_seeking', 1);
 
             if (!empty($filters['name'])) {
@@ -723,32 +732,49 @@ class StaffController extends Controller
 
     public function updateAvailability(Request $request)
     {
-        $user = Auth::user();
-        if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        try {
+            $user = Auth::user();
+            if (!$user) return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
 
-        $isAvailable = $request->input('is_available', false);
-        $isJobSeeking = $request->input('is_job_seeking', false);
+            $isAvailable = filter_var($request->input('is_available', false), FILTER_VALIDATE_BOOLEAN);
+            $isJobSeeking = filter_var($request->input('is_job_seeking', false), FILTER_VALIDATE_BOOLEAN);
 
-        // Update fields (using is_active as fallback if columns missing)
-        $updateData = [
-            'is_active' => $isAvailable ? 1 : 0,
-        ];
+            $updateData = [];
 
-        // Only update these if columns exist (we'll add them via migration)
-        if (Schema::hasColumn('users', 'is_available')) $updateData['is_available'] = $isAvailable;
-        if (Schema::hasColumn('users', 'is_job_seeking')) $updateData['is_job_seeking'] = $isJobSeeking;
+            // Only update if columns exist (safety check)
+            if (Schema::hasColumn('users', 'is_available')) {
+                $updateData['is_available'] = $isAvailable;
+            }
+            
+            if (Schema::hasColumn('users', 'is_job_seeking')) {
+                $updateData['is_job_seeking'] = $isJobSeeking;
+            }
 
-        $user->update($updateData);
+            // If both columns missing, fallback to is_active (old logic)
+            if (empty($updateData)) {
+                $updateData['is_active'] = $isAvailable ? 1 : 0;
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Availability updated successfully',
-            'data' => [
-                'is_available' => $isAvailable,
-                'is_job_seeking' => $isJobSeeking,
-                'status' => $isAvailable ? 'active' : 'paused'
-            ]
-        ]);
+            $user->update($updateData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Availability updated successfully',
+                'data' => [
+                    'is_available' => $isAvailable,
+                    'is_job_seeking' => $isJobSeeking,
+                    'is_active' => (bool)$user->is_active,
+                    'status' => $isAvailable ? 'active' : 'paused'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('updateAvailability error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error during update',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getAvailabilityStatus()

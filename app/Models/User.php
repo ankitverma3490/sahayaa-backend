@@ -146,6 +146,8 @@ class User extends Authenticatable
         'languages_spoken' => 'array',
         'skills' => 'array',
         'auto_attendence' => 'boolean',
+        'is_available' => 'boolean',
+        'is_job_seeking' => 'boolean',
         'referral_code_expires_at' => 'datetime',
     ];
 

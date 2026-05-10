@@ -946,7 +946,7 @@ class StaffController extends Controller
             // Get all staff members hired by this user (accepted applications)
             $hiredStaffIds = JobApplication::where('application_status', 'accepted')
                 ->whereHas('job', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
+                    $query->where('created_by', $user->id);
                 })
                 ->pluck('user_id')
                 ->toArray();

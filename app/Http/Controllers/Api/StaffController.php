@@ -187,11 +187,27 @@ class StaffController extends Controller
             ], 422);
         }
 
-        $staff = User::find($request->id);
+        $staffId = $request->id ?: Auth::id();
+        $staff = User::find($staffId);
 
-        // Get first and last date of given month
-        $startDate = Carbon::create($request->year, $request->month, 1)->startOfMonth();
-        $endDate   = Carbon::create($request->year, $request->month, 1)->endOfMonth();
+        if (!$staff) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Staff member not found',
+            ], 404);
+        }
+
+        // Get first and last date of given month, with defaults if missing
+        $year = (int)($request->year ?: date('Y'));
+        $month = (int)($request->month ?: date('m'));
+
+        try {
+            $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+            $endDate   = Carbon::create($year, $month, 1)->endOfMonth();
+        } catch (\Exception $e) {
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate   = Carbon::now()->endOfMonth();
+        }
 
         // Get attendance records for that month
         $attendance = Attendance::whereBetween('date', [$startDate, $endDate])

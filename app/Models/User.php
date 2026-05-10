@@ -503,4 +503,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LeaveRequest::class, 'created_by', 'id');
     }
+
+    public function attendance_details()
+    {
+        return $this->hasMany(Attendance::class, 'staff_id');
+    }
 }

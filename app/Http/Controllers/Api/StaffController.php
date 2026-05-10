@@ -374,7 +374,6 @@ class StaffController extends Controller
                 'data' => [] // Return empty data on failure during search to avoid showing everyone
             ]);
         }
-        }
     }
 
     /**
@@ -880,5 +879,75 @@ class StaffController extends Controller
     }
 
 
+    public function getActiveTodayUser()
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
 
+            // Get all staff members hired by this user (accepted applications)
+            $hiredStaffIds = JobApplication::where('application_status', 'accepted')
+                ->whereHas('job', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->pluck('user_id')
+                ->toArray();
+
+            // Also include staff added directly by this user (if any)
+            $directlyAddedStaffIds = User::where('added_by', $user->id)
+                ->where('user_role_id', 2)
+                ->pluck('id')
+                ->toArray();
+
+            $allStaffIds = array_unique(array_merge($hiredStaffIds, $directlyAddedStaffIds));
+
+            if (empty($allStaffIds)) {
+                return response()->json([
+                    'success' => true,
+                    'active_staff' => [],
+                    'status' => ['date' => now()->toDateString()]
+                ]);
+            }
+
+            $today = now()->toDateString();
+
+            $staffMembers = User::with(['attendance_details' => function($query) use ($today) {
+                    $query->where('date', $today);
+                }, 'userWorkInfo'])
+                ->whereIn('id', $allStaffIds)
+                ->get()
+                ->map(function($staff) {
+                    return [
+                        'id' => $staff->id,
+                        'name' => $staff->first_name . ' ' . $staff->last_name,
+                        'first_name' => $staff->first_name,
+                        'last_name' => $staff->last_name,
+                        'image' => $staff->image ? (str_contains($staff->image, 'http') ? $staff->image : url($staff->image)) : null,
+                        'staff' => $staff, // Include full staff object for frontend compatibility
+                        'attendance_details' => $staff->attendance_details->first() ?: [
+                            'status' => 'absent', // Default to absent if no record for today
+                            'date' => now()->toDateString()
+                        ]
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'active_staff' => $staffMembers,
+                'status' => [
+                    'date' => $today
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('getActiveTodayUser failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch active staff',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -645,6 +645,8 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::post('/hire-me/deactivate', [StaffController::class, 'deactivateHireMe']);
     });
 
+    Route::get('housersold/staff/active-today', [StaffController::class, 'getActiveTodayUser']);
+
     Route::get('/jobs/{id}', [JobController::class, 'show']);
     
     Route::post('user/delete-self', [UserController::class, 'deleteSelfAccount']);

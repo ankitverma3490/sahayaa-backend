@@ -4708,13 +4708,33 @@ private function updateExistingStaff(User $existingUser, Request $request)
     public function getStaffList(Request $request)
     {
         try {
+            $user = Auth::guard('api')->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
             $perPage = $request->get('per_page', 10);
             $search = $request->get('search', '');
             
-            $staffQuery = User::where('is_staff_added', 1)
-                ->where('added_by', Auth::guard('api')->user()->id)
-                ->where('user_role_id',2)
-                ->where('is_deleted', 0) // Exclude terminated staff
+            // Get all staff members hired by this user through JobApplications
+            $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+            $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
+                ->whereHas('job', function($query) use ($user) {
+                    $query->where('created_by', $user->id);
+                })
+                ->pluck('user_id')
+                ->toArray();
+
+            // Include staff added directly
+            $directlyAddedStaffIds = User::where('user_role_id', 2)
+                ->where('added_by', $user->id)
+                ->pluck('id')
+                ->toArray();
+
+            $allStaffIds = array_unique(array_merge($hiredStaffIds, $directlyAddedStaffIds));
+
+            $staffQuery = User::whereIn('id', $allStaffIds)
+                ->where('is_deleted', 0)
                 ->with(['addresses', 'userWorkInfo', 'addedByUser'])
                 ->orderBy('created_at', 'desc');
 

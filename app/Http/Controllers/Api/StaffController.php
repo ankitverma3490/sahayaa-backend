@@ -938,22 +938,28 @@ class StaffController extends Controller
     public function getActiveTodayUser()
     {
         try {
-            $user = Auth::user();
+            $user = Auth::guard('api')->user();
             if (!$user) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
             }
 
-            // Get all staff members hired by this user (accepted applications)
-            $hiredStaffIds = JobApplication::where('application_status', 'accepted')
+            // Get all staff members hired by this user (accepted, approved, active, or hired applications)
+            $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+            
+            $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
                 ->whereHas('job', function($query) use ($user) {
                     $query->where('created_by', $user->id);
                 })
                 ->pluck('user_id')
                 ->toArray();
 
-            // Also include staff added directly by this user (if any)
-            $directlyAddedStaffIds = User::where('added_by', $user->id)
-                ->where('user_role_id', 2)
+            // Also include staff added directly by this user (if any) or where is_staff_added is 1
+            $directlyAddedStaffIds = User::where('user_role_id', 2)
+                ->where(function($query) use ($user) {
+                    $query->where('added_by', $user->id)
+                          ->orWhere('is_staff_added', 1); // Broaden to find any staff flagged as added
+                })
+                ->where('added_by', $user->id) // Re-narrow to ensure it's THIS user's staff
                 ->pluck('id')
                 ->toArray();
 

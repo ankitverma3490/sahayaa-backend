@@ -330,10 +330,41 @@ class StaffController extends Controller
             }
 
             if (!empty($filters['role'])) {
-                $role = $filters['role'];
-                $query->whereHas('userWorkInfo', function ($q) use ($role) {
-                    $q->whereJsonContains('primary_role', $role)
-                      ->orWhere('primary_role', 'like', '%' . $role . '%');
+                $role = strtolower(trim($filters['role']));
+                
+                // Role aliases — map AI output to possible DB values
+                $roleAliases = [
+                    'driver' => ['driver', 'Driver', 'Driver / Chauffeur', 'Chauffeur'],
+                    'cook' => ['cook', 'Cook', 'chef', 'Chef', 'Cook / Chef', 'Chef / Baker'],
+                    'chef' => ['chef', 'Chef', 'cook', 'Cook', 'Cook / Chef', 'Chef / Baker'],
+                    'maid' => ['maid', 'Maid', 'House Cleaner', 'house cleaner', 'House Cleaner / Maid', 'cleaner'],
+                    'house cleaner' => ['House Cleaner', 'house cleaner', 'Maid', 'House Cleaner / Maid'],
+                    'nanny' => ['nanny', 'Nanny', 'Baby Sitter', 'baby sitter', 'Baby Sitter / Nanny', 'Babysitter'],
+                    'baby sitter' => ['Baby Sitter', 'baby sitter', 'Nanny', 'Baby Sitter / Nanny'],
+                    'housekeeper' => ['housekeeper', 'Housekeeper'],
+                    'gardener' => ['gardener', 'Gardener'],
+                    'security' => ['security', 'Security', 'Security Guard', 'guard', 'Guard'],
+                    'nurse' => ['nurse', 'Nurse', 'Nurse / Caretaker', 'caretaker'],
+                    'tutor' => ['tutor', 'Tutor', 'teacher', 'Teacher'],
+                    'plumber' => ['plumber', 'Plumber'],
+                    'electrician' => ['electrician', 'Electrician'],
+                    'carpenter' => ['carpenter', 'Carpenter'],
+                    'painter' => ['painter', 'Painter'],
+                    'sweeper' => ['sweeper', 'Sweeper'],
+                    'laundry' => ['laundry', 'Laundry', 'Laundry / Ironing'],
+                    'dog walker' => ['dog walker', 'Dog Walker', 'Pet Walker'],
+                    'attendant' => ['attendant', 'Attendant', 'Personal Attendant'],
+                    'pet caretaker' => ['pet caretaker', 'Pet Caretaker', 'caretaker', 'Caretaker'],
+                ];
+                
+                $searchValues = $roleAliases[$role] ?? [$role, ucfirst($role), strtoupper($role)];
+                
+                $query->whereHas('userWorkInfo', function ($q) use ($role, $searchValues) {
+                    $q->where(function($inner) use ($role, $searchValues) {
+                        foreach ($searchValues as $val) {
+                            $inner->orWhereRaw("LOWER(primary_role) LIKE ?", ['%' . strtolower($val) . '%']);
+                        }
+                    });
                 });
             }
 
@@ -345,13 +376,14 @@ class StaffController extends Controller
                 });
             }
 
-            // ✅ If query was provided but AI didn't find any filters, don't return everyone
+            // ✅ If query was provided but AI didn't find any filters, use basic keyword fallback
             if (empty($filters['role']) && empty($filters['name']) && empty($filters['location']) && empty($filters['gender']) && empty($filters['salary'])) {
+                $data = $this->applyBasicFilters($baseQuery, $queryText)->get();
                 return response()->json([
                     'success' => true,
                     'ai_filters' => $filters,
-                    'message' => 'No matching staff found for your query.',
-                    'data' => []
+                    'message' => 'Showing keyword-matched results.',
+                    'data' => $data
                 ]);
             }
 
@@ -415,9 +447,33 @@ class StaffController extends Controller
         }
 
         if ($matchedRole) {
-            $query->whereHas('userWorkInfo', function ($q) use ($matchedRole) {
-                $q->whereJsonContains('primary_role', $matchedRole)
-                  ->orWhere('primary_role', 'like', '%' . $matchedRole . '%');
+            $roleAliases = [
+                'driver' => ['driver', 'Driver', 'Driver / Chauffeur'],
+                'cook' => ['cook', 'Cook', 'chef', 'Chef', 'Cook / Chef'],
+                'maid' => ['maid', 'Maid', 'House Cleaner', 'House Cleaner / Maid'],
+                'nanny' => ['nanny', 'Nanny', 'Baby Sitter', 'Baby Sitter / Nanny'],
+                'housekeeper' => ['housekeeper', 'Housekeeper'],
+                'gardener' => ['gardener', 'Gardener'],
+                'security' => ['security', 'Security', 'Security Guard'],
+                'nurse' => ['nurse', 'Nurse', 'Nurse / Caretaker'],
+                'tutor' => ['tutor', 'Tutor', 'teacher', 'Teacher'],
+                'plumber' => ['plumber', 'Plumber'],
+                'electrician' => ['electrician', 'Electrician'],
+                'carpenter' => ['carpenter', 'Carpenter'],
+                'painter' => ['painter', 'Painter'],
+                'sweeper' => ['sweeper', 'Sweeper'],
+                'laundry' => ['laundry', 'Laundry', 'Laundry / Ironing'],
+                'dog walker' => ['dog walker', 'Dog Walker'],
+                'attendant' => ['attendant', 'Attendant', 'Personal Attendant'],
+            ];
+            $searchValues = $roleAliases[$matchedRole] ?? [$matchedRole, ucfirst($matchedRole)];
+            
+            $query->whereHas('userWorkInfo', function ($q) use ($searchValues) {
+                $q->where(function($inner) use ($searchValues) {
+                    foreach ($searchValues as $val) {
+                        $inner->orWhereRaw("LOWER(primary_role) LIKE ?", ['%' . strtolower($val) . '%']);
+                    }
+                });
             });
         }
 

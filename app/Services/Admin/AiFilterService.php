@@ -52,12 +52,17 @@ class AiFilterService
                 - status (string): Employment status
 
                 IMPORTANT: For role-based searches, ALWAYS extract the job role into the "role" field.
-                Example: "Experienced Male Driver" -> {"role": "Driver", "gender": "male"}
-                Example: "female cook in Mumbai" -> {"role": "Cook", "gender": "female", "location": "Mumbai"}
-                Example: "Professional Housekeeper" -> {"role": "House Cleaner"}
-                Example: "plumber in Indore" -> {"role": "Plumber", "location": "Indore"}
-                Example: "electrician near me" -> {"role": "Electrician"}
-                Example: "Indore City plumber" -> {"role": "Plumber", "location": "Indore"}
+                ALWAYS return role in LOWERCASE.
+                Use ONLY these canonical role names (lowercase):
+                driver, cook, chef, maid, house cleaner, nanny, baby sitter, housekeeper, gardener, security, nurse, tutor, plumber, electrician, carpenter, painter, sweeper, laundry, dog walker, attendant, pet caretaker
+                
+                Example: "Experienced Male Driver" -> {"role": "driver", "gender": "male"}
+                Example: "female cook in Mumbai" -> {"role": "cook", "gender": "female", "location": "Mumbai"}
+                Example: "Professional Housekeeper" -> {"role": "housekeeper"}
+                Example: "plumber in Indore" -> {"role": "plumber", "location": "Indore"}
+                Example: "chef near me" -> {"role": "chef"}
+                Example: "find me a driver" -> {"role": "driver"}
+                Example: "Indore City plumber" -> {"role": "plumber", "location": "Indore"}
 
                 Return ONLY valid JSON.
                 No markdown.

@@ -59,7 +59,7 @@ class KycVerification extends Model
             return $value;
         }
 
-        return env('APP_URL') . '/public/noimage.jpg';
+        return null;
     }
 
     // Relationship with verifier

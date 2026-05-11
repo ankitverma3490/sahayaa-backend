@@ -166,7 +166,7 @@ class User extends Authenticatable
             }
             return env('APP_URL') . '/public/' . $value;
         }
-        return asset('noimage.jpg'); // Use asset() helper for better URL generation
+        return null;
     }
 
     public function getDocumentsFrontAttribute($value)

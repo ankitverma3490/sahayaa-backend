@@ -329,20 +329,9 @@ class StaffController extends Controller
                     // OR check User table current_city
                     ->orWhere('current_city', 'like', '%' . $loc . '%');
                 });
-            } else {
-                // If no location in query, try to show staff in employer's city first,
-                // but DON'T restrict strictly if the list is empty (can be broadened later)
-                $userCity = auth()->user()->addresses()->first()?->city;
-                if ($userCity) {
-                    $query->where(function($q) use ($userCity) {
-                        $q->whereHas('addresses', function ($sub) use ($userCity) {
-                            $sub->where('city', 'like', '%' . $userCity . '%');
-                        })->orWhereHas('userWorkInfo', function ($sub) use ($userCity) {
-                            $sub->where('preferred_work_location', 'like', '%' . $userCity . '%');
-                        });
-                    });
-                }
             }
+            // Removed automatic restriction to owner's city here to allow broader AI results 
+            // as per client request. Staff can be ready to work anywhere.
 
             if (!empty($filters['role'])) {
                 $role = strtolower(trim($filters['role']));
@@ -502,9 +491,13 @@ class StaffController extends Controller
 
         if (!empty($words)) {
             $locationWord = array_values($words)[0];
-            $query->whereHas('addresses', function ($q) use ($locationWord) {
-                $q->where('city', 'like', '%' . $locationWord . '%')
-                  ->orWhere('state', 'like', '%' . $locationWord . '%');
+            $query->where(function($q) use ($locationWord) {
+                $q->whereHas('addresses', function ($sub) use ($locationWord) {
+                    $sub->where('city', 'like', '%' . $locationWord . '%')
+                      ->orWhere('state', 'like', '%' . $locationWord . '%');
+                })->orWhereHas('userWorkInfo', function ($sub) use ($locationWord) {
+                    $sub->where('preferred_work_location', 'like', '%' . $locationWord . '%');
+                });
             });
         } elseif (!$matchedRole) {
             // ✅ If no role and no location found in basic filter, force empty results

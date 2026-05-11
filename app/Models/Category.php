@@ -31,7 +31,7 @@ class Category extends Model
         if ($value) {
             return $value;
         }
-        return env('APP_URL') . '/public/noimage.jpg';
+        return null;
     }
 
     /**

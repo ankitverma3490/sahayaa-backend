@@ -651,6 +651,16 @@ public function getProfile(Request $request)
             if (empty($user->name) || $user->name === 'Staff Member' || $user->name === 'User') {
                 $user->name = $aadhaarData['name'] ?? $user->name;
             }
+
+            // Also populate first_name and last_name if they are empty
+            if (empty($user->first_name) && !empty($user->name)) {
+                $parts = explode(' ', trim($user->name));
+                $user->first_name = $parts[0];
+                if (count($parts) > 1 && empty($user->last_name)) {
+                    array_shift($parts);
+                    $user->last_name = implode(' ', $parts);
+                }
+            }
             
             if (empty($user->dob) && !empty($aadhaarData['dob'])) {
                 // Convert date format from DD-MM-YYYY to YYYY-MM-DD for MySQL
@@ -679,6 +689,42 @@ public function getProfile(Request $request)
             
             if (empty($user->gender) && !empty($aadhaarData['gender'])) {
                 $user->gender = strtolower($aadhaarData['gender']);
+            }
+
+            // Save Aadhaar photo as profile image if user has no image
+            if (empty($user->image) && !empty($aadhaarData['photo'])) {
+                try {
+                    $imageData = $aadhaarData['photo'];
+                    // Ensure it's a data URI for Cloudinary or just raw base64
+                    if (strpos($imageData, 'data:image') === false) {
+                        $imageData = 'data:image/jpeg;base64,' . $imageData;
+                    }
+                    
+                    $upload = \CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary::upload($imageData, [
+                        'folder' => 'uploads/user_profile_images',
+                        'resource_type' => 'auto',
+                    ]);
+                    
+                    if ($upload) {
+                        $user->image = $upload->getSecurePath();
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Failed to save Aadhaar photo to Cloudinary: ' . $e->getMessage());
+                    // Fallback to local storage if Cloudinary fails
+                    try {
+                        $rawImageData = $aadhaarData['photo'];
+                        if (strpos($rawImageData, ',') !== false) {
+                            $rawImageData = explode(',', $rawImageData)[1];
+                        }
+                        $imageContent = base64_decode($rawImageData);
+                        $fileName = 'profile_' . $user->id . '_' . time() . '.jpg';
+                        $path = 'uploads/profile/' . $fileName;
+                        Storage::disk('public')->put($path, $imageContent);
+                        $user->image = asset('storage/' . $path);
+                    } catch (\Exception $localEx) {
+                        \Log::warning('Failed to save Aadhaar photo locally: ' . $localEx->getMessage());
+                    }
+                }
             }
             
             $user->save();

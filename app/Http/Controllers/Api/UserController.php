@@ -1084,7 +1084,8 @@ public function updateProfile(Request $request)
             'pet_details.*.pet_count' => 'nullable|integer|min:1',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'languages_spoken' => 'nullable|array',
-            'auto_attendence' => 'nullable|boolean'
+            'auto_attendence' => 'nullable|boolean',
+            'upi_id' => 'nullable|string|max:255'
         ]);
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
@@ -1154,7 +1155,7 @@ public function updateProfile(Request $request)
         $userUpdateFields = array_intersect_key($data, array_flip([
             'first_name', 'last_name', 'name', 'email', 'phone_number',
             'gender', 'dob', 'auto_attendence', 'image', 'user_role_id', 'step',
-            'verification_certificate', 'aadhar_front', 'aadhar_back'
+            'verification_certificate', 'aadhar_front', 'aadhar_back', 'upi_id'
         ]));
 
         try {
@@ -1607,6 +1608,7 @@ public function updateProfileCustomer(Request $request)
             'auto_attendence' => 'nullable|in:0,1',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'languages_spoken'=> 'nullable|array',
+            'upi_id'          => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -1633,6 +1635,7 @@ public function updateProfileCustomer(Request $request)
             'location'   => $request->location,
             'lat'        => $request->lat,
             'long'       => $request->long,
+            'upi_id'     => $request->upi_id,
         ], fn($v) => !is_null($v));
 
         // Handle auto_attendence separately so value 0 is NOT removed by array_filter
@@ -4951,6 +4954,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 'emergency_contact_number' => 'sometimes|required|string|max:15',
                 
                 'aadhar_number' => 'sometimes|required|string|max:12|unique:users,aadhar_number,' . $id,
+                'upi_id' => 'nullable|string|max:255',
                 'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
@@ -4989,7 +4993,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
         $updatedFields = [];
         $userFields = [
             'first_name', 'last_name', 'email', 'phone_number', 'gender',
-            'dob', 'aadhar_number'
+            'dob', 'aadhar_number', 'upi_id'
         ];
 
         try {

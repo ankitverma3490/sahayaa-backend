@@ -810,140 +810,77 @@ private function getWorkingDays($startDate, $endDate)
             $page = $request->page ?? 1;
             $offset = ($page - 1) * $limit;
 
-            // Build query for payments without join first to avoid collation issues
-            $paymentsQuery = Payment::with(['user', 'staff'])->where('user_id',$user->id)
-                ->select('payments.*');
-
-            // Apply filters
-            if ($request->filled('status')) {
-                $paymentsQuery->where('payments.status', $request->status);
-            }
-
-            if ($request->filled('payment_mode')) {
-                $paymentsQuery->where('payments.payment_mode', $request->payment_mode);
-            }
-
+            // 1. Get salary payments
+            $paymentsQuery = Payment::with(['user', 'staff'])->where('user_id', $user->id);
+            
             if ($request->filled('staff_id')) {
-                $paymentsQuery->where('payments.staff_id', $request->staff_id);
+                $paymentsQuery->where('staff_id', $request->staff_id);
             }
-
-            if ($request->filled('user_id')) {
-                $paymentsQuery->where('payments.user_id', $request->user_id);
-            }
-
             if ($request->filled('date_from')) {
-                $paymentsQuery->whereDate('payments.created_at', '>=', $request->date_from);
+                $paymentsQuery->whereDate('created_at', '>=', $request->date_from);
             }
-
             if ($request->filled('date_to')) {
-                $paymentsQuery->whereDate('payments.created_at', '<=', $request->date_to);
+                $paymentsQuery->whereDate('created_at', '<=', $request->date_to);
             }
 
-            // Get total count for pagination
-            $total = $paymentsQuery->count();
+            $payments = $paymentsQuery->orderBy('created_at', 'desc')->get();
 
-            // Get paginated results
-            $payments = $paymentsQuery->orderBy('payments.created_at', 'desc')
-                ->offset($offset)
-                ->limit($limit)
-                ->get();
+            // 2. Get staff advances
+            $advancesQuery = \App\Models\StaffAdvance::with(['staff'])->where('employer_id', $user->id);
+            
+            if ($request->filled('staff_id')) {
+                $advancesQuery->where('staff_id', $request->staff_id);
+            }
+            if ($request->filled('date_from')) {
+                $advancesQuery->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $advancesQuery->whereDate('created_at', '<=', $request->date_to);
+            }
 
-            // Get all order_ids and payment_ids for batch transaction query
-            $orderIds = $payments->pluck('order_id')->filter()->toArray();
-            $paymentIds = $payments->pluck('payment_id')->filter()->toArray();
+            $advances = $advancesQuery->orderBy('created_at', 'desc')->get();
 
-            // Get related transactions in one query to avoid N+1 problem
-            $transactions = Transaction::whereIn('order_id', $orderIds)
-                ->orWhereIn('reference_id', $paymentIds)
-                ->get()
-                ->groupBy(function($transaction) {
-                    return $transaction->order_id ?? $transaction->reference_id;
-                });
+            // 3. Unify results
+            $unifiedData = collect();
 
-            // Transform data with transaction details
-            $paymentData = $payments->map(function($payment) use ($transactions) {
-                // Find transactions for this payment
-                $paymentTransactions = collect();
-                
-                if ($payment->order_id && isset($transactions[$payment->order_id])) {
-                    $paymentTransactions = $transactions[$payment->order_id];
-                } elseif ($payment->payment_id && isset($transactions[$payment->payment_id])) {
-                    $paymentTransactions = $transactions[$payment->payment_id];
-                }
-
-                return [
-                    'payment_id' => $payment->id,
-                    'payment_reference' => $payment->payment_id,
-                    'order_id' => $payment->order_id,
-                    'amount' => (float) $payment->amount,
-                    'net_salary' => (float) $payment->net_salary,
-                    'status' => $payment->status,
+            foreach ($payments as $payment) {
+                $unifiedData->push([
+                    'id' => $payment->id,
+                    'type' => 'salary',
+                    'amount' => (float) $payment->net_salary,
                     'payment_mode' => $payment->payment_mode,
+                    'status' => $payment->status,
+                    'date' => $payment->created_at->toISOString(),
                     'salary_period' => $payment->salary_period,
-                    'created_at' => $payment->created_at->format('Y-m-d H:i:s'),
-                    'updated_at' => $payment->updated_at->format('Y-m-d H:i:s'),
-                    
-                    // Salary breakdown
-                    'salary_breakdown' => [
-                        'base_salary' => (float) $payment->base_salary,
-                        'performance_bonus' => (float) $payment->performance_bonus,
-                        'overtime_pay' => (float) $payment->overtime_pay,
-                        'tax_deduction' => (float) $payment->tax_deduction,
-                        'advance_payment' => (float) $payment->advance_payment,
-                    ],
-                    
-                    // User details (admin who processed payment)
-                    'processed_by' => $payment->user ? [
-                        'id' => $payment->user->id,
-                        'name' => $payment->user->first_name . ' ' . $payment->user->last_name,
-                        'email' => $payment->user->email,
-                        'phone' => $payment->user->phone_number,
-                    ] : null,
-                    
-                    // Staff details (who received payment)
-                    'staff_member' => $payment->staff ? [
-                        'id' => $payment->staff->id,
-                        'name' => $payment->staff->first_name . ' ' . $payment->staff->last_name,
-                        'email' => $payment->staff->email,
-                        'phone' => $payment->staff->phone_number,
-                    ] : null,
-                    
-                    // Transaction details
-                    'transactions' => $paymentTransactions->map(function($transaction) {
-                        return [
-                            'transaction_id' => $transaction->id,
-                            'transaction_reference' => $transaction->transaction_id,
-                            'type' => $transaction->type,
-                            'order_number' => $transaction->order_number,
-                            'reference_id' => $transaction->reference_id,
-                            'amount' => (float) $transaction->amount,
-                            'currency' => $transaction->currency,
-                            'payment_mode' => $transaction->payment_mode,
-                            'payment_status' => $transaction->payment_status,
-                            'for_entry' => $transaction->for_entry,
-                            'created_at' => $transaction->created_at->format('Y-m-d H:i:s'),
-                            'invoice_pdf_url' => $transaction->invoice_pdf_url,
-                            'payment_response' => $transaction->payment_response ? 
-                                json_decode($transaction->payment_response, true) : null
-                        ];
-                    })
-                ];
-            });
+                    'staff_name' => $payment->staff ? ($payment->staff->first_name . ' ' . $payment->staff->last_name) : 'Unknown',
+                ]);
+            }
 
-            $pagination = [
-                'current_page' => (int) $page,
-                'per_page' => (int) $limit,
-                'total' => $total,
-                'last_page' => ceil($total / $limit),
-                'from' => $offset + 1,
-                'to' => $offset + $payments->count()
-            ];
+            foreach ($advances as $advance) {
+                // Determine payment mode from remarks if not explicitly stored
+                $mode = 'cash';
+                if (stripos($advance->remarks, 'UPI') !== false) $mode = 'upi';
+                
+                $unifiedData->push([
+                    'id' => $advance->id,
+                    'type' => 'advance',
+                    'is_advance' => true,
+                    'amount' => (float) $advance->amount,
+                    'payment_mode' => $mode,
+                    'status' => $advance->status === 'active' ? 'paid' : $advance->status,
+                    'date' => $advance->created_at->toISOString(),
+                    'deduction_method' => $advance->deduction_type === 'full' ? 'one_time' : 'monthly',
+                    'staff_name' => $advance->staff ? ($advance->staff->first_name . ' ' . $advance->staff->last_name) : 'Unknown',
+                ]);
+            }
+
+            // Sort by date desc
+            $sortedData = $unifiedData->sortByDesc('date')->values();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Recent payments retrieved successfully',
-                'data' => $paymentData,
-                'pagination' => $pagination
+                'message' => 'Unified history retrieved successfully',
+                'data' => $sortedData
             ]);
 
         } catch (\Exception $e) {

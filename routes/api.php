@@ -268,37 +268,42 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
     $marked = [];
     $skipped = [];
 
-    // Load employer via BOTH added_by and parent_user_id (dashboard uses added_by)
+    // Load all staff (role 2) who are active
     $users = \App\Models\User::with(['userWorkInfo'])
         ->where('user_role_id', '2')
         ->where('is_active', 1)
         ->where('is_deleted', 0)
-        ->where('is_staff_added', 1)
         ->get();
 
     foreach ($users as $user) {
         // Employer = added_by (primary) or parent_user_id (fallback)
         $employerId = $user->added_by ?? $user->parent_user_id ?? null;
         if (!$employerId) {
-            $skipped[] = $user->name . ' (not hired yet)';
+            $skipped[] = $user->name . ' (no employer linked)';
             continue;
         }
 
         // Load employer and check auto_attendence
         $employer = \App\Models\User::find($employerId);
         $autoEnabled = $employer && ($employer->auto_attendence == "1" || $employer->auto_attendence == 1 || $employer->auto_attendence === true);
-        if (!$autoEnabled) { $skipped[] = $user->name . ' (auto off)'; continue; }
+        if (!$autoEnabled) {
+            $skipped[] = $user->name . ' (auto-present OFF for employer: ' . ($employer->name ?? 'Unknown') . ')';
+            continue;
+        }
 
-        // Working days check — normalize to first-3-letters comparison so
-        // "Monday","Mon","monday","mon" all match. Default to Mon–Sat when null.
+        // Working days check — normalize to first-3-letters comparison
         $rawDays = $user->userWorkInfo?->working_days;
         if (empty($rawDays)) {
+            // Default to Mon-Sat if not specified
             $rawDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
         }
-        $workingDays3 = array_map(fn($d) => substr(strtolower($d), 0, 3), $rawDays);
+        
+        $workingDays3 = array_map(fn($d) => substr(strtolower(trim($d)), 0, 3), $rawDays);
         $today3       = substr($todayDayName, 0, 3);
+        
         if (!in_array($today3, $workingDays3)) {
-            $skipped[] = $user->name . ' (not working day)'; continue;
+            $skipped[] = $user->name . ' (today is ' . $todayDayName . ', not in working days: ' . implode(',', $workingDays3) . ')';
+            continue;
         }
 
         // ✅ CRITICAL FIX: Only create attendance if it doesn't exist

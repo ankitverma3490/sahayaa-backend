@@ -286,6 +286,12 @@ class SalaryController extends Controller
         $orderId = 'SAL_' . strtoupper(uniqid());
         $transactionId = 'TXN_' . strtoupper(uniqid());
 
+        // Determine status: default to 'paid' for cash, 'pending' for others unless specified
+        $status = $request->status;
+        if (!$status) {
+            $status = (strtolower($paymentMode) === 'cash') ? 'paid' : 'pending';
+        }
+
         DB::beginTransaction();
         try {
             $payment = Payment::create([
@@ -294,7 +300,7 @@ class SalaryController extends Controller
                 'amount' => $netSalary,
                 'payment_id' => $paymentId,
                 'order_id' => $orderId,
-                'status' => $request->status ?? 'paid',
+                'status' => $status,
                 'payment_mode' => $paymentMode,
                 'base_salary' => $baseSalary,
                 'performance_bonus' => $performanceBonus,
@@ -1311,6 +1317,12 @@ private function getWorkingDays($startDate, $endDate)
             $shouldDeduct = $request->input('should_deduct', true);
             $deductionMethod = $request->input('deduction_method', 'monthly');
             $paymentMode = $request->input('payment_mode', 'cash');
+            $status = $request->input('status');
+            
+            if (!$status) {
+                $status = (strtolower($paymentMode) === 'cash') ? 'paid' : 'pending';
+            }
+            
             $employerId = auth()->user()->id;
 
             // ✅ Only update advance_withdraw_amount if deduction is enabled
@@ -1340,7 +1352,7 @@ private function getWorkingDays($startDate, $endDate)
                     'deduction_type'     => $mappedDeductionType,
                     'installment_amount' => $request->amount, // Default to full amount for installment_amount if installments
                     'given_date'         => now()->toDateString(),
-                    'status'             => $shouldDeduct ? 'active' : 'closed',
+                    'status'             => $status === 'paid' ? ($shouldDeduct ? 'active' : 'closed') : 'pending',
                     'remarks'            => 'Paid via ' . strtoupper($paymentMode),
                 ]);
             } catch (\Exception $e) {

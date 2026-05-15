@@ -100,13 +100,17 @@ class AdminSalaryController extends Controller
             'payment_mode' => 'nullable|string'
         ]);
 
-        // ✅ Calculate Net Salary
-        $netSalary =
+        // ✅ Calculate Net Salary (Capped at 0)
+        $totalEarnings = 
             $request->basic_salary
             + ($request->performative_allowance ?? 0)
-            + ($request->over_time_allowance ?? 0)
-            - ($request->tax ?? 0)
-            - ($request->advance_payment ?? 0);
+            + ($request->over_time_allowance ?? 0);
+            
+        $totalDeductions = 
+            ($request->tax ?? 0)
+            + ($request->advance_payment ?? 0);
+            
+        $netSalary = max(0, $totalEarnings - $totalDeductions);
         
         // ✅ Create Salary
         $salary = Salary::create([

@@ -595,17 +595,22 @@ public function getEarningsSummary(Request $request)
                       ->orWhere('salary_period', 'like', '%' . str_replace(' ', '-', $monthName) . '%');
                 })
                 ->get();
+                
+            $currentMonthSalaries = Salary::where('staff_id', $user->id)
+                ->whereMonth('payment_date', date('m'))
+                ->whereYear('payment_date', date('Y'))
+                ->get();
 
             // Calculate totals for current month
-            $totalBaseSalary = $currentMonthPayments->sum('base_salary');
-            $totalPerformanceBonus = $currentMonthPayments->sum('performance_bonus');
-            $totalOvertimePay = $currentMonthPayments->sum('overtime_pay');
-            $totalTaxDeduction = $currentMonthPayments->sum('tax_deduction');
-            $totalAdvancePayment = $currentMonthPayments->sum('advance_payment');
-            $totalNetSalary = $currentMonthPayments->sum('net_salary');
+            $totalBaseSalary = $currentMonthPayments->sum('base_salary') + $currentMonthSalaries->sum('basic_salary');
+            $totalPerformanceBonus = $currentMonthPayments->sum('performance_bonus') + $currentMonthSalaries->sum('performative_allowance');
+            $totalOvertimePay = $currentMonthPayments->sum('overtime_pay') + $currentMonthSalaries->sum('over_time_allowance');
+            $totalTaxDeduction = $currentMonthPayments->sum('tax_deduction') + $currentMonthSalaries->sum('tax');
+            $totalAdvancePayment = $currentMonthPayments->sum('advance_payment') + $currentMonthSalaries->sum('advance_payment');
+            $totalNetSalary = $currentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
 
-            // If no payments for current month, use prioritized base salary
-            if ($currentMonthPayments->isEmpty()) {
+            // If no records for current month, use prioritized base salary
+            if ($currentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
                 $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
                 if ($userWorkInfo && $userWorkInfo->salary) {
                     $totalBaseSalary = (float) $userWorkInfo->salary;
@@ -1165,13 +1170,17 @@ private function getWorkingDays($startDate, $endDate)
             
             $currentMonthPayments = Payment::where('staff_id', $user->id)
                 ->where('salary_period', 'like', '%' . date('F Y') . '%')
-                // ->where('status', 'completed')
+                ->get();
+                
+            $currentMonthSalaries = Salary::where('staff_id', $user->id)
+                ->whereMonth('payment_date', date('m'))
+                ->whereYear('payment_date', date('Y'))
                 ->get();
 
-            $totalEarnings = $currentMonthPayments->sum('net_salary');
+            $totalEarnings = $currentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
             
-            // If no payments found, get base salary from prioritized sources
-            if ($currentMonthPayments->isEmpty()) {
+            // If no payments/salaries found, get base salary from prioritized sources
+            if ($currentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
                 $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
                 if ($userWorkInfo && $userWorkInfo->salary) {
                     $totalEarnings = (float) $userWorkInfo->salary;

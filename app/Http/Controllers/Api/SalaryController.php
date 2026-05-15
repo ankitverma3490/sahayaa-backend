@@ -703,7 +703,7 @@ public function getEarningsSummary(Request $request)
             $earningsSummary = [
                 "employer" => $application->job && isset($application->job->creator) 
                     ? (trim(($application->job->creator->first_name ?? '') . ' ' . ($application->job->creator->last_name ?? '')) ?: ($application->job->creator->name ?? "Your Employer"))
-                    : ($employer['name'] ?? ($user->addedByUser->name ?? "Your Employer")),
+                    : (trim(($user->addedByUser->first_name ?? '') . ' ' . ($user->addedByUser->last_name ?? '')) ?: ($user->addedByUser->name ?? ($employer['name'] ?? "Your Employer"))),
                 "job_id" => $job['id'] ?? null,
                 "role" => $job['title'] ?? "Job Role",
 

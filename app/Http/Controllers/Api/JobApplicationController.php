@@ -255,7 +255,7 @@ class JobApplicationController extends Controller
                 Notification::create([
                     'user_id' => $job->created_by,
                     'title' => 'New Job Application',
-                    'message' => $user->name . ' has applied for the job: ' . $job->title,
+                    'message' => ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for the job: ' . $job->title,
                     'type' => 'job_application',
                     'is_read' => 0
                 ]);
@@ -523,7 +523,7 @@ class JobApplicationController extends Controller
             Notification::create([
                 'user_id' => $request->houseowner_id,
                 'title' => 'New Leave Request',
-                'message' => $user->name . ' has applied for leave from ' . $request->start_date . ' to ' . $request->end_date,
+                'message' => ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for leave from ' . $request->start_date . ' to ' . $request->end_date,
                 'status' => 'unread',
                 'type' => 'leave_application'
             ]);

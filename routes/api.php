@@ -262,82 +262,101 @@ Route::get('/run-auto-attendance/{secret}', function ($secret) {
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    // Use IST timezone for correct date/day
-    $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
-    $todayDayName = strtolower(\Carbon\Carbon::now('Asia/Kolkata')->format('l'));
-    $marked = [];
-    $skipped = [];
+    try {
+        // Use IST timezone for correct date/day
+        $today = \Carbon\Carbon::now('Asia/Kolkata')->toDateString();
+        $todayDayName = strtolower(\Carbon\Carbon::now('Asia/Kolkata')->format('l'));
+        $marked = [];
+        $skipped = [];
+        $skipped_reasons = [];
 
-    // Load all staff (role 2) who are active
-    $users = \App\Models\User::with(['userWorkInfo'])
-        ->where('user_role_id', '2')
-        ->where('is_active', 1)
-        ->where('is_deleted', 0)
-        ->get();
+        // Load all staff (role 2) who are active and added to a household
+        $users = \App\Models\User::with(['userWorkInfo'])
+            ->where('user_role_id', '2')
+            ->where('is_active', 1)
+            ->where('is_deleted', 0)
+            ->where('is_staff_added', 1) // Only hired staff
+            ->get();
 
-    foreach ($users as $user) {
-        // Employer = added_by (primary) or parent_user_id (fallback)
-        $employerId = $user->added_by ?? $user->parent_user_id ?? null;
-        if (!$employerId) {
-            $skipped[] = $user->name . ' (no employer linked)';
-            continue;
+        foreach ($users as $user) {
+            try {
+                // Employer = added_by (primary) or parent_user_id (fallback)
+                $employerId = $user->added_by ?? $user->parent_user_id ?? null;
+                if (!$employerId) {
+                    $skipped_reasons[] = $user->name . ' (no employer linked/not hired)';
+                    continue;
+                }
+
+                // Load employer and check auto_attendence
+                $employer = \App\Models\User::find($employerId);
+                if (!$employer) {
+                    $skipped_reasons[] = $user->name . ' (employer record not found)';
+                    continue;
+                }
+
+                $autoEnabled = ($employer->auto_attendence == "1" || $employer->auto_attendence == 1 || $employer->auto_attendence === true);
+                if (!$autoEnabled) {
+                    $skipped_reasons[] = $user->name . ' (auto-present OFF for employer: ' . $employer->name . ')';
+                    continue;
+                }
+
+                // Working days check
+                $rawDays = $user->userWorkInfo?->working_days;
+                if (empty($rawDays)) {
+                    // Default to Mon-Sat if not specified
+                    $rawDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                }
+                
+                $workingDays3 = array_map(fn($d) => substr(strtolower(trim($d)), 0, 3), $rawDays);
+                $today3       = substr($todayDayName, 0, 3);
+                
+                if (!in_array($today3, $workingDays3)) {
+                    $skipped_reasons[] = $user->name . ' (today is ' . $todayDayName . ', not in working days: ' . implode(',', $workingDays3) . ')';
+                    continue;
+                }
+
+                // Check if already marked
+                $existingAtt = \App\Models\Attendance::where('staff_id', $user->id)
+                    ->where('date', $today)
+                    ->first();
+
+                if ($existingAtt) {
+                    $skipped_reasons[] = $user->name . ' (already marked as ' . $existingAtt->status . ')';
+                    continue;
+                }
+
+                // Create new attendance record
+                \App\Models\Attendance::create([
+                    'staff_id'      => $user->id,
+                    'date'          => $today,
+                    'check_in_time' => '07:00:00',
+                    'status'        => 'present',
+                    'description'   => 'Auto-marked by system trigger',
+                    'processed_by'  => 1,
+                ]);
+                $marked[] = $user->name;
+
+            } catch (\Exception $e) {
+                $skipped_reasons[] = $user->name . ' (Error: ' . $e->getMessage() . ')';
+            }
         }
 
-        // Load employer and check auto_attendence
-        $employer = \App\Models\User::find($employerId);
-        $autoEnabled = $employer && ($employer->auto_attendence == "1" || $employer->auto_attendence == 1 || $employer->auto_attendence === true);
-        if (!$autoEnabled) {
-            $skipped[] = $user->name . ' (auto-present OFF for employer: ' . ($employer->name ?? 'Unknown') . ')';
-            continue;
-        }
-
-        // Working days check — normalize to first-3-letters comparison
-        $rawDays = $user->userWorkInfo?->working_days;
-        if (empty($rawDays)) {
-            // Default to Mon-Sat if not specified
-            $rawDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        }
-        
-        $workingDays3 = array_map(fn($d) => substr(strtolower(trim($d)), 0, 3), $rawDays);
-        $today3       = substr($todayDayName, 0, 3);
-        
-        if (!in_array($today3, $workingDays3)) {
-            $skipped[] = $user->name . ' (today is ' . $todayDayName . ', not in working days: ' . implode(',', $workingDays3) . ')';
-            continue;
-        }
-
-        // ✅ CRITICAL FIX: Only create attendance if it doesn't exist
-        // If manually marked (late, absent, etc.), don't overwrite it
-        $existingAtt = \App\Models\Attendance::where('staff_id', $user->id)
-            ->where('date', $today)
-            ->first();
-
-        if ($existingAtt) {
-            // Attendance already marked - respect manual changes
-            $skipped[] = $user->name . ' (already marked as ' . $existingAtt->status . ')';
-            continue;
-        }
-
-        // Create new attendance record only if none exists
-        $att = \App\Models\Attendance::create([
-            'staff_id'      => $user->id,
-            'date'          => $today,
-            'check_in_time' => '07:00:00',
-            'status'        => 'present',
-            'description'   => 'Auto-marked by system',
-            'processed_by'  => 1,
+        return response()->json([
+            'success' => true,
+            'message' => '✅ Auto attendance trigger process complete',
+            'date' => $today,
+            'day' => $todayDayName,
+            'marked_count' => count($marked),
+            'marked_list' => $marked,
+            'skipped_reasons' => $skipped_reasons,
         ]);
-        $marked[] = $user->name;
-    }
 
-    return response()->json([
-        'success' => true,
-        'message' => '✅ Auto attendance lag gayi!',
-        'date' => $today,
-        'day' => $todayDayName,
-        'marked' => $marked,
-        'skipped' => $skipped,
-    ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
 });
 // One-shot: clean duplicate attendance rows AND add unique index.
 // Safe to call multiple times (migration guards against re-adding index).

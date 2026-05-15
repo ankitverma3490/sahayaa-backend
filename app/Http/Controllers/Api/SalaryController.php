@@ -166,7 +166,14 @@ class SalaryController extends Controller
         }
 
         $salaryData = [
-            'staff_member' => $user,
+            'staff_member' => [
+                'id' => $user->id,
+                'name' => trim($user->first_name . ' ' . $user->last_name) ?: ($user->name ?: 'Staff Member'),
+                'email' => $user->email,
+                'phone' => $user->phone_number,
+                'image' => $user->image,
+                'upi_id' => $user->upi_id,
+            ],
             'salary_details' => [
                 'base_salary' => [
                     'monthly_salary' => $baseSalary,
@@ -457,9 +464,10 @@ class SalaryController extends Controller
         $salaryData = [
             'staff_member' => [
                 'id' => $user->id,
-                'name' => $user->first_name . ' ' . $user->last_name,
+                'name' => trim($user->first_name . ' ' . $user->last_name) ?: ($user->name ?: 'Staff Member'),
                 'email' => $user->email,
                 'phone' => $user->phone_number,
+                'image' => $user->image,
             ],
             'salary_details' => [
                 'base_salary' => [
@@ -647,7 +655,9 @@ public function getEarningsSummary(Request $request)
             $nextPayDate = \Carbon\Carbon::parse($acceptedDate)->addDays(7)->format('d/m/Y');
 
             $earningsSummary = [
-                "employer" => $employer['name'] ?? "Unknown Employer",
+                "employer" => $application->job && isset($application->job->creator) 
+                    ? (trim(($application->job->creator->first_name ?? '') . ' ' . ($application->job->creator->last_name ?? '')) ?: ($application->job->creator->name ?? "Your Employer"))
+                    : ($employer['name'] ?? "Your Employer"),
                 "job_id" => $job['id'] ?? null,
                 "role" => $job['title'] ?? "Job Role",
 
@@ -858,7 +868,9 @@ private function getWorkingDays($startDate, $endDate)
                     'status' => $payment->status,
                     'date' => $payment->created_at->toISOString(),
                     'salary_period' => $payment->salary_period,
-                    'staff_name' => $payment->staff ? ($payment->staff->first_name . ' ' . $payment->staff->last_name) : 'Unknown',
+                    'staff_name' => $payment->staff 
+                        ? (trim($payment->staff->first_name . ' ' . $payment->staff->last_name) ?: ($payment->staff->name ?: 'Staff Member'))
+                        : 'Unknown',
                 ]);
             }
 
@@ -876,7 +888,9 @@ private function getWorkingDays($startDate, $endDate)
                     'status' => $advance->status === 'active' ? 'paid' : $advance->status,
                     'date' => $advance->created_at->toISOString(),
                     'deduction_method' => $advance->deduction_type === 'full' ? 'one_time' : 'monthly',
-                    'staff_name' => $advance->staff ? ($advance->staff->first_name . ' ' . $advance->staff->last_name) : 'Unknown',
+                    'staff_name' => $advance->staff 
+                        ? (trim($advance->staff->first_name . ' ' . $advance->staff->last_name) ?: ($advance->staff->name ?: 'Staff Member'))
+                        : 'Unknown',
                 ]);
             }
 

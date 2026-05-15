@@ -105,7 +105,12 @@ class User extends Authenticatable
         'referral_code',
         'referred_by',
         'referral_earnings',
-        'referral_code_expires_at'
+        'referral_code_expires_at',
+        'employer_aadhar_front',
+        'employer_aadhar_back',
+        'employer_police_verification',
+        'employer_other_doc',
+        'fir_document'
     ];
 
     /**
@@ -223,6 +228,31 @@ class User extends Authenticatable
             return env('APP_URL') . '/public/' . $value;
         }
         return null;
+    }
+
+    public function getEmployerAadharFrontAttribute($value)
+    {
+        return $this->getFileUrl($value);
+    }
+
+    public function getEmployerAadharBackAttribute($value)
+    {
+        return $this->getFileUrl($value);
+    }
+
+    public function getEmployerPoliceVerificationAttribute($value)
+    {
+        return $this->getFileUrl($value);
+    }
+
+    public function getEmployerOtherDocAttribute($value)
+    {
+        return $this->getFileUrl($value);
+    }
+
+    public function getFirDocumentAttribute($value)
+    {
+        return $this->getFileUrl($value);
     }
 
     /**

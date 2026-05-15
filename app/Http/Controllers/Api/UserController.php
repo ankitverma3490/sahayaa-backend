@@ -4494,6 +4494,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
         'is_verified' => 1,
         'step' => 6, // ← FIXED: Use 'step' not 'steps'
         'relation' => $request->emergency_contact_name,
+        'upi_id' => $request->upi_id, // ← ADDED: Persist UPI ID
     ];
     
     \Log::info('Update Data Prepared', ['data' => $updateData]);
@@ -4956,6 +4957,13 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 'aadhar_number' => 'sometimes|required|string|max:12|unique:users,aadhar_number,' . $id,
                 'upi_id' => 'nullable|string|max:255',
                 'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                
+                // Private Documents
+                'employer_aadhar_front' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'employer_aadhar_back' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'employer_police_verification' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'employer_other_doc' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'fir_document' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
             ]);
 
             if ($validator->fails()) {
@@ -5006,16 +5014,17 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
             foreach ($userFields as $field) {
                 if ($request->has($field)) {
-                    if ($field === 'first_name' || $field === 'last_name') {
-                        $updateData[$field] = $request->$field;
-                        $updateData['name'] = $request->first_name . ' ' . $request->last_name;
-                        $updatedFields[] = $field;
-                        $updatedFields[] = 'name';
-                    } else {
-                        $updateData[$field] = $request->$field;
-                        $updatedFields[] = $field;
-                    }
+                    $updateData[$field] = $request->$field;
+                    $updatedFields[] = $field;
                 }
+            }
+
+            // Update composite name if either first_name or last_name is provided
+            if ($request->has('first_name') || $request->has('last_name')) {
+                $firstName = $request->has('first_name') ? $request->first_name : $staff->first_name;
+                $lastName = $request->has('last_name') ? $request->last_name : $staff->last_name;
+                $updateData['name'] = trim($firstName . ' ' . $lastName);
+                $updatedFields[] = 'name';
             }
 
             // Handle file uploads
@@ -5038,6 +5047,28 @@ private function updateExistingStaff(User $existingUser, Request $request)
                     'new_path' => $updateData['image'],
                     'timestamp' => now()->toDateTimeString()
                 ]);
+            }
+
+            // Handle Private Document uploads
+            $docFields = [
+                'employer_aadhar_front', 
+                'employer_aadhar_back', 
+                'employer_police_verification', 
+                'employer_other_doc',
+                'fir_document'
+            ];
+
+            foreach ($docFields as $docField) {
+                if ($request->hasFile($docField)) {
+                    \Log::info("Processing {$docField} upload", [
+                        'action' => $logAction,
+                        'staff_id' => $staff->id,
+                        'timestamp' => now()->toDateTimeString()
+                    ]);
+                    
+                    $updateData[$docField] = $this->uploadCloudary($request, $docField, "staff/private_docs");
+                    $updatedFields[] = $docField;
+                }
             }
 
             \Log::info('User update data prepared', [
@@ -5321,7 +5352,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Staff member updated successfully',
-            'data' => $staff->fresh(['addresses', 'userWorkInfo'])
+            'data' => $staff->fresh(['addresses', 'userWorkInfo', 'kycInformation'])
         ]);
 
     } catch (\Exception $e) {

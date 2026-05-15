@@ -535,15 +535,20 @@ public function getEarningsSummary(Request $request)
         // Get approved job applications
         $applications = JobApplication::where('user_id', $user->id)
             ->where('application_status', 'accepted')
-            ->with(['job.creator'])
+            ->with(['job.creator', 'user.addedByUser', 'user.userWorkInfo'])
             ->when($jobId, function($query) use ($jobId) {
                 return $query->where('job_id', $jobId);
             })
             ->get();
 
         if ($applications->isEmpty()) {
+            // Reload user with relations if needed
+            $user->load(['addedByUser', 'userWorkInfo']);
+            
             // Check if user was directly added by someone
-            if ($user->addedByUser) {
+            if ($user->addedByUser || $user->added_by) {
+                $employer = $user->addedByUser ?: User::find($user->added_by);
+                
                 // Create a "virtual" application object for consistent processing
                 $virtualApplication = new \stdClass();
                 $virtualApplication->id = 0;
@@ -554,12 +559,12 @@ public function getEarningsSummary(Request $request)
                 $virtualJob->id = null;
                 $virtualJob->title = $user->userWorkInfo->primary_role ?? "Staff Member";
                 $virtualJob->compensation = $user->userWorkInfo->salary ?? 0;
-                $virtualJob->city = $user->addedByUser->location ?? "";
+                $virtualJob->city = $employer->location ?? "";
                 $virtualJob->state = "";
-                $virtualJob->street_address = $user->addedByUser->location ?? "";
+                $virtualJob->street_address = $employer->location ?? "";
                 $virtualJob->commitment_type = "";
                 $virtualJob->compensation_type = "";
-                $virtualJob->creator = $user->addedByUser;
+                $virtualJob->creator = $employer;
                 
                 $virtualApplication->job = $virtualJob;
                 $applications = collect([$virtualApplication]);
@@ -604,8 +609,12 @@ public function getEarningsSummary(Request $request)
                 $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
                 if ($userWorkInfo && $userWorkInfo->salary) {
                     $totalBaseSalary = (float) $userWorkInfo->salary;
+                } elseif (isset($job['compensation'])) {
+                    $totalBaseSalary = (float) $job['compensation'];
+                } elseif (is_object($application->job) && isset($application->job->compensation)) {
+                     $totalBaseSalary = (float) $application->job->compensation;
                 } else {
-                    $totalBaseSalary = $job['compensation'] ?? 0;
+                    $totalBaseSalary = 0;
                 }
                 $totalNetSalary = $totalBaseSalary;
             }
@@ -657,7 +666,7 @@ public function getEarningsSummary(Request $request)
             $earningsSummary = [
                 "employer" => $application->job && isset($application->job->creator) 
                     ? (trim(($application->job->creator->first_name ?? '') . ' ' . ($application->job->creator->last_name ?? '')) ?: ($application->job->creator->name ?? "Your Employer"))
-                    : ($employer['name'] ?? "Your Employer"),
+                    : ($employer['name'] ?? ($user->addedByUser->name ?? "Your Employer")),
                 "job_id" => $job['id'] ?? null,
                 "role" => $job['title'] ?? "Job Role",
 
@@ -697,7 +706,7 @@ public function getEarningsSummary(Request $request)
                 "payment_history" => $paymentHistory,
 
                 "salary_summary" => [
-                    "current_monthly_salary" => $job['compensation'] ?? 0,
+                    "current_monthly_salary" => (float)($user->userWorkInfo->salary ?? ($job['compensation'] ?? (is_object($application->job) ? ($application->job->compensation ?? 0) : 0))),
                     "next_pay_date" => $nextPayDate,
                 ],
 

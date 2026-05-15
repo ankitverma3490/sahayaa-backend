@@ -3932,10 +3932,10 @@ public function addStaff(Request $request)
             // Aadhar details
             'aadhar_number' => 'required',
             // Document files (optional)
-            'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'aadhar_front' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'aadhar_back' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'police_clearance_certificate' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:2048',
+            'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
+            'aadhar_front' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+            'aadhar_back' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+            'police_clearance_certificate' => 'nullable|file|mimes:pdf,jpeg,png,jpg|max:10240',
         ]);
 
         if ($validator->fails()) {

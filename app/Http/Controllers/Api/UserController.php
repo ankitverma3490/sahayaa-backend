@@ -4024,7 +4024,7 @@ public function addStaff(Request $request)
         try {
             if ($request->hasFile('police_clearance_certificate')) {
                 // $policeClearancePath = $request->file('police_clearance_certificate')->store('staff/documents', 'public');
-                $aadharBackPath = $this->uploadCloudary($request,"police_clearance_certificate","staff/documents");
+                $policeClearancePath = $this->uploadCloudary($request,"police_clearance_certificate","staff/documents");
                 
                 \Log::info('Police clearance certificate uploaded successfully', [
                     'action' => $logAction,

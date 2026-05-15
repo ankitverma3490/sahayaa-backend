@@ -110,8 +110,16 @@ class AdminSalaryController extends Controller
             ($request->tax ?? 0)
             + ($request->advance_payment ?? 0);
             
-        $netSalary = max(0, $totalEarnings - $totalDeductions);
+        $netSalary = $totalEarnings - $totalDeductions;
         
+        if ($netSalary <= 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Net salary must be greater than zero. Please adjust earnings or deductions.'
+            ], 422);
+        }
+        
+        $netSalary = max(0, $netSalary); // Safeguard
         // ✅ Create Salary
         $salary = Salary::create([
             'staff_id' => $request->staff_id,

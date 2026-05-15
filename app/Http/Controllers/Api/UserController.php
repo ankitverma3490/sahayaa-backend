@@ -4956,14 +4956,14 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 
                 'aadhar_number' => 'sometimes|required|string|max:12|unique:users,aadhar_number,' . $id,
                 'upi_id' => 'nullable|string|max:255',
-                'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
                 
                 // Private Documents
-                'employer_aadhar_front' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'employer_aadhar_back' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'employer_police_verification' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'employer_other_doc' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
-                'fir_document' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+                'employer_aadhar_front' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+                'employer_aadhar_back' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+                'employer_police_verification' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+                'employer_other_doc' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
+                'fir_document' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
             ]);
 
             if ($validator->fails()) {

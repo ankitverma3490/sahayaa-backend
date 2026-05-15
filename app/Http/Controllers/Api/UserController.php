@@ -4933,7 +4933,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
             $validator = Validator::make($request->all(), [
                 'first_name' => 'sometimes|required|string|max:255',
                 'last_name' => 'sometimes|required|string|max:255',
-                'email' => 'nullable|required|email|unique:users,email,' . $id,
+                'email' => 'sometimes|nullable|email|unique:users,email,' . $id,
                 'phone_number' => 'sometimes|required|string|max:15|unique:users,phone_number,' . $id,
                 'gender' => 'sometimes|required|in:male,female,other',
                 'dob' => 'sometimes|required|date',

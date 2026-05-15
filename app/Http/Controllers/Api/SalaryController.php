@@ -625,9 +625,33 @@ public function getEarningsSummary(Request $request)
             }
 
             // Get payment history (last 3 months)
+            $salaryHistory = Salary::where('staff_id', $user->id)
+                ->orderBy('payment_date', 'desc')
+                ->limit(3)
+                ->get()
+                ->map(function($s) {
+                    return [
+                        'id' => $s->id,
+                        'month' => Carbon::parse($s->payment_date)->format('F Y'),
+                        'date' => $s->created_at->toDateTimeString(),
+                        'paid_on' => Carbon::parse($s->payment_date)->format('d/m/Y'),
+                        'amount' => (float)$s->net_salary,
+                        'status' => $s->status,
+                        'type' => (float)($s->advance_payment ?? 0) > 0 ? 'advance' : 'salary',
+                        'payment_mode' => $s->payment_mode,
+                        'base_salary' => $s->basic_salary,
+                        'performance_bonus' => $s->performative_allowance,
+                        'overtime_pay' => $s->over_time_allowance,
+                        'tax_deduction' => $s->tax,
+                        'advance_payment' => $s->advance_payment,
+                        'payment_id' => 'SAL-' . $s->id,
+                    ];
+                });
+
             $paymentHistory = (clone $paymentsQuery)
                 // ->where('status', 'completed')
                 ->orderBy('created_at', 'desc')
+                ->limit(3)
                 ->get()
                 ->map(function($payment) {
                     return [
@@ -635,9 +659,9 @@ public function getEarningsSummary(Request $request)
                         'month' => $payment->salary_period,
                         'date' => $payment->created_at->toDateTimeString(),
                         'paid_on' => $payment->updated_at->format('d/m/Y'),
-                        'amount' => $payment->net_salary,
+                        'amount' => (float)$payment->net_salary,
                         'status' => $payment->status,
-                        'type' => 'salary',
+                        'type' => (float)($payment->advance_payment ?? 0) > 0 ? 'advance' : 'salary',
                         'payment_mode' => $payment->payment_mode,
                         'base_salary' => $payment->base_salary,
                         'performance_bonus' => $payment->performance_bonus,
@@ -648,6 +672,12 @@ public function getEarningsSummary(Request $request)
                         'order_id' => $payment->order_id
                     ];
                 });
+
+            // Merge and sort combined history
+            $combinedHistory = $salaryHistory->concat($paymentHistory)
+                ->sortByDesc('date')
+                ->values()
+                ->take(3);
             $startDate = date('Y-m-01', strtotime($month));
             $endDate = date('Y-m-t', strtotime($month));
             
@@ -708,7 +738,7 @@ public function getEarningsSummary(Request $request)
                     ]
                 ],
 
-                "payment_history" => $paymentHistory,
+                "payment_history" => $combinedHistory,
 
                 "salary_summary" => [
                     "current_monthly_salary" => (float)($user->userWorkInfo->salary ?? ($job['compensation'] ?? (is_object($application->job) ? ($application->job->compensation ?? 0) : 0))),

@@ -590,6 +590,7 @@ public function getEarningsSummary(Request $request)
 
             // Get current month payments
             $currentMonthPayments = (clone $paymentsQuery)
+                ->where('status', 'paid')
                 ->where(function($q) use ($monthName) {
                     $q->where('salary_period', 'like', '%' . $monthName . '%')
                       ->orWhere('salary_period', 'like', '%' . str_replace(' ', '-', $monthName) . '%');
@@ -599,6 +600,7 @@ public function getEarningsSummary(Request $request)
             $currentMonthSalaries = Salary::where('staff_id', $user->id)
                 ->whereMonth('payment_date', date('m'))
                 ->whereYear('payment_date', date('Y'))
+                ->where('status', 'paid')
                 ->get();
 
             // Calculate totals for current month
@@ -1199,12 +1201,14 @@ private function getWorkingDays($startDate, $endDate)
             $monthEnd = date('Y-m-t');
             
             $currentMonthPayments = Payment::where('staff_id', $user->id)
+                ->where('status', 'paid')
                 ->where('salary_period', 'like', '%' . date('F Y') . '%')
                 ->get();
                 
             $currentMonthSalaries = Salary::where('staff_id', $user->id)
                 ->whereMonth('payment_date', date('m'))
                 ->whereYear('payment_date', date('Y'))
+                ->where('status', 'paid')
                 ->get();
 
             $totalEarnings = $currentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');

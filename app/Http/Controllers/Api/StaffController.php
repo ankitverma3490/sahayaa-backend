@@ -1007,7 +1007,33 @@ class StaffController extends Controller
                 }, 'userWorkInfo'])
                 ->whereIn('id', $allStaffIds)
                 ->get()
-                ->map(function($staff) {
+                ->map(function($staff) use ($user, $today) {
+                    $attendance = $staff->attendance_details->first();
+
+                    // Lazy auto-attendance fallback: If the employer has auto-attendance enabled, 
+                    // and no record exists, dynamically create it to cover for missed crons or late toggles.
+                    $autoEnabled = $user->auto_attendence == "1" || $user->auto_attendence == 1 || $user->auto_attendence === true;
+                    if (!$attendance && $autoEnabled) {
+                        $rawDays = $staff->userWorkInfo?->working_days ?? ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                        $workingDays3 = array_map(fn($d) => substr(strtolower($d), 0, 3), $rawDays);
+                        $today3 = substr(strtolower(now()->format('l')), 0, 3);
+                        
+                        if (in_array($today3, $workingDays3)) {
+                            try {
+                                $attendance = \App\Models\Attendance::create([
+                                    'staff_id'      => $staff->id,
+                                    'date'          => $today,
+                                    'check_in_time' => '07:00:00',
+                                    'status'        => 'present',
+                                    'description'   => 'Auto-marked by system (Dynamic)',
+                                    'processed_by'  => 1,
+                                ]);
+                            } catch (\Exception $e) {
+                                // Silent fail if duplicate insertion happens concurrently
+                            }
+                        }
+                    }
+
                     return [
                         'id' => $staff->id,
                         'name' => $staff->first_name . ' ' . $staff->last_name,
@@ -1015,9 +1041,9 @@ class StaffController extends Controller
                         'last_name' => $staff->last_name,
                         'image' => $staff->image ? (str_contains($staff->image, 'http') ? $staff->image : url($staff->image)) : null,
                         'staff' => $staff, // Include full staff object for frontend compatibility
-                        'attendance_details' => $staff->attendance_details->first() ?: [
+                        'attendance_details' => $attendance ?: [
                             'status' => 'absent', // Default to absent if no record for today
-                            'date' => now()->toDateString()
+                            'date' => $today
                         ]
                     ];
                 });

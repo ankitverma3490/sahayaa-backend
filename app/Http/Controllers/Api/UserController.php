@@ -3931,6 +3931,7 @@ public function addStaff(Request $request)
             'working_days' => 'nullable|array',
             // Aadhar details
             'aadhar_number' => 'required',
+            'upi_id' => 'nullable|string|max:255',
             // Document files (optional)
             'staff_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'aadhar_front' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',

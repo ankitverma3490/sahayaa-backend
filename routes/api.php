@@ -657,6 +657,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::prefix('staff')->group(function () {
         Route::post('/add', [UserController::class, 'addStaff']);
         Route::get('/list', [UserController::class, 'getStaffList']);
+        Route::get('/available/{id}', [UserController::class, 'getAvailableStaffDetails']);
         Route::get('/{id}', [UserController::class, 'getStaffDetails']);
         Route::post('/update/{id}', [UserController::class, 'updateStaff']);
         

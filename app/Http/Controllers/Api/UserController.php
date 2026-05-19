@@ -729,6 +729,55 @@ public function getProfile(Request $request)
             
             $user->save();
 
+            // Auto-populate UserAddress from Aadhaar split_address if user doesn't have address
+            try {
+                $rawResponse = $verifyResult['raw_data'] ?? null;
+                $splitAddress = $rawResponse['data']['split_address'] ?? null;
+                if ($splitAddress) {
+                    $streetParts = array_filter([
+                        $splitAddress['house'] ?? null,
+                        $splitAddress['street'] ?? null,
+                        $splitAddress['locality'] ?? null,
+                        $splitAddress['po'] ?? null
+                    ]);
+                    $street = implode(', ', $streetParts);
+                    $city = $splitAddress['dist'] ?? $splitAddress['vtc'] ?? null;
+                    $state = $splitAddress['state'] ?? null;
+                    $pincode = $splitAddress['pincode'] ?? null;
+
+                    if (!empty($street) || !empty($city) || !empty($state) || !empty($pincode)) {
+                        \App\Models\UserAddress::updateOrCreate(
+                            ['user_id' => $user->id, 'is_primary' => true],
+                            [
+                                'street' => $street,
+                                'city' => $city,
+                                'state' => $state,
+                                'pincode' => $pincode
+                            ]
+                        );
+                    }
+                }
+            } catch (\Exception $addrEx) {
+                \Log::warning('Failed to save Aadhaar address: ' . $addrEx->getMessage());
+            }
+
+            // Eager load relations for the response to auto-fill forms
+            $user->load([
+                'addresses',
+                'petDetails',
+                'lastExp',
+                'householdInformation',
+                'kycInformation',
+                'userWorkInfo',
+                'addedByUser',
+                'addedByUser.addresses',
+                'addedByUser.petDetails',
+                'addedByUser.lastExp',
+                'addedByUser.householdInformation',
+                'addedByUser.kycInformation',
+                'addedByUser.userWorkInfo'
+            ]);
+
             return response()->json([
                 'message' => 'Aadhaar verified successfully',
                 'user' => $user,
@@ -1085,7 +1134,10 @@ public function updateProfile(Request $request)
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'languages_spoken' => 'nullable|array',
             'auto_attendence' => 'nullable|boolean',
-            'upi_id' => 'nullable|string|max:255'
+            'upi_id' => 'nullable|string|max:255',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_number' => 'nullable|string|max:255',
+            'preferred_work_location' => 'nullable|string|max:255'
         ]);
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
@@ -1314,6 +1366,9 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file|max:10240',
+        'emergency_contact_name' => 'nullable|string|max:255',
+        'emergency_contact_number' => 'nullable|string|max:255',
+        'preferred_work_location' => 'nullable|string|max:255',
     ]);
 
 
@@ -1346,6 +1401,9 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'total_experience' => $workValidated['total_experience'] ?? null,
         'education' => $workValidated['education'] ?? null,
         'additional_info' => $workValidated['additional_info'] ?? null,
+        'emergency_contact_name' => $workValidated['emergency_contact_name'] ?? null,
+        'emergency_contact_number' => $workValidated['emergency_contact_number'] ?? null,
+        'preferred_work_location' => $workValidated['preferred_work_location'] ?? null,
     ];
     if ($request->hasFile('voice_note')) {
         $directory = "uploads/user_voice_notes";
@@ -3153,6 +3211,9 @@ public function addressUpdate(Request $request)
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file', // 10MB max
+        'emergency_contact_name' => 'nullable|string|max:255',
+        'emergency_contact_number' => 'nullable|string|max:255',
+        'preferred_work_location' => 'nullable|string|max:255',
     ]);
  $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
 UserHouseholdInformation::updateOrCreate(
@@ -3167,6 +3228,9 @@ UserHouseholdInformation::updateOrCreate(
         'total_experience' => $validated['total_experience'] ?? null,
         'education' => $validated['education'] ?? null,
         'additional_info' => $validated['additional_info'] ?? null,
+        'emergency_contact_name' => $validated['emergency_contact_name'] ?? null,
+        'emergency_contact_number' => $validated['emergency_contact_number'] ?? null,
+        'preferred_work_location' => $validated['preferred_work_location'] ?? null,
     ];
     if ($request->hasFile('voice_note')) {
         $directory = "uploads/user_voice_notes";
@@ -4847,6 +4911,39 @@ private function updateExistingStaff(User $existingUser, Request $request)
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve staff details',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get details of any available/registered staff member
+     */
+    public function getAvailableStaffDetails($id)
+    {
+        try {
+            $staff = User::where('user_role_id', 2)
+                ->where('id', $id)
+                ->with(['addresses', 'userWorkInfo', 'addedByUser'])
+                ->first();
+
+            if (!$staff) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Available staff member not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Available staff details retrieved successfully',
+                'data' => $staff
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve available staff details',
                 'error' => $e->getMessage()
             ], 500);
         }

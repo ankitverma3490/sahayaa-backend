@@ -380,8 +380,57 @@ class StaffController extends Controller
                 });
             }
 
+            if (!empty($filters['experience'])) {
+                $exp = (int) $filters['experience'];
+                $query->whereHas('userWorkInfo', function ($q) use ($exp) {
+                    $q->where('total_experience', '>=', $exp);
+                });
+            }
+
+            if (!empty($filters['languages']) && is_array($filters['languages'])) {
+                $langs = $filters['languages'];
+                $query->whereHas('userWorkInfo', function ($q) use ($langs) {
+                    $q->where(function ($inner) use ($langs) {
+                        foreach ($langs as $lang) {
+                            $inner->orWhere('languages_spoken', 'like', '%' . $lang . '%');
+                        }
+                    });
+                });
+            }
+
+            if (!empty($filters['skills']) && is_array($filters['skills'])) {
+                $skills = $filters['skills'];
+                $query->whereHas('userWorkInfo', function ($q) use ($skills) {
+                    $q->where(function ($inner) use ($skills) {
+                        foreach ($skills as $skill) {
+                            $inner->orWhere('skills', 'like', '%' . $skill . '%')
+                                  ->orWhere('primary_role', 'like', '%' . $skill . '%')
+                                  ->orWhere('additional_info', 'like', '%' . $skill . '%');
+                        }
+                    });
+                });
+            }
+
+            if (!empty($filters['general_keywords']) && is_array($filters['general_keywords'])) {
+                $keywords = $filters['general_keywords'];
+                $query->where(function ($q) use ($keywords) {
+                    foreach ($keywords as $kw) {
+                        $q->where(function ($inner) use ($kw) {
+                            $inner->orWhere('first_name', 'like', '%' . $kw . '%')
+                                  ->orWhere('last_name', 'like', '%' . $kw . '%')
+                                  ->orWhereHas('userWorkInfo', function ($sub) use ($kw) {
+                                      $sub->where('primary_role', 'like', '%' . $kw . '%')
+                                          ->orWhere('skills', 'like', '%' . $kw . '%')
+                                          ->orWhere('additional_info', 'like', '%' . $kw . '%')
+                                          ->orWhere('education', 'like', '%' . $kw . '%');
+                                  });
+                        });
+                    }
+                });
+            }
+
             // ✅ If query was provided but AI didn't find any filters, use basic keyword fallback
-            if (empty($filters['role']) && empty($filters['name']) && empty($filters['location']) && empty($filters['gender']) && empty($filters['salary'])) {
+            if (empty($filters['role']) && empty($filters['name']) && empty($filters['location']) && empty($filters['gender']) && empty($filters['salary']) && empty($filters['experience']) && empty($filters['languages']) && empty($filters['skills']) && empty($filters['general_keywords'])) {
                 $data = $this->applyBasicFilters($baseQuery, $queryText)->get();
                 return response()->json([
                     'success' => true,

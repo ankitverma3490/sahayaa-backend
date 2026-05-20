@@ -49,7 +49,10 @@ class AiFilterService
                 - role (string): Job role/title (e.g. "Driver", "Cook", "Maid", "House Cleaner", "Baby Sitter", "Nanny", "Chef", "Plumber", "Electrician", "Carpenter", "Painter", "Gardener", "Security Guard", "Nurse", "Tutor", "Sweeper", "Laundry", "Dog Walker", "Attendant")
                 - location (string): City, area, or state name (EXTRACT EXACT CITY NAME)
                 - salary (object): Salary range with operators like {"gt": 5000, "lt": 20000}
-                - status (string): Employment status
+                - experience (integer): Minimum years of experience (e.g., 2, 5, 10)
+                - languages (array of strings): Languages spoken (e.g., ["hindi", "english", "telugu", "tamil"])
+                - skills (array of strings): Specific skills, tasks, or requirements (e.g., ["driving license", "first aid", "newborn care", "vegetarian cooking", "cleaning"])
+                - general_keywords (array of strings): Any other adjectives or descriptive keywords from the user request (e.g., ["polite", "reliable", "verified", "urgent"])
 
                 IMPORTANT: For role-based searches, ALWAYS extract the job role into the "role" field.
                 IMPORTANT: For city/location searches, extract the city name (e.g., "Vizag", "Mumbai", "Delhi") and put it in the "location" field.
@@ -57,14 +60,10 @@ class AiFilterService
                 Use ONLY these canonical role names (lowercase):
                 driver, cook, chef, maid, house cleaner, nanny, baby sitter, housekeeper, gardener, security, nurse, tutor, plumber, electrician, carpenter, painter, sweeper, laundry, dog walker, attendant, pet caretaker
                 
-                Example: "I need a cook in vizag" -> {"role": "cook", "location": "vizag"}
-                Example: "Experienced Male Driver" -> {"role": "driver", "gender": "male"}
-                Example: "female cook in Mumbai" -> {"role": "cook", "gender": "female", "location": "Mumbai"}
-                Example: "Professional Housekeeper" -> {"role": "housekeeper"}
-                Example: "plumber in Indore" -> {"role": "plumber", "location": "Indore"}
-                Example: "chef near me" -> {"role": "chef"}
-                Example: "find me a driver" -> {"role": "driver"}
-                Example: "Indore City plumber" -> {"role": "plumber", "location": "Indore"}
+                Example: "I need a cook who knows Hindi and has 5 years experience in Vizag" -> {"role": "cook", "location": "Vizag", "languages": ["hindi"], "experience": 5}
+                Example: "Experienced Male Driver with license" -> {"role": "driver", "gender": "male", "skills": ["driving license"]}
+                Example: "female cook in Mumbai who knows south indian food" -> {"role": "cook", "gender": "female", "location": "Mumbai", "skills": ["south indian"]}
+                Example: "polite nanny in delhi" -> {"role": "nanny", "location": "delhi", "general_keywords": ["polite"]}
 
                 Return ONLY valid JSON.
                 No markdown.

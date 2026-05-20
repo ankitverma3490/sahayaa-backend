@@ -24,7 +24,7 @@ public function index(Request $request): JsonResponse
 {
     $user = Auth::guard('api')->user();
     
-    $jobs = Job::withCount('applications')
+    $jobs = Job::select('jobs.*')->withCount('applications')
               ->when($user, function ($query) use ($user, $request) {
                   // Add select for is_applied
                   $query->addSelect([

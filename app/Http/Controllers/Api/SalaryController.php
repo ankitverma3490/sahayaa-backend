@@ -512,10 +512,27 @@ class SalaryController extends Controller
     }
 }
 
-public function getEarningsSummary(Request $request)
+public function getEarningsSummary(Request $request, $job_id = null)
 {
     try {
-        $validator = Validator::make($request->all(), [
+        $input = $request->all();
+
+        // Populate job_id from route parameter if not in query parameters
+        if ($job_id !== null && !isset($input['job_id'])) {
+            $input['job_id'] = $job_id;
+        }
+
+        // Sanitize job_id to handle React Native state uninitialized values (like 'null', 'undefined', empty, or 0)
+        if (isset($input['job_id']) && ($input['job_id'] === 'null' || $input['job_id'] === 'undefined' || $input['job_id'] === '' || $input['job_id'] == 0)) {
+            unset($input['job_id']);
+        }
+
+        // Sanitize month to handle empty/uninitialized strings
+        if (isset($input['month']) && ($input['month'] === 'null' || $input['month'] === 'undefined' || $input['month'] === '')) {
+            unset($input['month']);
+        }
+
+        $validator = Validator::make($input, [
             'job_id' => 'sometimes|exists:jobs,id',
             'month' => 'sometimes|date_format:Y-m'
         ]);
@@ -528,9 +545,16 @@ public function getEarningsSummary(Request $request)
             ], 422);
         }
         
-        $user = Auth::user();
-        $jobId = $request->job_id;
-        $month = $request->month ?? date('Y-m');
+        $user = Auth::guard('api')->user();
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        $jobId = $input['job_id'] ?? null;
+        $month = $input['month'] ?? date('Y-m');
         $monthName = date('F Y', strtotime($month));
         // Get approved job applications
         $applications = JobApplication::where('user_id', $user->id)

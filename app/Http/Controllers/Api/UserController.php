@@ -434,7 +434,11 @@ public function getProfile(Request $request)
     public function logout(Request $request)
     {
         if ($request->user()) { 
-            $request->user()->token()->revoke();
+            if (method_exists($request->user(), 'currentAccessToken') && $request->user()->currentAccessToken()) {
+                $request->user()->currentAccessToken()->delete();
+            } elseif (method_exists($request->user(), 'token') && $request->user()->token()) {
+                $request->user()->token()->revoke();
+            }
         }
         return response()->json([
             'status' => true,

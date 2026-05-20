@@ -1231,6 +1231,8 @@ public function updateProfile(Request $request)
         if ($isEdit == 1 && $user->user_role_id == 2) {
             try {
                 $this->saveWorkAndExperience($user, $request, $isEdit);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                \Log::error('saveWorkAndExperience ValidationException: ' . json_encode($e->errors()));
             } catch (\Throwable $th) {
                 \Log::error('saveWorkAndExperience failed: ' . $th->getMessage());
                 // non-fatal
@@ -1363,10 +1365,9 @@ private function saveWorkAndExperience($user, $request, $isEdit)
     // Work Info
     $workValidated = $request->validate([
         'primary_role' => 'nullable|string|max:255',
-        'skills' => 'nullable|array',
-        'skills.*' => 'string|max:255',
-        'languages_spoken' => 'nullable|array',
-        'total_experience' => 'nullable|numeric|min:0|max:10',
+        'skills' => 'nullable',
+        'languages_spoken' => 'nullable',
+        'total_experience' => 'nullable',
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file|max:10240',
@@ -1375,34 +1376,45 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'preferred_work_location' => 'nullable|string|max:255',
     ]);
 
-
-
-  $jsonResponse = json_encode($workValidated, JSON_PRETTY_PRINT);
-
-    // File path inside storage folder
-    $filePath = storage_path('logs/ddddv.txt');
-
-    // Open the file for appending (creates file if not exists)
-    $file = fopen($filePath, 'a');
-
-    if ($file) {
-        fwrite($file, "==== " . date('Y-m-d H:i:s') . " ====\n");
-        fwrite($file, $jsonResponse . "\n\n");
-        fclose($file);
-    } else {
-        // Handle error if file couldn't be opened
-        \Log::error('Could not open log file for writing.');
+    $skills = $request->input('skills');
+    if (is_string($skills)) {
+        $decoded = json_decode($skills, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $skills = $decoded;
+        } else {
+            $skills = array_map('trim', explode(',', $skills));
+        }
     }
+
+    $languages = $request->input('languages_spoken');
+    if (is_string($languages)) {
+        $decoded = json_decode($languages, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $languages = $decoded;
+        } else {
+            $languages = array_map('trim', explode(',', $languages));
+        }
+    }
+
+    $totalExperience = $request->input('total_experience');
+    if ($totalExperience !== null) {
+        if (preg_match('/[0-9]+(\.[0-9]+)?/', $totalExperience, $matches)) {
+            $totalExperience = (float)$matches[0];
+        } else {
+            $totalExperience = null;
+        }
+    }
+
     $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
     UserHouseholdInformation::updateOrCreate(
-    ['user_id' => $user->id],     // condition
-    ['languages_spoken' => $request->languages_spoken] // fields to update
-);
+        ['user_id' => $user->id],     // condition
+        ['languages_spoken' => $languages] // fields to update
+    );
     $data = [
         'primary_role' => $workValidated['primary_role'] ?? null,
-        'skills' => $workValidated['skills'] ?? [],
-         'languages_spoken' => $workValidated['languages_spoken'] ?? null,
-        'total_experience' => $workValidated['total_experience'] ?? null,
+        'skills' => $skills ?? [],
+        'languages_spoken' => $languages ?? null,
+        'total_experience' => $totalExperience ?? null,
         'education' => $workValidated['education'] ?? null,
         'additional_info' => $workValidated['additional_info'] ?? null,
         'emergency_contact_name' => $workValidated['emergency_contact_name'] ?? null,
@@ -1671,6 +1683,8 @@ public function updateProfileCustomer(Request $request)
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'languages_spoken'=> 'nullable|array',
             'upi_id'          => 'nullable|string|max:255',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_number' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -1719,13 +1733,14 @@ public function updateProfileCustomer(Request $request)
         // ✅ Merge Work Info logic
         $workValidated = $request->validate([
             'primary_role' => 'nullable|string|max:255',
-            'skills' => 'nullable|array',
-            'skills.*' => 'string|max:255',
-            'languages_spoken' => 'nullable|max:255',
-            'total_experience' => 'nullable|string|max:255',
+            'skills' => 'nullable',
+            'languages_spoken' => 'nullable',
+            'total_experience' => 'nullable',
             'education' => 'nullable|string|max:255',
             'additional_info' => 'nullable',
             'voice_note' => 'nullable|file|max:10240',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_number' => 'nullable|string|max:255',
         ]);
         $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
 
@@ -1773,13 +1788,44 @@ public function updateProfileCustomer(Request $request)
             }
         }
 
+        $skills = $request->input('skills');
+        if (is_string($skills)) {
+            $decoded = json_decode($skills, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $skills = $decoded;
+            } else {
+                $skills = array_map('trim', explode(',', $skills));
+            }
+        }
+
+        $languages = $request->input('languages_spoken');
+        if (is_string($languages)) {
+            $decoded = json_decode($languages, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $languages = $decoded;
+            } else {
+                $languages = array_map('trim', explode(',', $languages));
+            }
+        }
+
+        $totalExperience = $request->input('total_experience');
+        if ($totalExperience !== null) {
+            if (preg_match('/[0-9]+(\.[0-9]+)?/', $totalExperience, $matches)) {
+                $totalExperience = (float)$matches[0];
+            } else {
+                $totalExperience = null;
+            }
+        }
+
         $workData = [
             'primary_role' => $workValidated['primary_role'] ?? null,
-            'skills' => $workValidated['skills'] ?? [],
-            'languages_spoken' => $workValidated['languages_spoken'] ?? null,
-            'total_experience' => $workValidated['total_experience'] ?? null,
+            'skills' => $skills ?? [],
+            'languages_spoken' => $languages ?? null,
+            'total_experience' => $totalExperience ?? null,
             'education' => $workValidated['education'] ?? null,
             'additional_info' => $workValidated['additional_info'] ?? null,
+            'emergency_contact_name' => $workValidated['emergency_contact_name'] ?? null,
+            'emergency_contact_number' => $workValidated['emergency_contact_number'] ?? null,
         ];
 
         $data = $validator->validated();

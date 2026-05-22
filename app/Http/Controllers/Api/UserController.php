@@ -3177,6 +3177,7 @@ public function addressUpdate(Request $request)
 
     for ($i = 0; $i < $count; $i++) {
         $addresses[] = [
+            'name' => $data['name'][$i] ?? null,
             'street' => $data['street'][$i] ?? null,
             'city' => $data['city'][$i] ?? null,
             'state' => $data['state'][$i] ?? null,
@@ -3191,6 +3192,7 @@ public function addressUpdate(Request $request)
     foreach ($addresses as $addr) {
         $validated = validator($addr, [
             'id' => 'nullable|integer|exists:user_addresses,id',
+            'name' => 'nullable|string|max:255',
             'street' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'required|string|max:255',

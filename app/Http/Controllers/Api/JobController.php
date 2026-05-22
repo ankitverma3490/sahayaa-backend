@@ -169,7 +169,8 @@ public function index(Request $request): JsonResponse
             'first_aid_certified' => 'boolean',
             'pet_care_required' => 'boolean',
             'additional_requirements' => 'nullable|string',
-            'required_skills' => 'nullable|string'
+            'required_skills' => 'nullable|string',
+            'status' => 'nullable|in:pending,open,closed'
         ]);
 
         if ($validator->fails()) {
@@ -181,7 +182,7 @@ public function index(Request $request): JsonResponse
         }
         $job = Job::create(array_merge($validator->validated(), [
             'created_by' => Auth::guard('api')->user()->id,
-            'status' => 'pending'
+            'status' => $request->input('status', 'pending')
         ]));
 
         $subscription->increment('job_user_limit');

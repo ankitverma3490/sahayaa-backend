@@ -130,29 +130,34 @@ public function index(Request $request): JsonResponse
         if (!$subscription) {
             return response()->json([
                 'success' => false,
-                'message' => 'No active subscription found.'
+                'error_code' => 'UPGRADE_REQUIRED',
+                'message' => 'Please upgrade to Premium Plan to post jobs.'
             ]);
         }
 
         $plan = Subscription::find($subscription->subscription_id);
-        if (!$plan) {
+        if (!$plan || $plan->price <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Subscription plan not found.'
+                'error_code' => 'UPGRADE_REQUIRED',
+                'message' => 'Please upgrade to Premium Plan to post jobs.'
             ]);
         }
 
-        // Check limit only if plan has a job_limit set
-        if ($plan->job_limit && $subscription->job_user_limit >= $plan->job_limit) {
+        // Check limit including extra purchased jobs
+        $allowed_limit = ($plan->job_limit ?? 3) + ($subscription->extra_jobs ?? 0);
+        if ($subscription->job_user_limit >= $allowed_limit) {
             return response()->json([
                 'success' => false,
+                'error_code' => 'LIMIT_EXCEEDED',
+                'extra_job_price' => $plan->extra_job_price ?? 500,
                 'message' => 'Monthly Job limit exceeded.'
             ]);
         }
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'compensation' => 'nullable|numeric',
             'expected_compensation' => 'nullable|numeric',
             'compensation_type' => 'required|in:monthly,hourly,yearly',
@@ -226,7 +231,7 @@ public function index(Request $request): JsonResponse
 
         $validator = Validator::make($request->all(), [
             'title' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
+            'description' => 'nullable|string',
             'compensation' => 'nullable|numeric',
             'expected_compensation' => 'nullable|numeric',
             'compensation_type' => 'sometimes|required|in:monthly,hourly,yearly',

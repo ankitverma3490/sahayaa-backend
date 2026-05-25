@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AdminSalaryController;
 use App\Http\Controllers\Api\TerminationController;
 use App\Http\Controllers\Api\AdvanceController;
+use App\Http\Controllers\adminpnlx\TransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -636,6 +637,8 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
         Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
         Route::post('/subscribe', [SubscriptionController::class, 'subscribeFree']);
+        Route::post('/create-extra-job-order', [SubscriptionController::class, 'createExtraJobOrder']);
+        Route::post('/verify-extra-job-payment', [SubscriptionController::class, 'verifyExtraJobPayment']);
     });
 
     Route::get('/settings/notification', [SettingController::class, 'handleNotification']);
@@ -699,6 +702,8 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::post('/add', [UserController::class, 'notificationAdd']);
         Route::get('/list', [UserController::class, 'notificationList']);
         Route::put('/{id}/read', [UserController::class, 'notificationMarkAsRead']);
+        Route::get('/unread-count', [UserController::class, 'notificationUnreadCount']);
+        Route::post('/read', [UserController::class, 'notificationMarkAsReadPost']);
     });
 
 

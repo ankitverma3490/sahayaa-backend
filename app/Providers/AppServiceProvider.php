@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Paginator::useBootstrap();
+
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'user' => \App\Models\User::class,
+            'vendor' => \App\Models\User::class,
+        ]);
         
         // ✅ Prevent DB queries during CLI / Composer / Build
         if (app()->runningInConsole()) {

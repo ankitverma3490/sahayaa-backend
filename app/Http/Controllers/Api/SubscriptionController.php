@@ -52,7 +52,8 @@ class SubscriptionController extends Controller
             'role_id'           => 'required|exists:roles,id',
             'extra'             => 'nullable',
             'subscription_limit' => 'required|numeric',
-            'job_limit' => 'required|numeric'
+            'job_limit' => 'required|numeric',
+            'extra_job_price' => 'nullable|numeric'
         ]);
 
         $subscription = Subscription::create($data);
@@ -78,7 +79,9 @@ class SubscriptionController extends Controller
             'razorpay_order_id' => 'nullable|string',
             'role_id'           => 'required|exists:roles,id',
             'extra'             => 'nullable|array',
-            'subscription_limit' => 'required|numeric'
+            'subscription_limit' => 'required|numeric',
+            'job_limit' => 'nullable|numeric',
+            'extra_job_price' => 'nullable|numeric'
         ]);
 
         $subscription->update($data);
@@ -499,5 +502,135 @@ class SubscriptionController extends Controller
             'message' => 'Subscribed to free plan successfully.',
             'data'    => $subscriptionUser,
         ]);
+    }
+
+    /**
+     * Create Razorpay order to purchase 1 extra job posting
+     */
+    public function createExtraJobOrder(Request $request)
+    {
+        $user = Auth::user();
+        
+        $activeSubscription = SubscriptionUser::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (!$activeSubscription) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No active subscription found. Upgrade to Premium to purchase extra jobs.'
+            ], 404);
+        }
+
+        $plan = Subscription::find($activeSubscription->subscription_id);
+        if (!$plan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Subscription plan not found.'
+            ], 404);
+        }
+
+        $price = $plan->extra_job_price ?? 500;
+        if ($price <= 0) {
+            $activeSubscription->increment('extra_jobs');
+            return response()->json([
+                'status' => true,
+                'free' => true,
+                'message' => 'Extra job post added for free.',
+            ]);
+        }
+
+        try {
+            $api_key = config('services.razorpay.key');
+            $api_secret = config('services.razorpay.secret');
+            
+            $razorpayData = [
+                "amount" => (int) ($price * 100), // in paise
+                "currency" => "INR",
+                "receipt" => "extra_job_" . uniqid(),
+                "payment_capture" => 1
+            ];
+            $api = new Api($api_key, $api_secret);
+            $order = $api->order->create($razorpayData);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Extra job order created successfully',
+                'order_id' => $order['id'],
+                'amount' => $price,
+                'currency' => 'INR',
+                'razorpay_key' => $api_key,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verify Razorpay payment and increment extra_jobs limit
+     */
+    public function verifyExtraJobPayment(Request $request)
+    {
+        $request->validate([
+            'razorpay_order_id' => 'required',
+            'razorpay_payment_id' => 'required',
+            'razorpay_signature' => 'required',
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            // Verify signature
+            $generated_signature = hash_hmac(
+                'sha256',
+                $request->razorpay_order_id . "|" . $request->razorpay_payment_id,
+                config('services.razorpay.secret')
+            );
+
+            if ($generated_signature !== $request->razorpay_signature) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid payment signature'
+                ], 400);
+            }
+
+            $activeSubscription = SubscriptionUser::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->latest()
+                ->first();
+
+            if (!$activeSubscription) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Active subscription not found'
+                ], 404);
+            }
+
+            $activeSubscription->increment('extra_jobs');
+
+            // Send notification to user
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'Extra Job Posting Purchased',
+                'message' => 'You have successfully purchased 1 extra job posting limit.',
+                'status' => 'unread',
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment verified successfully. Extra job post added.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment verification failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

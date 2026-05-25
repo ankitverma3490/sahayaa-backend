@@ -368,6 +368,13 @@ class User extends Authenticatable
         return $this->hasOne(UserWorkInfo::class, 'user_id');
     }
 
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'received_by_id')
+            ->where('received_by_type', 'user')
+            ->with('givenBy');
+    }
+
     public function portfolioImages()
     {
         return $this->hasMany(PortfolioImage::class);

@@ -2215,6 +2215,42 @@ public function notificationAdd(Request $request)
         ]);
     }
 
+    public function notificationUnreadCount(Request $request)
+    {
+        $userId = Auth::user()->id;
+        $count = Notification::where('user_id', $userId)
+            ->where('status', 'unread')
+            ->count();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Unread notifications count retrieved successfully',
+            'unread_count' => $count
+        ]);
+    }
+
+    public function notificationMarkAsReadPost(Request $request)
+    {
+        $request->validate([
+            'notification_id' => 'required|exists:notifications,id'
+        ]);
+
+        $notification = Notification::where('id', $request->notification_id)
+            ->where('user_id', Auth::user()->id)
+            ->firstOrFail();
+
+        $notification->update([
+            'status' => 'read',
+            'read_at' => now(),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Notification marked as read',
+            'data' => $notification
+        ]);
+    }
+
     public function notificationMarkAsRead($id)
     {
         $notification = Notification::findOrFail($id);
@@ -2246,7 +2282,10 @@ public function notificationAdd(Request $request)
             ->first();
 
         if ($notification) {
-            $notification->update(['read_at' => now()]);
+            $notification->update([
+                'status' => 'read',
+                'read_at' => now(),
+            ]);
         }
 
         return response()->json([
@@ -2259,7 +2298,10 @@ public function notificationAdd(Request $request)
         // Mark all notifications for the user as read
         Notification::where('user_id', $userId)
             ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+            ->update([
+                'status' => 'read',
+                'read_at' => now(),
+            ]);
 
         return response()->json([
             'status'  => 'success',
@@ -4919,6 +4961,13 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
             $staff = $staffQuery->paginate($perPage);
 
+            $staff->getCollection()->transform(function ($item) use ($user) {
+                if ($item->added_by != $user->id) {
+                    $item->status = 'inactive';
+                }
+                return $item;
+            });
+
             return response()->json([
                 'success' => true,
                 'message' => 'Staff list retrieved successfully',
@@ -4940,9 +4989,36 @@ private function updateExistingStaff(User $existingUser, Request $request)
     public function getStaffDetails($id)
     {
         try {
-            $staff = User::where('is_staff_added', 1)
-                ->where('added_by', Auth::guard('api')->user()->id)
-                ->where('id', $id)
+            $user = Auth::guard('api')->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            // Get all staff members hired by this user through JobApplications or added directly
+            $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+            $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
+                ->whereHas('job', function($query) use ($user) {
+                    $query->where('created_by', $user->id);
+                })
+                ->pluck('user_id')
+                ->toArray();
+
+            $directlyAddedStaffIds = User::where('user_role_id', 2)
+                ->where('added_by', $user->id)
+                ->pluck('id')
+                ->toArray();
+
+            $allStaffIds = array_unique(array_merge($hiredStaffIds, $directlyAddedStaffIds));
+
+            if (!in_array($id, $allStaffIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Staff member not found'
+                ], 404);
+            }
+
+            $staff = User::where('id', $id)
+                ->where('is_deleted', 0)
                 ->with(['addresses', 'userWorkInfo', 'addedByUser'])
                 ->first();
 
@@ -4951,6 +5027,10 @@ private function updateExistingStaff(User $existingUser, Request $request)
                     'success' => false,
                     'message' => 'Staff member not found'
                 ], 404);
+            }
+
+            if ($staff->added_by != $user->id) {
+                $staff->status = 'inactive';
             }
 
             return response()->json([
@@ -4984,6 +5064,28 @@ private function updateExistingStaff(User $existingUser, Request $request)
                     'success' => false,
                     'message' => 'Available staff member not found'
                 ], 404);
+            }
+
+            $user = Auth::guard('api')->user();
+            if ($user) {
+                $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+                $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
+                    ->whereHas('job', function($query) use ($user) {
+                        $query->where('created_by', $user->id);
+                    })
+                    ->pluck('user_id')
+                    ->toArray();
+
+                $directlyAddedStaffIds = User::where('user_role_id', 2)
+                    ->where('added_by', $user->id)
+                    ->pluck('id')
+                    ->toArray();
+
+                $allStaffIds = array_unique(array_merge($hiredStaffIds, $directlyAddedStaffIds));
+
+                if (in_array($id, $allStaffIds) && $staff->added_by != $user->id) {
+                    $staff->status = 'inactive';
+                }
             }
 
             return response()->json([

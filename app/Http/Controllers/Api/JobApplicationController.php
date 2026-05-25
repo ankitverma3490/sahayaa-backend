@@ -393,7 +393,12 @@ class JobApplicationController extends Controller
     public function getJobApplications($jobId): JsonResponse
     {
       
-        $applications = JobApplication::with('user')
+        $applications = JobApplication::with([
+                            'user',
+                            'user.userWorkInfo',
+                            'user.reviewsReceived',
+                            'user.addresses'
+                         ])
                          ->where('job_id', $jobId)
                          ->orderBy('created_at', 'desc')
                          ->get();

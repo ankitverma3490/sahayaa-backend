@@ -156,6 +156,18 @@ class User extends Authenticatable
         'referral_code_expires_at' => 'datetime',
     ];
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function subscriptionUsers()
+    {
+        return $this->hasMany(\App\Models\SubscriptionUser::class, 'user_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Accessors & Mutators

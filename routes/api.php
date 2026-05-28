@@ -64,48 +64,89 @@ Route::get('/logs', function () {
 });
 
 Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
-    $plans = \App\Models\Subscription::all();
+    // Show ALL plans including soft-deleted for debugging
+    $allPlans = \App\Models\Subscription::withTrashed()->get(['id', 'subscription_name', 'price', 'type', 'deleted_at']);
+    $plans    = \App\Models\Subscription::all();
+    
+    // Find standard plan (price = 0, not soft-deleted)
     $standardPlan = \App\Models\Subscription::where('price', 0)->first();
     
     if (!$standardPlan) {
         return response()->json([
-            'status' => 'error',
-            'message' => 'No free Standard plan (price = 0) found in subscriptions table.',
-            'plans' => $plans
+            'status'    => 'error',
+            'message'   => 'No free Standard plan (price = 0) found in subscriptions table. Check all_plans below including soft-deleted.',
+            'all_plans' => $allPlans,
+            'plans'     => $plans,
         ]);
     }
-    
+
+    // House owners without ANY subscription record
+    $houseOwnerRole = \App\Models\Role::where('slug', 'house_owner')->orWhere('slug', 'houseowner')->orWhere('name', 'like', '%house%owner%')->first();
+    $houseOwnerRoleId = $houseOwnerRole ? $houseOwnerRole->id : 3;
+
+    $houseOwnersWithNoSub = \App\Models\User::where('user_role_id', $houseOwnerRoleId)
+        ->whereDoesntHave('subscriptionUsers')
+        ->pluck('id');
+
+    // Existing active subscriptions that are on old/wrong plan
     $activeSubs = \App\Models\SubscriptionUser::where('status', 'active')->get();
-    $count = 0;
     
+    $count       = 0;
+    $newCount    = 0;
+
     if ($request->input('confirm') === 'true') {
+        // Migrate existing active subscriptions to standard plan
         foreach ($activeSubs as $sub) {
             if ($sub->subscription_id !== $standardPlan->id) {
                 $sub->update([
                     'subscription_id' => $standardPlan->id,
-                    'amount' => $standardPlan->price
+                    'amount'          => $standardPlan->price
                 ]);
                 $count++;
             }
         }
+        // Create new standard plan subscription for house owners with no subscription
+        foreach ($houseOwnersWithNoSub as $userId) {
+            \App\Models\SubscriptionUser::create([
+                'user_id'        => $userId,
+                'subscription_id'=> $standardPlan->id,
+                'order_id'       => 'AUTO' . time() . $userId,
+                'order_number'   => 'AUTO' . time() . $userId,
+                'amount'         => 0,
+                'currency'       => 'INR',
+                'payment_status' => 'free',
+                'payment_mode'   => 'free',
+                'role'           => $houseOwnerRoleId,
+                'status'         => 'active',
+                'start_date'     => now(),
+                'end_date'       => now()->addYears(10),
+                'user_limit'     => 0,
+                'job_user_limit' => 0,
+            ]);
+            $newCount++;
+        }
         return response()->json([
-            'status' => 'success',
-            'message' => "Successfully migrated {$count} active subscriptions to the Standard Plan (ID: {$standardPlan->id}).",
-            'plans' => $plans,
-            'active_subscriptions_count' => count($activeSubs)
+            'status'                   => 'success',
+            'message'                  => "Migration complete!",
+            'migrated_existing'        => $count,
+            'new_standard_assigned'    => $newCount,
+            'standard_plan'            => $standardPlan,
         ]);
     }
     
     return response()->json([
-        'status' => 'preview',
-        'message' => 'Pass ?confirm=true to execute the migration.',
-        'standard_plan_found' => [
-            'id' => $standardPlan->id,
-            'name' => $standardPlan->name,
+        'status'                      => 'preview',
+        'message'                     => 'Pass ?confirm=true to execute the migration.',
+        'standard_plan_found'         => [
+            'id'    => $standardPlan->id,
+            'name'  => $standardPlan->subscription_name,
             'price' => $standardPlan->price
         ],
-        'total_active_subscriptions' => count($activeSubs),
-        'plans' => $plans
+        'existing_active_subs_to_migrate' => $activeSubs->where('subscription_id', '!=', $standardPlan->id)->count(),
+        'house_owners_with_no_sub'    => count($houseOwnersWithNoSub),
+        'total_active_subscriptions'  => count($activeSubs),
+        'all_plans_incl_deleted'      => $allPlans,
+        'active_plans'                => $plans,
     ]);
 });
 

@@ -117,19 +117,13 @@ Route::get('/', function () {
 });
 
 Route::get('/fixissue', function () {
-    // Your fix logic here
     Artisan::call('optimize:clear');
-    Artisan::call('migrate:fresh', ['--force' => true]);
-    Artisan::call('db:seed', ['--force' => true]);
-    return response()->json(['message' => 'API is working successfully', 'status' => 200]);
+    return response()->json(['message' => 'Cache cleared successfully', 'status' => 200]);
 });
 
 Route::get('/freshdata', function () {
-    // Your fix logic here
     Artisan::call('optimize:clear');
-    Artisan::call('migrate:fresh', ['--force' => true]);
-    // Artisan::call('db:seed', ['--force' => true]);
-    return response()->json(['message' => 'API is working successfully', 'status' => 200]);
+    return response()->json(['message' => 'Cache cleared successfully', 'status' => 200]);
 });
 
 

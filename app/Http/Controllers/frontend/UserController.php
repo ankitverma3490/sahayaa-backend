@@ -270,7 +270,7 @@ class UserController extends Controller
 									$userDeviceTokenDetail->save();
 								}
 							} 
-							$token                      =    $userDetail->createToken('Diabetes Virtual Care Access Client')->accessToken;
+							$token                      =    $userDetail->createToken('Diabetes Virtual Care Access Client')->plainTextToken;
 
 							$response["status"] = "success";
 							$response["token"] 	= $token;
@@ -424,7 +424,7 @@ class UserController extends Controller
 							}
 
 							if ($request->wantsJson()) {
-								$token                      =    $userDetail->createToken('Ayva')->accessToken;
+								$token                      =    $userDetail->createToken('Ayva')->plainTextToken;
 
 								if(!empty($request->input('device_id')) && !empty($request->input('device_type')) || !empty($request->input('device_token'))){
 									$UserDeviceToken = UserDeviceToken::where("user_id",$userDetail->id)->first();
@@ -697,7 +697,7 @@ class UserController extends Controller
 				'emergency_contact',
 				'image'
 			]);
-			$response['token'] = $user->createToken('authToken')->accessToken;
+			$response['token'] = $user->createToken('authToken')->plainTextToken;
 			$response['status'] = 'success';
 			$response["msg"]	= trans('messages.login_successful');
 			$response['data'] = $user_data;

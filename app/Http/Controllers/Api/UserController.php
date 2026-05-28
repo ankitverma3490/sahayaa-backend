@@ -482,7 +482,7 @@ public function getProfile(Request $request)
 
             if (!empty($user) && Hash::check($request->password, $user->password)) {
                 try {
-                    $token = $user->createToken('AuthToken')->accessToken;
+                    $token = $user->createToken('AuthToken')->plainTextToken;
                     
                     return response()->json([
                         "status" => "success",
@@ -2452,7 +2452,7 @@ public function socialLoginCallback(Request $request)
 				'emergency_contact',
 				'image'
 			]);
-			$response['token'] = $user->createToken('authToken')->accessToken;
+			$response['token'] = $user->createToken('authToken')->plainTextToken;
 			$response['status'] = 'success';
 			$response["msg"]	= "Sign Up successfully";
 			$response['data'] = $user_data;
@@ -5758,7 +5758,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
         
         try {
             // auth:api routes in this project expect Passport access tokens
-            $token = $user->createToken('AuthToken')->accessToken;
+            $token = $user->createToken('AuthToken')->plainTextToken;
             return response()->json([
                 'status' => 'success',
                 'msg'    => 'Login successful.',

@@ -581,8 +581,11 @@ class StaffController extends Controller
     {
         try {
             // user_role_id = 2 is staff — use direct ID instead of Role lookup to avoid null
-            $query = User::where('user_role_id', 2)
-                ->where('added_by', auth()->id());
+            $query = User::where('user_role_id', 2);
+            
+            if (auth()->check() && auth()->user()->user_role_id != 1) {
+                $query->where('added_by', auth()->id());
+            }
 
             // 🔍 Search
             if ($request->filled('search')) {

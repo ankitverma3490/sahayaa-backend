@@ -347,12 +347,14 @@ public function index(Request $request): JsonResponse
         $jobs = Job::orderBy('created_at', 'desc')->paginate(10);
         
         if (!$user) {
-            $jobs->each(function ($job) {
+            $jobs->getCollection()->transform(function ($job) {
                 $job->is_applied = 0;
+                return $job;
             });
         } else {
-            $jobs->each(function ($job) {
-                $job->is_applied = $job->is_applied > 0 ? 1 : 0;
+            $jobs->getCollection()->transform(function ($job) {
+                $job->is_applied = isset($job->is_applied) && $job->is_applied > 0 ? 1 : 0;
+                return $job;
             });
         }
 

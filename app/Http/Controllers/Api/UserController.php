@@ -5067,6 +5067,9 @@ private function updateExistingStaff(User $existingUser, Request $request)
             }
 
             $user = Auth::guard('api')->user();
+            $hasUnlimitedContacts = false;
+            $isHiredOrAdded = false;
+
             if ($user) {
                 $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
                 $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
@@ -5083,14 +5086,54 @@ private function updateExistingStaff(User $existingUser, Request $request)
 
                 $allStaffIds = array_unique(array_merge($hiredStaffIds, $directlyAddedStaffIds));
 
-                if (in_array($id, $allStaffIds) && $staff->added_by != $user->id) {
-                    $staff->status = 'inactive';
+                if (in_array($id, $allStaffIds)) {
+                    $isHiredOrAdded = true;
+                    if ($staff->added_by != $user->id) {
+                        $staff->status = 'inactive';
+                    }
                 }
+
+                // Check subscription for unlimited contacts
+                $subUser = \App\Models\SubscriptionUser::where('user_id', $user->id)
+                    ->where('status', 'active')
+                    ->whereNull('deleted_at')
+                    ->latest()
+                    ->first();
+                if ($subUser) {
+                    $plan = \App\Models\Subscription::find($subUser->subscription_id);
+                    if ($plan) {
+                        $features = is_array($plan->extra) ? $plan->extra : json_decode($plan->extra, true);
+                        if (is_array($features)) {
+                            foreach ($features as $f) {
+                                if (isset($f['feature']) && strtolower($f['feature']) === 'unlimited contacts') {
+                                    $hasUnlimitedContacts = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            $contactViewLocked = false;
+            if (!$isHiredOrAdded && !$hasUnlimitedContacts) {
+                $contactViewLocked = true;
+                if ($staff->phone_number) {
+                    $len = strlen($staff->phone_number);
+                    if ($len > 4) {
+                        $staff->phone_number = substr($staff->phone_number, 0, 2) . str_repeat('*', $len - 4) . substr($staff->phone_number, -2);
+                    } else {
+                        $staff->phone_number = '******';
+                    }
+                }
+                $staff->email = '***@***.com';
+                $staff->phone_number_country_code = null;
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Available staff details retrieved successfully',
+                'contact_view_locked' => $contactViewLocked,
                 'data' => $staff
             ]);
 

@@ -136,7 +136,7 @@ public function index(Request $request): JsonResponse
         }
 
         $plan = Subscription::find($subscription->subscription_id);
-        if (!$plan || $plan->price <= 0) {
+        if (!$plan) {
             return response()->json([
                 'success' => false,
                 'error_code' => 'UPGRADE_REQUIRED',

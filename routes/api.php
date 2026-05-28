@@ -63,6 +63,52 @@ Route::get('/logs', function () {
     ]);
 });
 
+Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
+    $plans = \App\Models\Subscription::all();
+    $standardPlan = \App\Models\Subscription::where('price', 0)->first();
+    
+    if (!$standardPlan) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No free Standard plan (price = 0) found in subscriptions table.',
+            'plans' => $plans
+        ]);
+    }
+    
+    $activeSubs = \App\Models\SubscriptionUser::where('status', 'active')->get();
+    $count = 0;
+    
+    if ($request->input('confirm') === 'true') {
+        foreach ($activeSubs as $sub) {
+            if ($sub->subscription_id !== $standardPlan->id) {
+                $sub->update([
+                    'subscription_id' => $standardPlan->id,
+                    'amount' => $standardPlan->price
+                ]);
+                $count++;
+            }
+        }
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully migrated {$count} active subscriptions to the Standard Plan (ID: {$standardPlan->id}).",
+            'plans' => $plans,
+            'active_subscriptions_count' => count($activeSubs)
+        ]);
+    }
+    
+    return response()->json([
+        'status' => 'preview',
+        'message' => 'Pass ?confirm=true to execute the migration.',
+        'standard_plan_found' => [
+            'id' => $standardPlan->id,
+            'name' => $standardPlan->name,
+            'price' => $standardPlan->price
+        ],
+        'total_active_subscriptions' => count($activeSubs),
+        'plans' => $plans
+    ]);
+});
+
 // Route::get('apitestttt', [UserController::class, 'otptest']);
 
 

@@ -375,11 +375,17 @@ class SubscriptionController extends Controller
         $user = Auth::user();
 
         if($user->user_role_id == 1) {
-            $subscriptions = SubscriptionUser::with('subscription')
+            $subscriptions = SubscriptionUser::with([
+                'subscription',
+                'user:id,first_name,last_name,name,email,user_role_id'
+            ])
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
         } else {
-            $subscriptions = SubscriptionUser::with('subscription')
+            $subscriptions = SubscriptionUser::with([
+                'subscription',
+                'user:id,first_name,last_name,name,email,user_role_id'
+            ])
                 ->where('user_id', $user->id)
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);

@@ -5757,7 +5757,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
         }
         
         try {
-            $token = $user->createToken('AuthToken')->plainTextToken;
+            // auth:api routes in this project expect Passport access tokens
+            $token = $user->createToken('AuthToken')->accessToken;
             return response()->json([
                 'status' => 'success',
                 'msg'    => 'Login successful.',

@@ -139,7 +139,7 @@ class StaffController extends Controller
     {
         // Validate request
         $validator = Validator::make($request->all(), [
-            'status' => 'required|in:block,repost',
+            'status' => 'required|in:block,active',
         ]);
         if ($validator->fails()) {
             return response()->json([

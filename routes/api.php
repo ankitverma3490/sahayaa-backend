@@ -64,12 +64,21 @@ Route::get('/logs', function () {
 });
 
 Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
+    if ($request->input('debug') === 'true') {
+        return response()->json([
+            'applications' => \App\Models\JobApplication::all(),
+            'jobs' => \App\Models\Job::all(),
+            'users' => \App\Models\User::orderBy('id', 'desc')->take(30)->get()
+        ]);
+    }
+
     // Show ALL plans including soft-deleted for debugging
     $allPlans = \App\Models\Subscription::withTrashed()->get(['id', 'subscription_name', 'price', 'type', 'deleted_at']);
     $plans    = \App\Models\Subscription::all();
     
     // Find standard plan (price = 0, not soft-deleted)
     $standardPlan = \App\Models\Subscription::where('price', 0)->first();
+
     
     if (!$standardPlan) {
         return response()->json([

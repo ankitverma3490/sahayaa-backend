@@ -490,14 +490,17 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Subscribe user to a free plan directly (no payment needed)
-     * Used by staff auto-subscribe flow on signup
+     * Subscribe user to a plan — handles both free and paid plans.
+     * If paymentId is provided, plan is activated as a paid subscription.
+     * If no paymentId, plan is activated as free.
      */
     public function subscribeFree(Request $request)
     {
         $user = Auth::guard('api')->user();
 
         $subscriptionId = $request->input('subscriptionId') ?? $request->input('subscription_id');
+        $paymentId      = $request->input('paymentId')      ?? $request->input('payment_id');
+
         if (!$subscriptionId) {
             return response()->json(['status' => false, 'message' => 'subscription_id is required'], 422);
         }
@@ -510,24 +513,30 @@ class SubscriptionController extends Controller
         // Cancel any existing active subscription
         SubscriptionUser::where('user_id', $user->id)->where('status', 'active')->update(['status' => 'cancelled']);
 
+        $isPaid    = !empty($paymentId);
         $startDate = now();
-        $endDate = now()->addDays($subscription->validity ?? 30);
+        $endDate   = now()->addDays($subscription->validity ?? 30);
 
         $subscriptionUser = SubscriptionUser::create([
             'user_id'          => $user->id,
             'subscription_id'  => $subscription->id,
-            'payment_status'   => 'free',
-            'payment_mode'     => 'free',
+            'payment_status'   => $isPaid ? 'paid'     : 'free',
+            'payment_mode'     => $isPaid ? 'razorpay' : 'free',
+            'payment_id'       => $paymentId ?? null,
             'status'           => 'active',
             'start_date'       => $startDate,
             'end_date'         => $endDate,
             'user_limit'       => 0,
-            'job_user_limit'   => 0,
+            'job_user_limit'   => $subscription->job_limit ?? 0,
         ]);
+
+        $message = $isPaid
+            ? "Subscribed to {$subscription->subscription_name} successfully!"
+            : 'Subscribed to free plan successfully.';
 
         return response()->json([
             'status'  => true,
-            'message' => 'Subscribed to free plan successfully.',
+            'message' => $message,
             'data'    => $subscriptionUser,
         ]);
     }

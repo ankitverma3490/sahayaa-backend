@@ -65,8 +65,19 @@ Route::get('/logs', function () {
 
 Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
     if ($request->input('debug') === 'true') {
+        $jobId = 1;
+        $applications = \App\Models\JobApplication::with([
+                            'user',
+                            'user.userWorkInfo',
+                            'user.reviewsReceived',
+                            'user.addresses'
+                         ])
+                         ->where('job_id', $jobId)
+                         ->orderBy('created_at', 'desc')
+                         ->get();
         return response()->json([
-            'applications' => \App\Models\JobApplication::all(),
+            'applications' => $applications,
+            'all_applications_count' => \App\Models\JobApplication::count(),
             'jobs' => \App\Models\Job::all(),
             'users' => \App\Models\User::orderBy('id', 'desc')->take(30)->get()
         ]);
@@ -78,6 +89,7 @@ Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
     
     // Find standard plan (price = 0, not soft-deleted)
     $standardPlan = \App\Models\Subscription::where('price', 0)->first();
+
 
     
     if (!$standardPlan) {

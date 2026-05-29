@@ -392,7 +392,7 @@ class JobApplicationController extends Controller
 
     public function getJobApplications($jobId): JsonResponse
     {
-      
+        \Log::info('getJobApplications called for Job ID: ' . $jobId);
         $applications = JobApplication::with([
                             'user',
                             'user.userWorkInfo',
@@ -402,6 +402,11 @@ class JobApplicationController extends Controller
                          ->where('job_id', $jobId)
                          ->orderBy('created_at', 'desc')
                          ->get();
+
+        \Log::info('Applications count: ' . $applications->count());
+        foreach ($applications as $app) {
+            \Log::info('App ID: ' . $app->id . ', User ID: ' . $app->user_id . ', User: ' . ($app->user ? 'found (' . $app->user->name . ')' : 'not found'));
+        }
 
         return response()->json([
             'status' => 'success',

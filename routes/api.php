@@ -895,3 +895,13 @@ Route::group(['middleware' => 'auth:api'], function() {
 
 });
 
+
+Route::get('/debug-db', function () {
+    return response()->json([
+        'applications' => \App\Models\JobApplication::all(),
+        'jobs' => \App\Models\Job::all(),
+        'users' => \App\Models\User::orderBy('id', 'desc')->take(10)->get()
+    ]);
+});
+
+

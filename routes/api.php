@@ -75,12 +75,19 @@ Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
                          ->where('job_id', $jobId)
                          ->orderBy('created_at', 'desc')
                          ->get();
+                         
+        $singleApp = \App\Models\JobApplication::find(1);
+        $explicitUser = $singleApp ? $singleApp->user : null;
+        
         return response()->json([
             'applications' => $applications,
+            'single_app' => $singleApp,
+            'explicit_user' => $explicitUser,
             'all_applications_count' => \App\Models\JobApplication::count(),
             'jobs' => \App\Models\Job::all(),
             'users' => \App\Models\User::orderBy('id', 'desc')->take(30)->get()
         ]);
+
     }
 
     // Show ALL plans including soft-deleted for debugging

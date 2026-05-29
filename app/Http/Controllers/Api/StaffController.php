@@ -276,7 +276,7 @@ class StaffController extends Controller
 
             // Subscription limit check - fall back to non-AI list instead of hard failure
             $canUseAi = $subscription && $plan
-                && $subscription->user_limit < $plan->subscription_limit;
+                && ($plan->subscription_limit == 0 || $subscription->user_limit < $plan->subscription_limit);
 
             if (!$canUseAi) {
                 // Even without AI, apply basic role/location filter from query text
@@ -446,7 +446,7 @@ class StaffController extends Controller
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
-                'remaining_limit' => $plan->subscription_limit - ($subscription->user_limit),
+                'remaining_limit' => $plan->subscription_limit > 0 ? $plan->subscription_limit - $subscription->user_limit : 'Unlimited',
                 'data' => $data
             ]);
 
@@ -645,7 +645,7 @@ class StaffController extends Controller
         }
 
         // ✅ Check AI limit
-        if ($subscription->user_limit >= $plan->subscription_limit) {
+        if ($plan->subscription_limit > 0 && $subscription->user_limit >= $plan->subscription_limit) {
             return response()->json([
                 'success' => false,
                 'message' => 'Monthly AI limit exceeded.'
@@ -857,7 +857,7 @@ class StaffController extends Controller
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
-                'remaining_limit' => $plan->subscription_limit - ($subscription->user_limit + 1),
+                'remaining_limit' => $plan->subscription_limit > 0 ? $plan->subscription_limit - ($subscription->user_limit + 1) : 'Unlimited',
                 'data' => $data
             ]);
 

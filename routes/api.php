@@ -66,27 +66,37 @@ Route::get('/logs', function () {
 Route::get('/migrate-plans', function (\Illuminate\Http\Request $request) {
     if ($request->input('debug') === 'true') {
         $jobId = 1;
-        $applications = \App\Models\JobApplication::with([
-                            'user',
-                            'user.userWorkInfo',
-                            'user.reviewsReceived',
-                            'user.addresses'
-                         ])
-                         ->where('job_id', $jobId)
-                         ->orderBy('created_at', 'desc')
-                         ->get();
-                         
-        $singleApp = \App\Models\JobApplication::find(1);
-        $explicitUser = $singleApp ? $singleApp->user : null;
-        
-        return response()->json([
-            'applications' => $applications,
-            'single_app' => $singleApp,
-            'explicit_user' => $explicitUser,
-            'all_applications_count' => \App\Models\JobApplication::count(),
-            'jobs' => \App\Models\Job::all(),
-            'users' => \App\Models\User::orderBy('id', 'desc')->take(30)->get()
-        ]);
+        try {
+            $applications = \App\Models\JobApplication::with([
+                                'user',
+                                'user.userWorkInfo',
+                                'user.reviewsReceived',
+                                'user.addresses'
+                             ])
+                             ->where('job_id', $jobId)
+                             ->orderBy('created_at', 'desc')
+                             ->get();
+                             
+            $singleApp = \App\Models\JobApplication::find(1);
+            $explicitUser = $singleApp ? $singleApp->user : null;
+            
+            return response()->json([
+                'status' => 'success',
+                'applications' => $applications,
+                'single_app' => $singleApp,
+                'explicit_user' => $explicitUser,
+                'all_applications_count' => \App\Models\JobApplication::count(),
+                'jobs' => \App\Models\Job::all(),
+                'users' => \App\Models\User::orderBy('id', 'desc')->take(30)->get()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+
 
     }
 

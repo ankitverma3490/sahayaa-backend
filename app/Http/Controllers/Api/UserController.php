@@ -631,8 +631,25 @@ public function getProfile(Request $request)
         }
 
         try {
-            $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
-            $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
+            // --- TESTING BYPASS START ---
+            if ($user->aadhar_reference_id === 'TEST_REF_123456' && $request->otp === '123456') {
+                $verifyResult = [
+                    'success' => true,
+                    'message' => 'Aadhaar verified successfully (TEST MODE)',
+                    'aadhaar_data' => [
+                        'name' => 'Verified Test Staff',
+                        'dob' => '1990-01-01',
+                        'gender' => 'M',
+                        'address' => 'Test Address, India',
+                        'photo' => '',
+                        'aadhaar_number' => '123412341234'
+                    ]
+                ];
+            } else {
+                $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
+                $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
+            }
+            // --- TESTING BYPASS END ---
             
             if (!$verifyResult['success']) {
                 return response()->json([
@@ -2804,6 +2821,44 @@ public function saveAadharAndSendOtp(Request $request)
         $request->validate([
             'aadhar_number' => 'required|digits:12',
         ]);
+
+        // --- TESTING BYPASS START ---
+        if ($request->aadhar_number === '123412341234') {
+            if ($request->is_staff_add == 1) {
+                $newUser = new User();
+                $newUser->name = 'Staff Member';
+                $newUser->aadhar_number = $request->aadhar_number;
+                $newUser->aadhar_reference_id = 'TEST_REF_123456';
+                $newUser->aadhar_number_otp_expire_at = \Carbon\Carbon::now()->addMinutes(10);
+                $newUser->aadhar__verify = false;
+                $newUser->is_staff_added = 1;
+                $newUser->step = 4;
+                $newUser->user_role_id = 2;
+                $newUser->save();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'OTP sent successfully (TEST MODE: Use 123456)',
+                    'reference_id' => 'TEST_REF_123456',
+                    'data' => [
+                        'user_id' => $newUser->id,
+                        'aadhar_number' => $newUser->aadhar_number,
+                    ]
+                ], 200);
+            } else {
+                $user->aadhar_number = $request->aadhar_number;
+                $user->aadhar_reference_id = 'TEST_REF_123456';
+                $user->aadhar_number_otp_expire_at = \Carbon\Carbon::now()->addMinutes(10);
+                $user->save();
+                
+                return response()->json([
+                    'status' => true,
+                    'message' => 'OTP sent successfully (TEST MODE: Use 123456)',
+                    'reference_id' => 'TEST_REF_123456',
+                ], 200);
+            }
+        }
+        // --- TESTING BYPASS END ---
 
         $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
 

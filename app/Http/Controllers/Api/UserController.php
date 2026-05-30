@@ -115,47 +115,59 @@ class UserController extends Controller
 
   public function saveLastWorkExperience(Request $request)
     {
-        $user = Auth::guard('api')->user();
-        $validated = $request->validate([
-            'id' => 'nullable',
-            'role' => 'nullable',
-            'join_date' => 'nullable',
-            'end_date' => 'nullable',
-            'salary' => 'nullable',
-            'working_hours' => 'nullable',
-            'house_sold' => 'nullable',
-            'owner_name' => 'nullable',
-            'contact_number' => 'nullable',
-            'state' => 'nullable',
-            'city' => 'nullable',
-        ]);
-        $data = [
-            'user_id' => $user->id,
-            'role' => $validated['role'] ?? null,
-            'join_date' => $validated['join_date'] ?? null,
-            'end_date' => $validated['end_date'] ?? null,
-            'salary' => $validated['salary'] ?? null,
-            'working_hours' => $validated['working_hours'] ?? null,
-            'house_sold' => $validated['house_sold'] ?? 0,
-            'owner_name' => $validated['owner_name'] ?? null,
-            'contact_number' => $validated['contact_number'] ?? null,
-            'state' => $validated['state'] ?? null,
-            'city' => $validated['city'] ?? null,
-        ];
-    $user->update(['step' => 6]);
+        try {
+            $user = Auth::guard('api')->user();
+            $validated = $request->validate([
+                'id' => 'nullable',
+                'role' => 'nullable',
+                'join_date' => 'nullable',
+                'end_date' => 'nullable',
+                'salary' => 'nullable',
+                'working_hours' => 'nullable',
+                'house_sold' => 'nullable',
+                'owner_name' => 'nullable',
+                'contact_number' => 'nullable',
+                'state' => 'nullable',
+                'city' => 'nullable',
+            ]);
 
-        $experience = LastWorkExperience::updateOrCreate(
-            ['id' => $validated['id'] ?? null, 'user_id' => $user->id],
-            $data
-        );
+            $joinDate = $this->parseDateToYmd($validated['join_date'] ?? null);
+            $endDate = $this->parseDateToYmd($validated['end_date'] ?? null);
 
-        return response()->json([
-            'success' => true,
-            'message' => !empty($validated['id'])
-                ? 'Work experience updated successfully'
-                : 'Work experience added successfully',
-            'data' => $experience
-        ]);
+            $data = [
+                'user_id' => $user->id,
+                'role' => $validated['role'] ?? null,
+                'join_date' => $joinDate,
+                'end_date' => $endDate,
+                'salary' => $validated['salary'] ?? null,
+                'working_hours' => $validated['working_hours'] ?? null,
+                'house_sold' => $validated['house_sold'] ?? 0,
+                'owner_name' => $validated['owner_name'] ?? null,
+                'contact_number' => $validated['contact_number'] ?? null,
+                'state' => $validated['state'] ?? null,
+                'city' => $validated['city'] ?? null,
+            ];
+            $user->update(['step' => 6]);
+
+            $experience = LastWorkExperience::updateOrCreate(
+                ['id' => $validated['id'] ?? null, 'user_id' => $user->id],
+                $data
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => !empty($validated['id'])
+                    ? 'Work experience updated successfully'
+                    : 'Work experience added successfully',
+                'data' => $experience
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('saveLastWorkExperience Fail: ' . $e->getMessage());
+            try {
+                 file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Error in saveLastWorkExperience: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
+            } catch (\Exception $writeErr) {}
+            return response()->json(['success' => false, 'message' => 'Failed to save last work experience', 'error' => $e->getMessage()], 500);
+        }
     }
  
 public function deleteAcc()
@@ -1241,8 +1253,14 @@ public function updateProfile(Request $request)
                 $this->saveWorkAndExperience($user, $request, $isEdit);
             } catch (\Illuminate\Validation\ValidationException $e) {
                 \Log::error('saveWorkAndExperience ValidationException: ' . json_encode($e->errors()));
+                try {
+                     file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Validation Exception in saveWorkAndExperience: " . json_encode($e->errors()) . "\n", FILE_APPEND);
+                } catch (\Exception $writeErr) {}
             } catch (\Throwable $th) {
                 \Log::error('saveWorkAndExperience failed: ' . $th->getMessage());
+                try {
+                     file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Exception in saveWorkAndExperience: " . $th->getMessage() . "\n" . $th->getTraceAsString() . "\n\n", FILE_APPEND);
+                } catch (\Exception $writeErr) {}
                 // non-fatal
             }
         }
@@ -1457,39 +1475,8 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'city' => 'nullable',
     ]);
 
-    $joinDate = null;
-    if (!empty($expValidated['join_date'])) {
-        try {
-            $joinDate = \Carbon\Carbon::parse($expValidated['join_date'])->format('Y-m-d');
-        } catch (\Exception $e) {
-            try {
-                $joinDate = \Carbon\Carbon::createFromFormat('d/m/y', $expValidated['join_date'])->format('Y-m-d');
-            } catch (\Exception $ex) {
-                try {
-                    $joinDate = \Carbon\Carbon::createFromFormat('d-m-Y', $expValidated['join_date'])->format('Y-m-d');
-                } catch (\Exception $ex2) {
-                    $joinDate = null;
-                }
-            }
-        }
-    }
-
-    $endDate = null;
-    if (!empty($expValidated['end_date'])) {
-        try {
-            $endDate = \Carbon\Carbon::parse($expValidated['end_date'])->format('Y-m-d');
-        } catch (\Exception $e) {
-            try {
-                $endDate = \Carbon\Carbon::createFromFormat('d/m/y', $expValidated['end_date'])->format('Y-m-d');
-            } catch (\Exception $ex) {
-                try {
-                    $endDate = \Carbon\Carbon::createFromFormat('d-m-Y', $expValidated['end_date'])->format('Y-m-d');
-                } catch (\Exception $ex2) {
-                    $endDate = null;
-                }
-            }
-        }
-    }
+    $joinDate = $this->parseDateToYmd($expValidated['join_date'] ?? null);
+    $endDate = $this->parseDateToYmd($expValidated['end_date'] ?? null);
 
     $expData = [
         'user_id' => $user->id,
@@ -4111,6 +4098,13 @@ public function addStaff(Request $request)
     $logAction = 'STAFF_ADD';
     
     try {
+        if ($request->has('dob') && !empty($request->dob)) {
+            $request->merge(['dob' => $this->parseDateToYmd($request->dob)]);
+        }
+        if ($request->has('joining_date') && !empty($request->joining_date)) {
+            $request->merge(['joining_date' => $this->parseDateToYmd($request->joining_date)]);
+        }
+
         // ── PRE-VALIDATION: check by Aadhar OR phone FIRST ──────────────────
         // If the person already exists in the system (same aadhar OR same phone),
         // we skip straight to the re-hire path so the phone unique rule never
@@ -4472,6 +4466,9 @@ public function addStaff(Request $request)
             'transaction_rolled_back' => true,
             'timestamp' => now()->toDateTimeString()
         ]);
+        try {
+             file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Error in addStaff: " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
+        } catch (\Exception $writeErr) {}
 
         return response()->json([
             'success' => false,
@@ -5226,6 +5223,13 @@ private function updateExistingStaff(User $existingUser, Request $request)
     $logAction = 'STAFF_UPDATE_BY_ID';
     
     try {
+        if ($request->has('dob') && !empty($request->dob)) {
+            $request->merge(['dob' => $this->parseDateToYmd($request->dob)]);
+        }
+        if ($request->has('joining_date') && !empty($request->joining_date)) {
+            $request->merge(['joining_date' => $this->parseDateToYmd($request->joining_date)]);
+        }
+
         \Log::info('Starting staff update by ID', [
             'action' => $logAction,
             'staff_id' => $id,
@@ -5730,6 +5734,9 @@ private function updateExistingStaff(User $existingUser, Request $request)
             'transaction_rolled_back' => true,
             'timestamp' => now()->toDateTimeString()
         ]);
+        try {
+             file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Error in updateStaff (ID {$id}): " . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n\n", FILE_APPEND);
+        } catch (\Exception $writeErr) {}
 
         return response()->json([
             'success' => false,
@@ -6204,6 +6211,30 @@ private function updateExistingStaff(User $existingUser, Request $request)
         $response = $this->sendOtp($number);
 
         return response()->json($response);
+    }
+
+    private function parseDateToYmd($dateString)
+    {
+        if (empty($dateString)) {
+            return null;
+        }
+        try {
+            return \Carbon\Carbon::parse($dateString)->format('Y-m-d');
+        } catch (\Exception $e) {
+            try {
+                return \Carbon\Carbon::createFromFormat('d/m/y', $dateString)->format('Y-m-d');
+            } catch (\Exception $ex) {
+                try {
+                    return \Carbon\Carbon::createFromFormat('d-m-Y', $dateString)->format('Y-m-d');
+                } catch (\Exception $ex2) {
+                    try {
+                        return \Carbon\Carbon::createFromFormat('d/m/Y', $dateString)->format('Y-m-d');
+                    } catch (\Exception $ex3) {
+                        return null;
+                    }
+                }
+            }
+        }
     }
 
 }

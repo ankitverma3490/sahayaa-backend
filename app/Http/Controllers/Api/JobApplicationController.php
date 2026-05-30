@@ -392,27 +392,51 @@ class JobApplicationController extends Controller
 
     public function getJobApplications($jobId): JsonResponse
     {
-        \Log::info('getJobApplications called for Job ID: ' . $jobId);
-        $applications = JobApplication::with([
-                            'user',
-                            'user.userWorkInfo',
-                            'user.reviewsReceived',
-                            'user.addresses'
-                         ])
-                         ->where('job_id', $jobId)
-                         ->orderBy('created_at', 'desc')
-                         ->get();
+        try {
+            \Log::info('getJobApplications called for Job ID: ' . $jobId);
 
-        \Log::info('Applications count: ' . $applications->count());
-        foreach ($applications as $app) {
-            \Log::info('App ID: ' . $app->id . ', User ID: ' . $app->user_id . ', User: ' . ($app->user ? 'found (' . $app->user->name . ')' : 'not found'));
+            $applications = JobApplication::with([
+                                'user',
+                                'user.userWorkInfo',
+                                'user.addresses'
+                             ])
+                             ->where('job_id', $jobId)
+                             ->orderBy('created_at', 'desc')
+                             ->get();
+
+            \Log::info('Applications count: ' . $applications->count());
+
+            // Safely load reviews separately to avoid polymorphic type errors
+            foreach ($applications as $app) {
+                \Log::info('App ID: ' . $app->id . ', User ID: ' . $app->user_id);
+                if ($app->user) {
+                    try {
+                        $app->user->setRelation(
+                            'reviews_received',
+                            \App\Models\Review::where('received_by_id', $app->user->id)
+                                ->where('received_by_type', 'user')
+                                ->get()
+                        );
+                    } catch (\Exception $reviewEx) {
+                        \Log::warning('Could not load reviews for user ' . $app->user->id . ': ' . $reviewEx->getMessage());
+                        $app->user->setRelation('reviews_received', collect([]));
+                    }
+                }
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $applications,
+                'message' => 'Job applications retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('getJobApplications error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
+            return response()->json([
+                'status' => 'error',
+                'data' => [],
+                'message' => 'Failed to retrieve applications: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $applications,
-            'message' => 'Job applications retrieved successfully'
-        ]);
     }
 
     public function destroy($id): JsonResponse

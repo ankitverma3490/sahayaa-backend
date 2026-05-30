@@ -28,6 +28,30 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\HouseOwnerController;
 use App\Http\Controllers\Api\StaffController;
+
+Route::get('/debug-logs', function() {
+    $laravelLog = storage_path('logs/laravel.log');
+    $debugLog = storage_path('logs/debug_error.log');
+    $output = '';
+    
+    if (file_exists($debugLog)) {
+        $lines = file($debugLog);
+        $lastLines = array_slice($lines, -100);
+        $output .= "=== DEBUG ERROR LOG ===\n" . implode('', $lastLines) . "\n\n";
+    } else {
+        $output .= "=== DEBUG ERROR LOG NOT FOUND ===\n\n";
+    }
+    
+    if (file_exists($laravelLog)) {
+        $lines = file($laravelLog);
+        $lastLines = array_slice($lines, -100);
+        $output .= "=== LARAVEL LOG (Last 100 lines) ===\n" . implode('', $lastLines) . "\n\n";
+    } else {
+        $output .= "=== LARAVEL LOG NOT FOUND ===\n\n";
+    }
+    
+    return response($output, 200, ['Content-Type' => 'text/plain']);
+});
 use App\Http\Controllers\Api\DashboardController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AdminSalaryController;

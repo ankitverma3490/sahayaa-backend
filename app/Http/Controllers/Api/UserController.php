@@ -1140,6 +1140,7 @@ public function updateProfile(Request $request)
             'phone_number' => 'nullable|string|max:20',
             'gender' => 'nullable|string|in:male,female,other',
             'dob' => 'nullable|date',
+            'user_role_id' => 'nullable|integer',
             'addresses' => 'nullable|array',
             'addresses.*.street' => 'nullable|string',
             'addresses.*.city' => 'nullable|string',

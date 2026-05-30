@@ -1102,13 +1102,21 @@ public function updateProfile(Request $request)
 
         if ($request->has('dob') && !empty($request->dob)) {
             try {
-                // Try to parse DD-MM-YYYY and convert to YYYY-MM-DD for database
                 $dob = $request->dob;
-                if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $dob)) {
-                    $request->merge(['dob' => \Carbon\Carbon::createFromFormat('d-m-Y', $dob)->format('Y-m-d')]);
-                }
+                $formattedDob = \Carbon\Carbon::parse($dob)->format('Y-m-d');
+                $request->merge(['dob' => $formattedDob]);
             } catch (\Exception $e) {
-                // Keep original if parsing fails
+                try {
+                    $formattedDob = \Carbon\Carbon::createFromFormat('d/m/y', $dob)->format('Y-m-d');
+                    $request->merge(['dob' => $formattedDob]);
+                } catch (\Exception $ex) {
+                    try {
+                        $formattedDob = \Carbon\Carbon::createFromFormat('d-m-Y', $dob)->format('Y-m-d');
+                        $request->merge(['dob' => $formattedDob]);
+                    } catch (\Exception $ex2) {
+                        // Keep original if all parsing fails
+                    }
+                }
             }
         }
         $isEdit = $request->input('is_edit', 0);
@@ -1448,11 +1456,46 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'state' => 'nullable',
         'city' => 'nullable',
     ]);
+
+    $joinDate = null;
+    if (!empty($expValidated['join_date'])) {
+        try {
+            $joinDate = \Carbon\Carbon::parse($expValidated['join_date'])->format('Y-m-d');
+        } catch (\Exception $e) {
+            try {
+                $joinDate = \Carbon\Carbon::createFromFormat('d/m/y', $expValidated['join_date'])->format('Y-m-d');
+            } catch (\Exception $ex) {
+                try {
+                    $joinDate = \Carbon\Carbon::createFromFormat('d-m-Y', $expValidated['join_date'])->format('Y-m-d');
+                } catch (\Exception $ex2) {
+                    $joinDate = null;
+                }
+            }
+        }
+    }
+
+    $endDate = null;
+    if (!empty($expValidated['end_date'])) {
+        try {
+            $endDate = \Carbon\Carbon::parse($expValidated['end_date'])->format('Y-m-d');
+        } catch (\Exception $e) {
+            try {
+                $endDate = \Carbon\Carbon::createFromFormat('d/m/y', $expValidated['end_date'])->format('Y-m-d');
+            } catch (\Exception $ex) {
+                try {
+                    $endDate = \Carbon\Carbon::createFromFormat('d-m-Y', $expValidated['end_date'])->format('Y-m-d');
+                } catch (\Exception $ex2) {
+                    $endDate = null;
+                }
+            }
+        }
+    }
+
     $expData = [
         'user_id' => $user->id,
         'role' => $expValidated['role'] ?? null,
-        'join_date' => $expValidated['join_date'] ?? null,
-        'end_date' => $expValidated['end_date'] ?? null,
+        'join_date' => $joinDate,
+        'end_date' => $endDate,
         'salary' => $expValidated['salary'] ?? null,
         'working_hours' => $expValidated['working_hours'] ?? null,
         'house_sold' => $expValidated['house_sold'] ?? 0,
@@ -1666,6 +1709,26 @@ public function updateProfileCustomer(Request $request)
         }
 
         $isEdit = $request->input('is_edit', 0);
+
+        if ($request->has('dob') && !empty($request->dob)) {
+            try {
+                $dob = $request->dob;
+                $formattedDob = \Carbon\Carbon::parse($dob)->format('Y-m-d');
+                $request->merge(['dob' => $formattedDob]);
+            } catch (\Exception $e) {
+                try {
+                    $formattedDob = \Carbon\Carbon::createFromFormat('d/m/y', $dob)->format('Y-m-d');
+                    $request->merge(['dob' => $formattedDob]);
+                } catch (\Exception $ex) {
+                    try {
+                        $formattedDob = \Carbon\Carbon::createFromFormat('d-m-Y', $dob)->format('Y-m-d');
+                        $request->merge(['dob' => $formattedDob]);
+                    } catch (\Exception $ex2) {
+                        // Keep original if all parsing fails
+                    }
+                }
+            }
+        }
 
         $validator = Validator::make($request->all(), [
             'name'            => 'sometimes|string|max:255',
@@ -3308,12 +3371,18 @@ public function addressUpdate(Request $request)
         'emergency_contact_name' => 'nullable|string|max:255',
         'emergency_contact_number' => 'nullable|string|max:255',
         'preferred_work_location' => 'nullable|string|max:255',
+        'upi_id' => 'nullable|string|max:255',
     ]);
  $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
-UserHouseholdInformation::updateOrCreate(
+ UserHouseholdInformation::updateOrCreate(
     ['user_id' => $user->id],     // condition
     ['languages_spoken' => $request->languages_spoken] // fields to update
 );
+
+if (isset($validated['upi_id'])) {
+    $user->upi_id = $validated['upi_id'];
+    $user->save();
+}
 
     $data = [
         'primary_role' => $validated['primary_role'] ?? null,

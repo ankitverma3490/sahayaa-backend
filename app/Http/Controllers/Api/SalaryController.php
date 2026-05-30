@@ -627,16 +627,27 @@ public function getEarningsSummary(Request $request, $job_id = null)
                 ->where('status', 'paid')
                 ->get();
 
-            // Calculate totals for current month
-            $totalBaseSalary = $currentMonthPayments->sum('base_salary') + $currentMonthSalaries->sum('basic_salary');
-            $totalPerformanceBonus = $currentMonthPayments->sum('performance_bonus') + $currentMonthSalaries->sum('performative_allowance');
-            $totalOvertimePay = $currentMonthPayments->sum('overtime_pay') + $currentMonthSalaries->sum('over_time_allowance');
-            $totalTaxDeduction = $currentMonthPayments->sum('tax_deduction') + $currentMonthSalaries->sum('tax');
-            $totalAdvancePayment = $currentMonthPayments->sum('advance_payment') + $currentMonthSalaries->sum('advance_payment');
-            $totalNetSalary = $currentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
+            // Filter out duplicate payments that exist in the salaries table
+            $filteredCurrentMonthPayments = $currentMonthPayments->filter(function($payment) use ($currentMonthSalaries) {
+                foreach ($currentMonthSalaries as $salary) {
+                    $timeDiff = abs(strtotime($payment->created_at) - strtotime($salary->created_at));
+                    if ($timeDiff < 60 && abs($payment->net_salary - $salary->net_salary) < 0.01) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            // Calculate totals for current month using the deduplicated list
+            $totalBaseSalary = $filteredCurrentMonthPayments->sum('base_salary') + $currentMonthSalaries->sum('basic_salary');
+            $totalPerformanceBonus = $filteredCurrentMonthPayments->sum('performance_bonus') + $currentMonthSalaries->sum('performative_allowance');
+            $totalOvertimePay = $filteredCurrentMonthPayments->sum('overtime_pay') + $currentMonthSalaries->sum('over_time_allowance');
+            $totalTaxDeduction = $filteredCurrentMonthPayments->sum('tax_deduction') + $currentMonthSalaries->sum('tax');
+            $totalAdvancePayment = $filteredCurrentMonthPayments->sum('advance_payment') + $currentMonthSalaries->sum('advance_payment');
+            $totalNetSalary = $filteredCurrentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
 
             // If no records for current month, use prioritized base salary
-            if ($currentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
+            if ($filteredCurrentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
                 $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
                 if ($userWorkInfo && $userWorkInfo->salary) {
                     $totalBaseSalary = (float) $userWorkInfo->salary;
@@ -699,8 +710,19 @@ public function getEarningsSummary(Request $request, $job_id = null)
                     ];
                 });
 
+            // Deduplicate paymentHistory against salaryHistory
+            $filteredPaymentHistory = $paymentHistory->filter(function($payment) use ($salaryHistory) {
+                foreach ($salaryHistory as $salary) {
+                    $timeDiff = abs(strtotime($payment['date']) - strtotime($salary['date']));
+                    if ($timeDiff < 60 && abs($payment['amount'] - $salary['amount']) < 0.01) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
             // Merge and sort combined history
-            $combinedHistory = $salaryHistory->concat($paymentHistory)
+            $combinedHistory = $salaryHistory->concat($filteredPaymentHistory)
                 ->sortByDesc('date')
                 ->values()
                 ->take(3);
@@ -1235,10 +1257,21 @@ private function getWorkingDays($startDate, $endDate)
                 ->where('status', 'paid')
                 ->get();
 
-            $totalEarnings = $currentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
+            // Filter out duplicate payments that exist in the salaries table
+            $filteredCurrentMonthPayments = $currentMonthPayments->filter(function($payment) use ($currentMonthSalaries) {
+                foreach ($currentMonthSalaries as $salary) {
+                    $timeDiff = abs(strtotime($payment->created_at) - strtotime($salary->created_at));
+                    if ($timeDiff < 60 && abs($payment->net_salary - $salary->net_salary) < 0.01) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            $totalEarnings = $filteredCurrentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
             
             // If no payments/salaries found, get base salary from prioritized sources
-            if ($currentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
+            if ($filteredCurrentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
                 $userWorkInfo = UserWorkInfo::where('user_id', $user->id)->first();
                 if ($userWorkInfo && $userWorkInfo->salary) {
                     $totalEarnings = (float) $userWorkInfo->salary;

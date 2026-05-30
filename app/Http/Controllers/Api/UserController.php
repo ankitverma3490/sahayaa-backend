@@ -1165,6 +1165,9 @@ public function updateProfile(Request $request)
             'preferred_work_location' => 'nullable|string|max:255'
         ]);
         if ($validator->fails()) {
+            try {
+                file_put_contents(storage_path('logs/debug_error.log'), date('Y-m-d H:i:s') . " - Validation failed in updateProfile: " . json_encode($validator->errors()->toArray()) . "\n" . "Request Data: " . json_encode($request->all()) . "\n\n", FILE_APPEND);
+            } catch (\Exception $writeErr) {}
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
         $data = $validator->validated();

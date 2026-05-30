@@ -59,7 +59,7 @@ Route::get('/debug-logs', function() {
 
     if (file_exists($debugLog)) {
         $lines = file($debugLog);
-        $lastLines = array_slice($lines, -100);
+        $lastLines = array_slice($lines, -250);
         $output .= "=== DEBUG ERROR LOG ===\n" . implode('', $lastLines) . "\n\n";
     } else {
         $output .= "=== DEBUG ERROR LOG NOT FOUND ===\n\n";

@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\StaffController;
 Route::get('/debug-logs', function() {
     $laravelLog = storage_path('logs/laravel.log');
     $debugLog = storage_path('logs/debug_error.log');
+    $hjLog = storage_path('logs/hj.txt');
     $output = '';
     
     if (file_exists($debugLog)) {
@@ -48,6 +49,14 @@ Route::get('/debug-logs', function() {
         $output .= "=== LARAVEL LOG (Last 100 lines) ===\n" . implode('', $lastLines) . "\n\n";
     } else {
         $output .= "=== LARAVEL LOG NOT FOUND ===\n\n";
+    }
+
+    if (file_exists($hjLog)) {
+        $lines = file($hjLog);
+        $lastLines = array_slice($lines, -100);
+        $output .= "=== HJ LOG (Last 100 lines) ===\n" . implode('', $lastLines) . "\n\n";
+    } else {
+        $output .= "=== HJ LOG NOT FOUND ===\n\n";
     }
     
     return response($output, 200, ['Content-Type' => 'text/plain']);

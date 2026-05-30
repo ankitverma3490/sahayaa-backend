@@ -383,8 +383,7 @@ class User extends Authenticatable
     public function reviewsReceived()
     {
         return $this->hasMany(Review::class, 'received_by_id')
-            ->where('received_by_type', 'user')
-            ->with('givenBy');
+            ->where('received_by_type', 'user');
     }
 
     public function portfolioImages()

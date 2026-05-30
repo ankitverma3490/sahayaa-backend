@@ -1225,14 +1225,35 @@ public function updateProfile(Request $request)
             \Log::error('Could not open log file for writing.');
         }
         
-        if ($isEdit != 1) $data['step'] = 2;
-
-        // Only update user-table fields (safe subset to avoid issues with extra array fields)
-        $userUpdateFields = array_intersect_key($data, array_flip([
+        $allowedKeys = [
             'first_name', 'last_name', 'name', 'email', 'phone_number',
-            'gender', 'dob', 'auto_attendence', 'image', 'user_role_id', 'step',
-            'verification_certificate', 'aadhar_front', 'aadhar_back', 'upi_id'
-        ]));
+            'gender', 'dob', 'auto_attendence', 'user_role_id', 'upi_id'
+        ];
+
+        $userUpdateFields = [];
+        foreach ($allowedKeys as $key) {
+            if ($request->has($key)) {
+                $userUpdateFields[$key] = $data[$key];
+            }
+        }
+
+        // Handle uploaded files
+        if (isset($data['image'])) {
+            $userUpdateFields['image'] = $data['image'];
+        }
+        if (isset($data['aadhar_front'])) {
+            $userUpdateFields['aadhar_front'] = $data['aadhar_front'];
+        }
+        if (isset($data['aadhar_back'])) {
+            $userUpdateFields['aadhar_back'] = $data['aadhar_back'];
+        }
+        if (isset($data['verification_certificate'])) {
+            $userUpdateFields['verification_certificate'] = $data['verification_certificate'];
+        }
+
+        if ($isEdit != 1) {
+            $userUpdateFields['step'] = 2;
+        }
 
         try {
             if (!empty($userUpdateFields)) {
@@ -1248,7 +1269,8 @@ public function updateProfile(Request $request)
         }
 
         // saveWorkAndExperience is only for staff (role 2), not household employers
-        if ($isEdit == 1 && $user->user_role_id == 2) {
+        $workFields = ['emergency_contact_name', 'emergency_contact_number', 'preferred_work_location', 'primary_role', 'skills', 'languages_spoken', 'total_experience', 'education', 'additional_info', 'voice_note'];
+        if (($isEdit == 1 || $request->hasAny($workFields)) && $user->user_role_id == 2) {
             try {
                 $this->saveWorkAndExperience($user, $request, $isEdit);
             } catch (\Illuminate\Validation\ValidationException $e) {
@@ -1402,96 +1424,120 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'preferred_work_location' => 'nullable|string|max:255',
     ]);
 
-    $skills = $request->input('skills');
-    if (is_string($skills)) {
-        $decoded = json_decode($skills, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $skills = $decoded;
-        } else {
-            $skills = array_map('trim', explode(',', $skills));
-        }
+    $data = [];
+
+    if ($request->has('primary_role')) {
+        $data['primary_role'] = $workValidated['primary_role'];
     }
 
-    $languages = $request->input('languages_spoken');
-    if (is_string($languages)) {
-        $decoded = json_decode($languages, true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $languages = $decoded;
-        } else {
-            $languages = array_map('trim', explode(',', $languages));
+    if ($request->has('skills')) {
+        $skills = $request->input('skills');
+        if (is_string($skills)) {
+            $decoded = json_decode($skills, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $skills = $decoded;
+            } else {
+                $skills = array_map('trim', explode(',', $skills));
+            }
         }
+        $data['skills'] = $skills ?? [];
     }
 
-    $totalExperience = $request->input('total_experience');
-    if ($totalExperience !== null) {
-        if (preg_match('/[0-9]+(\.[0-9]+)?/', $totalExperience, $matches)) {
-            $totalExperience = (float)$matches[0];
-        } else {
-            $totalExperience = null;
+    if ($request->has('languages_spoken')) {
+        $languages = $request->input('languages_spoken');
+        if (is_string($languages)) {
+            $decoded = json_decode($languages, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $languages = $decoded;
+            } else {
+                $languages = array_map('trim', explode(',', $languages));
+            }
         }
+        $data['languages_spoken'] = $languages;
+
+        UserHouseholdInformation::updateOrCreate(
+            ['user_id' => $user->id],
+            ['languages_spoken' => $languages]
+        );
     }
 
-    $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
-    UserHouseholdInformation::updateOrCreate(
-        ['user_id' => $user->id],     // condition
-        ['languages_spoken' => $languages] // fields to update
-    );
-    $data = [
-        'primary_role' => $workValidated['primary_role'] ?? null,
-        'skills' => $skills ?? [],
-        'languages_spoken' => $languages ?? null,
-        'total_experience' => $totalExperience ?? null,
-        'education' => $workValidated['education'] ?? null,
-        'additional_info' => $workValidated['additional_info'] ?? null,
-        'emergency_contact_name' => $workValidated['emergency_contact_name'] ?? null,
-        'emergency_contact_number' => $workValidated['emergency_contact_number'] ?? null,
-        'preferred_work_location' => $workValidated['preferred_work_location'] ?? null,
-    ];
+    if ($request->has('total_experience')) {
+        $totalExperience = $request->input('total_experience');
+        if ($totalExperience !== null) {
+            if (preg_match('/[0-9]+(\.[0-9]+)?/', $totalExperience, $matches)) {
+                $totalExperience = (float)$matches[0];
+            } else {
+                $totalExperience = null;
+            }
+        }
+        $data['total_experience'] = $totalExperience;
+    }
+
+    if ($request->has('education')) {
+        $data['education'] = $workValidated['education'];
+    }
+
+    if ($request->has('additional_info')) {
+        $data['additional_info'] = $workValidated['additional_info'];
+    }
+
+    if ($request->has('emergency_contact_name')) {
+        $data['emergency_contact_name'] = $workValidated['emergency_contact_name'];
+    }
+
+    if ($request->has('emergency_contact_number')) {
+        $data['emergency_contact_number'] = $workValidated['emergency_contact_number'];
+    }
+
+    if ($request->has('preferred_work_location')) {
+        $data['preferred_work_location'] = $workValidated['preferred_work_location'];
+    }
+
     if ($request->hasFile('voice_note')) {
         $directory = "uploads/user_voice_notes";
-        // if (!file_exists(public_path($directory))) mkdir(public_path($directory), 0755, true);
-        // $file = $request->file('voice_note');
-        // $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-        // $file->move(public_path($directory), $fileName);
-        // $path = $directory . '/' . $fileName;
-        // if ($workInfo && $workInfo->voice_note && file_exists(public_path($workInfo->voice_note))) unlink(public_path($workInfo->voice_note));
-        $path = $this->uploadCloudary($request,"voice_note",$directory);
+        $path = $this->uploadCloudary($request, "voice_note", $directory);
         $data['voice_note'] = $path;
     }
-    UserWorkInfo::updateOrCreate(['user_id' => $user->id], $data);
 
-    // Last Work Experience
-    $expValidated = $request->validate([
-        'id' => 'nullable',
-        'role' => 'nullable',
-        'join_date' => 'nullable',
-        'end_date' => 'nullable',
-        'salary' => 'nullable',
-        'working_hours' => 'nullable',
-        'house_sold' => 'nullable',
-        'owner_name' => 'nullable',
-        'contact_number' => 'nullable',
-        'state' => 'nullable',
-        'city' => 'nullable',
-    ]);
+    if (!empty($data)) {
+        UserWorkInfo::updateOrCreate(['user_id' => $user->id], $data);
+    }
 
-    $joinDate = $this->parseDateToYmd($expValidated['join_date'] ?? null);
-    $endDate = $this->parseDateToYmd($expValidated['end_date'] ?? null);
+    // Last Work Experience - only update if relevant experience fields are sent
+    $expFields = ['role', 'join_date', 'end_date', 'salary', 'working_hours', 'house_sold', 'owner_name', 'contact_number', 'state', 'city'];
+    if ($request->hasAny($expFields)) {
+        $expValidated = $request->validate([
+            'id' => 'nullable',
+            'role' => 'nullable',
+            'join_date' => 'nullable',
+            'end_date' => 'nullable',
+            'salary' => 'nullable',
+            'working_hours' => 'nullable',
+            'house_sold' => 'nullable',
+            'owner_name' => 'nullable',
+            'contact_number' => 'nullable',
+            'state' => 'nullable',
+            'city' => 'nullable',
+        ]);
 
-    $expData = [
-        'user_id' => $user->id,
-        'role' => $expValidated['role'] ?? null,
-        'join_date' => $joinDate,
-        'end_date' => $endDate,
-        'salary' => $expValidated['salary'] ?? null,
-        'working_hours' => $expValidated['working_hours'] ?? null,
-        'house_sold' => $expValidated['house_sold'] ?? 0,
-        'owner_name' => $expValidated['owner_name'] ?? null,
-        'contact_number' => $expValidated['contact_number'] ?? null,
-        'state' => $expValidated['state'] ?? null,
-        'city' => $expValidated['city'] ?? null,
-    ];
-    LastWorkExperience::updateOrCreate(['id' => $expValidated['id'] ?? null, 'user_id' => $user->id], $expData);
+        $expData = ['user_id' => $user->id];
+
+        if ($request->has('role')) $expData['role'] = $expValidated['role'];
+        if ($request->has('join_date')) $expData['join_date'] = $this->parseDateToYmd($expValidated['join_date']);
+        if ($request->has('end_date')) $expData['end_date'] = $this->parseDateToYmd($expValidated['end_date']);
+        if ($request->has('salary')) $expData['salary'] = $expValidated['salary'];
+        if ($request->has('working_hours')) $expData['working_hours'] = $expValidated['working_hours'];
+        if ($request->has('house_sold')) $expData['house_sold'] = $expValidated['house_sold'] ?? 0;
+        if ($request->has('owner_name')) $expData['owner_name'] = $expValidated['owner_name'];
+        if ($request->has('contact_number')) $expData['contact_number'] = $expValidated['contact_number'];
+        if ($request->has('state')) $expData['state'] = $expValidated['state'];
+        if ($request->has('city')) $expData['city'] = $expValidated['city'];
+
+        LastWorkExperience::updateOrCreate(
+            ['id' => $expValidated['id'] ?? null, 'user_id' => $user->id],
+            $expData
+        );
+    }
 
     // Step will be set by parent function (updateProfile)
 }

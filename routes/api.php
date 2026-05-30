@@ -35,6 +35,28 @@ Route::get('/debug-logs', function() {
     $hjLog = storage_path('logs/hj.txt');
     $output = '';
     
+    // Check log channel
+    $output .= "LOG_CHANNEL: " . config('logging.default') . "\n";
+    $output .= "LOG_LEVEL: " . config('logging.channels.single.level') . "\n\n";
+
+    // Test file writing
+    $testFile = storage_path('logs/test_write.txt');
+    if (@file_put_contents($testFile, "TEST WRITE SUCCESS AT " . date('Y-m-d H:i:s')) !== false) {
+        $output .= "=== FILE WRITE TEST: SUCCESS ===\n\n";
+        @unlink($testFile);
+    } else {
+        $output .= "=== FILE WRITE TEST: FAILED ===\n\n";
+    }
+
+    // List all files in storage/logs
+    $logDir = storage_path('logs');
+    if (is_dir($logDir)) {
+        $files = scandir($logDir);
+        $output .= "=== FILES IN storage/logs ===\n" . implode("\n", $files) . "\n\n";
+    } else {
+        $output .= "=== storage/logs IS NOT A DIRECTORY ===\n\n";
+    }
+
     if (file_exists($debugLog)) {
         $lines = file($debugLog);
         $lastLines = array_slice($lines, -100);

@@ -357,17 +357,19 @@ class SalaryController extends Controller
             }
             DB::commit();
 
-            // 🚀 Notify staff member about salary payment
-            try {
-                Notification::create([
-                    'user_id' => $user_id,
-                    'title' => 'Salary Received',
-                    'message' => 'Your salary of ₹' . number_format($netSalary, 2) . ' for ' . $currentPeriod . ' has been paid by ' . Auth::guard('api')->user()->name . '.',
-                    'type' => 'salary_payment',
-                    'is_read' => 0
-                ]);
-            } catch (\Exception $e) {
-                \Log::error('Salary notification failed: ' . $e->getMessage());
+            // 🚀 Notify staff member about salary payment only if successful
+            if ($status === 'paid' || $status === 'completed') {
+                try {
+                    Notification::create([
+                        'user_id' => $user_id,
+                        'title' => 'Salary Received',
+                        'message' => 'Your salary of ₹' . number_format($netSalary, 2) . ' for ' . $currentPeriod . ' has been paid by ' . Auth::guard('api')->user()->name . '.',
+                        'type' => 'salary_payment',
+                        'is_read' => 0
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Salary notification failed: ' . $e->getMessage());
+                }
             }
         } catch (\Exception $e) {
             DB::rollBack();

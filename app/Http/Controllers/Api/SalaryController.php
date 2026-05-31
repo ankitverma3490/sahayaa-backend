@@ -319,7 +319,7 @@ class SalaryController extends Controller
             ]);
 
             // Handle Advance Deduction Logic
-            if ($advancePayment > 0) {
+            if ($advancePayment > 0 && ($status === 'paid' || $status === 'completed')) {
                 $remainingToDeduct = $advancePayment;
                 $activeAdvances = DB::table('staff_advances')
                     ->where('staff_id', $user_id)
@@ -354,6 +354,13 @@ class SalaryController extends Controller
 
                     $remainingToDeduct -= $deductFromThis;
                 }
+                
+                // Update user aggregate field
+                if (isset($user)) {
+                    $user->advance_withdraw_amount = max(0, $user->advance_withdraw_amount - $advancePayment);
+                    $user->advance_withdraw_added_by = Auth::guard('api')->id();
+                    $user->save();
+                }
             }
             DB::commit();
 
@@ -385,7 +392,7 @@ class SalaryController extends Controller
             'amount' => $netSalary,
             'currency' => 'INR',
             'payment_mode' => $paymentMode,
-            'payment_status' => $request->status ?? 'paid',
+            'payment_status' => $status,
             'created_by' => Auth::guard('api')->user()->id,
             'payment_response' => json_encode([
                 'base_salary' => $baseSalary,
@@ -410,54 +417,9 @@ class SalaryController extends Controller
             'advance_payment' => $advancePayment,
             'net_salary' => $netSalary,
             'payment_mode' => $paymentMode,
-            'status' => $request->status ?? 'paid',
+            'status' => $status,
             'payment_date' => now()->toDateString(),
         ]);
-
-        // ✅ Auto-deduct from StaffAdvance table (FIFO)
-        $employerId = Auth::guard('api')->user()->id;
-        $remainingToDeduct = (float)$advancePayment;
-
-        if ($remainingToDeduct > 0) {
-            $activeAdvances = \App\Models\StaffAdvance::where('staff_id', $user_id)
-                ->where('employer_id', $employerId)
-                ->where('status', 'active')
-                ->orderBy('created_at', 'asc')
-                ->get();
-
-            foreach ($activeAdvances as $advance) {
-                if ($remainingToDeduct <= 0) break;
-
-                $deductFromThis = min($remainingToDeduct, (float)$advance->remaining_balance);
-                $balanceAfter   = $advance->remaining_balance - $deductFromThis;
-
-                \App\Models\AdvanceTransaction::create([
-                    'advance_id'      => $advance->id,
-                    'staff_id'        => $advance->staff_id,
-                    'employer_id'     => $employerId,
-                    'deducted_amount' => $deductFromThis,
-                    'balance_after'   => $balanceAfter,
-                    'payment_id'      => $payment->id, // link to payment record
-                    'note'            => 'Salary deduction (' . ucfirst($advance->deduction_type) . ')',
-                ]);
-
-                $advance->remaining_balance = $balanceAfter;
-                if ($balanceAfter <= 0) {
-                    $advance->status = 'closed';
-                }
-                $advance->save();
-
-                $remainingToDeduct -= $deductFromThis;
-            }
-
-            // Update user aggregate field
-            if ($user) {
-                $user->advance_withdraw_amount = max(0, $user->advance_withdraw_amount - $advancePayment);
-                $user->advance_withdraw_added_by = $employerId;
-                $user->save();
-            }
-        }
-
 
         $salaryData = [
             'staff_member' => [

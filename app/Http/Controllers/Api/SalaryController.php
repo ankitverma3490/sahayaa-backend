@@ -456,11 +456,7 @@ class SalaryController extends Controller
             }
         }
 
-        // ✅ CRITICAL FIX: Update UserWorkInfo with new base salary to ensure consistency
-        UserWorkInfo::updateOrCreate(
-            ['user_id' => $user_id],
-            ['salary' => $baseSalary]
-        );
+
         $salaryData = [
             'staff_member' => [
                 'id' => $user->id,

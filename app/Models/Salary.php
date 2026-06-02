@@ -19,6 +19,7 @@ class Salary extends Model
         'advance_payment',
         'net_salary',
         'payment_mode',
+        'payment_receipt',
         'payment_date',
         'status',
     ];

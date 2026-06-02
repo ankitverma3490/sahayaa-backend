@@ -22,7 +22,9 @@ class Subscription extends Model
         'role_id',
         'subscription_limit',
         'job_limit',
-        'extra_job_price'
+        'staff_limit',
+        'extra_job_price',
+        'extra_staff_price'
     ];
 
     protected $casts = [

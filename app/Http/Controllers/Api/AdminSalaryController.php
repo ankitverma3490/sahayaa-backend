@@ -50,7 +50,8 @@ class AdminSalaryController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|string'
+            'status' => 'required|string',
+            'payment_receipt' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:5120'
         ]);
 
         if(!in_array($request->status, ['paid', 'unpaid', 'pending'])) {
@@ -63,6 +64,14 @@ class AdminSalaryController extends Controller
         $salary = Salary::findOrFail($id);
         $oldStatus = $salary->status;
         $salary->status = $request->status;
+        
+        if ($request->hasFile('payment_receipt')) {
+            $file = $request->file('payment_receipt');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/receipts'), $filename);
+            $salary->payment_receipt = 'uploads/receipts/' . $filename;
+        }
+
         $salary->save();
         
         // Send notification to staff when salary is marked as paid

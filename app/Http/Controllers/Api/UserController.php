@@ -4148,6 +4148,41 @@ public function addStaff(Request $request)
     $logAction = 'STAFF_ADD';
     
     try {
+        // Enforce Staff Limit for House Owners
+        if ($authUser && $authUser->user_role_id == 3) {
+            $activeSub = \App\Models\SubscriptionUser::where('user_id', $authUser->id)
+                ->where('status', 'active')
+                ->where('end_date', '>', now())
+                ->latest()
+                ->first();
+                
+            $staffLimit = $activeSub ? $activeSub->staff_user_limit : 2; // Default 2 if no active plan just in case
+            $extraStaff = $activeSub ? ($activeSub->extra_staff ?? 0) : 0;
+            $allowedLimit = $staffLimit + $extraStaff;
+            
+            // Get current active staff added by this house owner
+            $currentStaffCount = \App\Models\User::where('user_role_id', 2)
+                ->where('is_deleted', 0)
+                ->where('added_by', $authUser->id)
+                ->count();
+                
+            if ($currentStaffCount >= $allowedLimit) {
+                $plan = $activeSub ? \App\Models\Subscription::find($activeSub->subscription_id) : null;
+                $extraStaffPrice = $plan ? ($plan->extra_staff_price ?? 500) : 500;
+
+                DB::rollBack();
+                return response()->json([
+                    'status' => false,
+                    'error_code' => 'LIMIT_EXCEEDED',
+                    'message' => 'Staff limit reached. Please upgrade your plan or buy more limits to add more staff.',
+                    'limit_reached' => true,
+                    'current_staff_count' => $currentStaffCount,
+                    'staff_limit' => $allowedLimit,
+                    'extra_staff_price' => $extraStaffPrice
+                ], 403);
+            }
+        }
+
         if ($request->has('dob') && !empty($request->dob)) {
             $request->merge(['dob' => $this->parseDateToYmd($request->dob)]);
         }

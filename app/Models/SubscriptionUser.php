@@ -32,7 +32,9 @@ class SubscriptionUser extends Model
         'status',
         'user_limit',
         'job_user_limit',
-        'extra_jobs'
+        'staff_user_limit',
+        'extra_jobs',
+        'extra_staff'
     ];
 
     protected $casts = [

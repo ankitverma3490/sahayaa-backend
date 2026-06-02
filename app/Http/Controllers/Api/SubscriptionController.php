@@ -53,15 +53,18 @@ class SubscriptionController extends Controller
             'extra'             => 'nullable',
             'subscription_limit' => 'required|numeric',
             'job_limit' => 'nullable|numeric',
+            'staff_limit' => 'nullable|numeric',
             'extra_job_price' => 'nullable|numeric'
         ]);
 
         // Job posting limits/pricing are only applicable for House Owner plans (role_id = 3)
         if ((string)($data['role_id'] ?? '') !== '3') {
             $data['job_limit'] = 0;
+            $data['staff_limit'] = 0;
             $data['extra_job_price'] = 0;
         } else {
             $data['job_limit'] = (float)($data['job_limit'] ?? 0);
+            $data['staff_limit'] = (float)($data['staff_limit'] ?? 0);
             $data['extra_job_price'] = (float)($data['extra_job_price'] ?? 0);
         }
 
@@ -90,16 +93,21 @@ class SubscriptionController extends Controller
             'extra'             => 'nullable|array',
             'subscription_limit' => 'required|numeric',
             'job_limit' => 'nullable|numeric',
+            'staff_limit' => 'nullable|numeric',
             'extra_job_price' => 'nullable|numeric'
         ]);
 
         // Job posting limits/pricing are only applicable for House Owner plans (role_id = 3)
         if ((string)($data['role_id'] ?? $subscription->role_id ?? '') !== '3') {
             $data['job_limit'] = 0;
+            $data['staff_limit'] = 0;
             $data['extra_job_price'] = 0;
         } else {
             if (array_key_exists('job_limit', $data)) {
                 $data['job_limit'] = (float)($data['job_limit'] ?? 0);
+            }
+            if (array_key_exists('staff_limit', $data)) {
+                $data['staff_limit'] = (float)($data['staff_limit'] ?? 0);
             }
             if (array_key_exists('extra_job_price', $data)) {
                 $data['extra_job_price'] = (float)($data['extra_job_price'] ?? 0);
@@ -190,6 +198,8 @@ class SubscriptionController extends Controller
                     'type' => 'credit',
                     'start_date' => now(),
                     'end_date' => now()->addDays($subscription->validity),
+                    'job_user_limit' => $subscription->job_limit ?? 0,
+                    'staff_user_limit' => $subscription->staff_limit ?? 2,
                 ]);
                 $data = $this->zeroPaymentData($subscriptionUser);
                 return $data;
@@ -218,6 +228,8 @@ class SubscriptionController extends Controller
                     'type' => 'credit',
                     'start_date' => now(),
                     'end_date' => now()->addDays($subscription->validity),
+                    'job_user_limit' => $subscription->job_limit ?? 0,
+                    'staff_user_limit' => $subscription->staff_limit ?? 2,
                 ]);
 
                 return response()->json([
@@ -528,6 +540,7 @@ class SubscriptionController extends Controller
             'end_date'         => $endDate,
             'user_limit'       => 0,
             'job_user_limit'   => $subscription->job_limit ?? 0,
+            'staff_user_limit' => $subscription->staff_limit ?? 2,
         ]);
 
         $message = $isPaid
@@ -670,4 +683,127 @@ class SubscriptionController extends Controller
             ], 500);
         }
     }
+
+    public function createExtraStaffOrder(Request $request)
+    {
+        $user = Auth::user();
+        
+        $activeSubscription = SubscriptionUser::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first();
+
+        if (!$activeSubscription) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No active subscription found. Upgrade to Premium to purchase extra staff limit.'
+            ], 404);
+        }
+
+        $plan = Subscription::find($activeSubscription->subscription_id);
+        if (!$plan) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Subscription plan not found.'
+            ], 404);
+        }
+
+        $price = $plan->extra_staff_price ?? 500;
+        if ($price <= 0) {
+            $activeSubscription->increment('extra_staff');
+            return response()->json([
+                'status' => true,
+                'free' => true,
+                'message' => 'Extra staff limit added for free.',
+            ]);
+        }
+
+        try {
+            $api_key = config('services.razorpay.key');
+            $api_secret = config('services.razorpay.secret');
+            
+            $razorpayData = [
+                "amount" => (int) ($price * 100), // in paise
+                "currency" => "INR",
+                "receipt" => "extra_staff_" . uniqid(),
+                "payment_capture" => 1
+            ];
+            $api = new Api($api_key, $api_secret);
+            $order = $api->order->create($razorpayData);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Extra staff order created successfully',
+                'order_id' => $order['id'],
+                'amount' => $price,
+                'currency' => 'INR',
+                'razorpay_key' => $api_key,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to create order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function verifyExtraStaffPayment(Request $request)
+    {
+        $request->validate([
+            'razorpay_order_id' => 'required',
+            'razorpay_payment_id' => 'required',
+            'razorpay_signature' => 'required',
+        ]);
+
+        $user = Auth::user();
+
+        try {
+            $generated_signature = hash_hmac(
+                'sha256',
+                $request->razorpay_order_id . "|" . $request->razorpay_payment_id,
+                config('services.razorpay.secret')
+            );
+
+            if ($generated_signature !== $request->razorpay_signature) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Invalid payment signature'
+                ], 400);
+            }
+
+            $activeSubscription = SubscriptionUser::where('user_id', $user->id)
+                ->where('status', 'active')
+                ->latest()
+                ->first();
+
+            if (!$activeSubscription) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Active subscription not found'
+                ], 404);
+            }
+
+            $activeSubscription->increment('extra_staff');
+
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'Extra Staff Limit Purchased',
+                'message' => 'You have successfully purchased 1 extra staff limit.',
+                'status' => 'unread',
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Payment verified successfully. Extra staff limit added.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Payment verification failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

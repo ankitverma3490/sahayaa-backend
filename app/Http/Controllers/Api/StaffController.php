@@ -298,80 +298,76 @@ class StaffController extends Controller
             \Log::info('Applied AI Filters:', ['filters' => $filters, 'query' => $queryText]);
             
             // ✅ Fix: Use user_role_id instead of non-existent role() scope
-            $query = User::where('user_role_id', 2)
-                ->with(['userWorkInfo', 'addresses', 'kycInformation'])
-                ->where('is_job_seeking', 1);
+            // Clone base query for strict and relaxed searches
+            $query = clone $baseQuery;
 
-            if (!empty($filters['name'])) {
-                $name = $filters['name'];
-                $query->where(function ($q) use ($name) {
-                    $q->where('first_name', 'like', '%' . $name . '%')
-                      ->orWhere('last_name', 'like', '%' . $name . '%');
-                });
-            }
-
-            if (!empty($filters['gender'])) {
-                $query->where('gender', $filters['gender']);
-            }
-
-            if (!empty($filters['location'])) {
-                $loc = $filters['location'];
-                $query->where(function($q) use ($loc) {
-                    // Check current addresses
-                    $q->whereHas('addresses', function ($sub) use ($loc) {
-                        $sub->where('city', 'like', '%' . $loc . '%')
-                          ->orWhere('state', 'like', '%' . $loc . '%');
-                    })
-                    // OR check preferred work location
-                    ->orWhereHas('userWorkInfo', function ($sub) use ($loc) {
-                        $sub->where('preferred_work_location', 'like', '%' . $loc . '%');
-                    })
-                    // OR check User table current_city
-                    ->orWhere('current_city', 'like', '%' . $loc . '%');
-                });
-            }
-            // Removed automatic restriction to owner's city here to allow broader AI results 
-            // as per client request. Staff can be ready to work anywhere.
-
-            if (!empty($filters['role'])) {
-                $role = strtolower(trim($filters['role']));
-                
-                // Role aliases — map AI output to possible DB values
-                $roleAliases = [
-                    'driver' => ['driver', 'Driver', 'Driver / Chauffeur', 'Chauffeur'],
-                    'cook' => ['cook', 'Cook', 'chef', 'Chef', 'Cook / Chef', 'Chef / Baker'],
-                    'chef' => ['chef', 'Chef', 'cook', 'Cook', 'Cook / Chef', 'Chef / Baker'],
-                    'maid' => ['maid', 'Maid', 'House Cleaner', 'house cleaner', 'House Cleaner / Maid', 'cleaner'],
-                    'house cleaner' => ['House Cleaner', 'house cleaner', 'Maid', 'House Cleaner / Maid'],
-                    'nanny' => ['nanny', 'Nanny', 'Baby Sitter', 'baby sitter', 'Baby Sitter / Nanny', 'Babysitter'],
-                    'baby sitter' => ['Baby Sitter', 'baby sitter', 'Nanny', 'Baby Sitter / Nanny'],
-                    'housekeeper' => ['housekeeper', 'Housekeeper'],
-                    'gardener' => ['gardener', 'Gardener'],
-                    'security' => ['security', 'Security', 'Security Guard', 'guard', 'Guard'],
-                    'nurse' => ['nurse', 'Nurse', 'Nurse / Caretaker', 'caretaker'],
-                    'tutor' => ['tutor', 'Tutor', 'teacher', 'Teacher'],
-                    'plumber' => ['plumber', 'Plumber'],
-                    'electrician' => ['electrician', 'Electrician'],
-                    'carpenter' => ['carpenter', 'Carpenter'],
-                    'painter' => ['painter', 'Painter'],
-                    'sweeper' => ['sweeper', 'Sweeper'],
-                    'laundry' => ['laundry', 'Laundry', 'Laundry / Ironing'],
-                    'dog walker' => ['dog walker', 'Dog Walker', 'Pet Walker'],
-                    'attendant' => ['attendant', 'Attendant', 'Personal Attendant'],
-                    'pet caretaker' => ['pet caretaker', 'Pet Caretaker', 'caretaker', 'Caretaker'],
-                ];
-                
-                $searchValues = $roleAliases[$role] ?? [$role, ucfirst($role), strtoupper($role)];
-                
-                $query->whereHas('userWorkInfo', function ($q) use ($role, $searchValues) {
-                    $q->where(function($inner) use ($role, $searchValues) {
-                        foreach ($searchValues as $val) {
-                            $inner->orWhereRaw("LOWER(primary_role) LIKE ?", ['%' . strtolower($val) . '%']);
-                        }
+            $applyCoreFilters = function($q) use ($filters) {
+                if (!empty($filters['name'])) {
+                    $name = $filters['name'];
+                    $q->where(function ($query) use ($name) {
+                        $query->where('first_name', 'like', '%' . $name . '%')
+                              ->orWhere('last_name', 'like', '%' . $name . '%');
                     });
-                });
-            }
+                }
 
+                if (!empty($filters['gender'])) {
+                    $q->where('gender', $filters['gender']);
+                }
+
+                if (!empty($filters['location'])) {
+                    $loc = $filters['location'];
+                    $q->where(function($query) use ($loc) {
+                        $query->whereHas('addresses', function ($sub) use ($loc) {
+                            $sub->where('city', 'like', '%' . $loc . '%')
+                              ->orWhere('state', 'like', '%' . $loc . '%');
+                        })
+                        ->orWhereHas('userWorkInfo', function ($sub) use ($loc) {
+                            $sub->where('preferred_work_location', 'like', '%' . $loc . '%');
+                        })
+                        ->orWhere('current_city', 'like', '%' . $loc . '%');
+                    });
+                }
+
+                if (!empty($filters['role'])) {
+                    $role = strtolower(trim($filters['role']));
+                    $roleAliases = [
+                        'driver' => ['driver', 'Driver', 'Driver / Chauffeur', 'Chauffeur'],
+                        'cook' => ['cook', 'Cook', 'chef', 'Chef', 'Cook / Chef', 'Chef / Baker'],
+                        'chef' => ['chef', 'Chef', 'cook', 'Cook', 'Cook / Chef', 'Chef / Baker'],
+                        'maid' => ['maid', 'Maid', 'House Cleaner', 'house cleaner', 'House Cleaner / Maid', 'cleaner'],
+                        'house cleaner' => ['House Cleaner', 'house cleaner', 'Maid', 'House Cleaner / Maid'],
+                        'nanny' => ['nanny', 'Nanny', 'Baby Sitter', 'baby sitter', 'Baby Sitter / Nanny', 'Babysitter'],
+                        'baby sitter' => ['Baby Sitter', 'baby sitter', 'Nanny', 'Baby Sitter / Nanny'],
+                        'housekeeper' => ['housekeeper', 'Housekeeper'],
+                        'gardener' => ['gardener', 'Gardener'],
+                        'security' => ['security', 'Security', 'Security Guard', 'guard', 'Guard'],
+                        'nurse' => ['nurse', 'Nurse', 'Nurse / Caretaker', 'caretaker'],
+                        'tutor' => ['tutor', 'Tutor', 'teacher', 'Teacher'],
+                        'plumber' => ['plumber', 'Plumber'],
+                        'electrician' => ['electrician', 'Electrician'],
+                        'carpenter' => ['carpenter', 'Carpenter'],
+                        'painter' => ['painter', 'Painter'],
+                        'sweeper' => ['sweeper', 'Sweeper'],
+                        'laundry' => ['laundry', 'Laundry', 'Laundry / Ironing'],
+                        'dog walker' => ['dog walker', 'Dog Walker', 'Pet Walker'],
+                        'attendant' => ['attendant', 'Attendant', 'Personal Attendant'],
+                        'pet caretaker' => ['pet caretaker', 'Pet Caretaker', 'caretaker', 'Caretaker'],
+                    ];
+                    $searchValues = $roleAliases[$role] ?? [$role, ucfirst($role), strtoupper($role)];
+                    $q->whereHas('userWorkInfo', function ($sub) use ($role, $searchValues) {
+                        $sub->where(function($inner) use ($role, $searchValues) {
+                            foreach ($searchValues as $val) {
+                                $inner->orWhereRaw("LOWER(primary_role) LIKE ?", ['%' . strtolower($val) . '%']);
+                            }
+                        });
+                    });
+                }
+            };
+
+            // Apply core filters (Role, Location, Gender, Name)
+            $applyCoreFilters($query);
+
+            // Apply strict filters (Salary, Experience, Languages, Skills, Keywords)
             if (!empty($filters['salary']) && is_array($filters['salary'])) {
                 $salary = $filters['salary'];
                 $query->whereHas('userWorkInfo', function ($q) use ($salary) {
@@ -441,6 +437,15 @@ class StaffController extends Controller
             }
 
             $data = $query->get();
+
+            // ✅ Fallback: If strict AI filters yield 0 results, run a relaxed query
+            if ($data->isEmpty() && (!empty($filters['general_keywords']) || !empty($filters['skills']) || !empty($filters['experience']) || !empty($filters['languages']) || !empty($filters['salary']))) {
+                $relaxedQuery = clone $baseQuery;
+                $applyCoreFilters($relaxedQuery);
+                $data = $relaxedQuery->get();
+                $filters['_relaxed'] = true; // Inform frontend that strict filters were dropped
+            }
+
             $subscription->increment('user_limit');
 
             return response()->json([

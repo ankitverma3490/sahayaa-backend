@@ -813,6 +813,8 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::post('/subscribe', [SubscriptionController::class, 'subscribeFree']);
         Route::post('/create-extra-job-order', [SubscriptionController::class, 'createExtraJobOrder']);
         Route::post('/verify-extra-job-payment', [SubscriptionController::class, 'verifyExtraJobPayment']);
+        Route::post('/create-extra-staff-order', [SubscriptionController::class, 'createExtraStaffOrder']);
+        Route::post('/verify-extra-staff-payment', [SubscriptionController::class, 'verifyExtraStaffPayment']);
     });
 
     Route::get('/settings/notification', [SettingController::class, 'handleNotification']);

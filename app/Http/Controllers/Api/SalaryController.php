@@ -733,18 +733,20 @@ public function getEarningsSummary(Request $request, $job_id = null)
 
                 "deductions" => [
                     "provident_fund" => [
-                        "amount" => 0, // You can add this to your payment model
+                        "amount" => 0, 
                         "included" => false
                     ],
                     "income_tax" => [
-                        "amount" => abs($totalTaxDeduction), // Make positive for display
+                        "amount" => abs($totalTaxDeduction),
                         "included" => $totalTaxDeduction != 0
                     ],
                     "advance_repayment" => [
-                        "amount" => abs($totalAdvancePayment), // Make positive for display
+                        "amount" => abs($totalAdvancePayment),
                         "included" => $totalAdvancePayment != 0
                     ]
                 ],
+
+                "payment_status" => $filteredCurrentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty() ? 'pending' : 'paid',
 
                 "payment_history" => $combinedHistory,
 

@@ -456,12 +456,22 @@ class StaffController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('getAiData failed: ' . $e->getMessage());
+            \Log::error('getAiData failed, falling back to basic filters: ' . $e->getMessage(), [
+                'query' => $queryText,
+            ]);
+
+            $fallbackQuery = User::with(['userWorkInfo', 'addresses', 'kycInformation'])
+                ->where('user_role_id', 2)
+                ->where('is_job_seeking', 1);
+
+            $data = $this->applyBasicFilters($fallbackQuery, $queryText)->get();
+
             return response()->json([
-                'success' => false,
-                'message' => 'AI search failed. Please try a simpler search or check your internet connection.',
-                'error' => $e->getMessage(),
-                'data' => [] // Return empty data on failure during search to avoid showing everyone
+                'success' => true,
+                'ai_filters' => null,
+                'message' => 'Showing filtered staff results.',
+                'fallback' => true,
+                'data' => $data
             ]);
         }
     }
@@ -471,7 +481,7 @@ class StaffController extends Controller
      */
     private function applyBasicFilters($query, $queryText)
     {
-        $queryLower = strtolower($queryText);
+        $queryLower = strtolower(trim($queryText));
         
         // Common role keywords
         $roleMap = [
@@ -535,26 +545,44 @@ class StaffController extends Controller
             });
         }
 
+        $locationPhrase = null;
+        if (preg_match('/\b(?:in|at|near|from)\s+([a-z\s]+)$/i', $queryLower, $matches)) {
+            $locationPhrase = trim($matches[1]);
+        }
+
         // Location keywords - words that are not role/stop words
-        $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female', 'city'];
+        $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'from', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female', 'city', 'staff', 'worker', 'helper', 'need', 'looking'];
         $allRoleKeywords = array_merge(...array_values($roleMap));
         
         $words = array_filter(explode(' ', $queryLower), function($w) use ($stopWords, $allRoleKeywords) {
             return strlen($w) > 2 && !in_array($w, $stopWords) && !in_array($w, $allRoleKeywords);
         });
 
+        $locationTerms = [];
+        if (!empty($locationPhrase)) {
+            $locationTerms[] = $locationPhrase;
+        }
         if (!empty($words)) {
-            $locationWord = array_values($words)[0];
-            $query->where(function($q) use ($locationWord) {
-                $q->whereHas('addresses', function ($sub) use ($locationWord) {
-                    $sub->where('city', 'like', '%' . $locationWord . '%')
-                      ->orWhere('state', 'like', '%' . $locationWord . '%');
-                })->orWhereHas('userWorkInfo', function ($sub) use ($locationWord) {
-                    $sub->where('preferred_work_location', 'like', '%' . $locationWord . '%');
-                });
+            $locationTerms[] = implode(' ', array_values($words));
+            $locationTerms[] = array_values($words)[0];
+        }
+        $locationTerms = array_values(array_unique(array_filter(array_map('trim', $locationTerms))));
+
+        if (!empty($locationTerms)) {
+            $query->where(function($q) use ($locationTerms) {
+                foreach ($locationTerms as $locationWord) {
+                    $q->orWhereHas('addresses', function ($sub) use ($locationWord) {
+                        $sub->where('city', 'like', '%' . $locationWord . '%')
+                          ->orWhere('state', 'like', '%' . $locationWord . '%')
+                          ->orWhere('locality', 'like', '%' . $locationWord . '%');
+                    })->orWhereHas('userWorkInfo', function ($sub) use ($locationWord) {
+                        $sub->where('preferred_work_location', 'like', '%' . $locationWord . '%');
+                    })->orWhere('current_city', 'like', '%' . $locationWord . '%')
+                      ->orWhere('current_state', 'like', '%' . $locationWord . '%');
+                }
             });
         } elseif (!$matchedRole) {
-            // ✅ If no role and no location found in basic filter, force empty results
+            // If no role and no location found in basic filter, force empty results
             $query->where('id', 0); 
         }
 

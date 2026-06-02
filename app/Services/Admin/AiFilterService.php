@@ -2,7 +2,7 @@
 
 namespace App\Services\Admin;
 
-use OpenAI;
+use OpenAI\Laravel\Facades\OpenAI;
 
 class AiFilterService
 {

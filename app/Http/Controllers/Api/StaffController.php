@@ -455,24 +455,41 @@ class StaffController extends Controller
                 'data' => $data
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('getAiData failed, falling back to basic filters: ' . $e->getMessage(), [
                 'query' => $queryText,
             ]);
 
-            $fallbackQuery = User::with(['userWorkInfo', 'addresses', 'kycInformation'])
-                ->where('user_role_id', 2)
-                ->where('is_job_seeking', 1);
+            try {
+                $fallbackQuery = User::with(['userWorkInfo', 'addresses', 'kycInformation'])
+                    ->where('user_role_id', 2)
+                    ->where('is_job_seeking', 1);
 
-            $data = $this->applyBasicFilters($fallbackQuery, $queryText)->get();
+                $data = $this->applyBasicFilters($fallbackQuery, $queryText)->get();
 
-            return response()->json([
-                'success' => true,
-                'ai_filters' => null,
-                'message' => 'Showing filtered staff results.',
-                'fallback' => true,
-                'data' => $data
-            ]);
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'Showing filtered staff results.',
+                    'fallback' => true,
+                    'data' => $data
+                ]);
+            } catch (\Throwable $fallbackError) {
+                \Log::error('getAiData fallback also failed: ' . $fallbackError->getMessage(), [
+                    'query' => $queryText,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'Unable to apply AI filters. Showing available staff.',
+                    'fallback' => true,
+                    'data' => User::with(['userWorkInfo', 'addresses', 'kycInformation'])
+                        ->where('user_role_id', 2)
+                        ->where('is_job_seeking', 1)
+                        ->get()
+                ]);
+            }
         }
     }
 
@@ -507,7 +524,7 @@ class StaffController extends Controller
         $matchedRole = null;
         foreach ($roleMap as $role => $keywords) {
             foreach ($keywords as $kw) {
-                if (str_contains($queryLower, $kw)) {
+                if (strpos($queryLower, $kw) !== false) {
                     $matchedRole = $role;
                     break 2;
                 }
@@ -1124,7 +1141,7 @@ class StaffController extends Controller
                         'name' => $staff->first_name . ' ' . $staff->last_name,
                         'first_name' => $staff->first_name,
                         'last_name' => $staff->last_name,
-                        'image' => $staff->image ? (str_contains($staff->image, 'http') ? $staff->image : url($staff->image)) : null,
+                        'image' => $staff->image ? ((strpos($staff->image, 'http') !== false) ? $staff->image : url($staff->image)) : null,
                         'staff' => $staff, // Include full staff object for frontend compatibility
                         'attendance_details' => $attendance ?: [
                             'status' => 'absent', // Default to absent if no record for today

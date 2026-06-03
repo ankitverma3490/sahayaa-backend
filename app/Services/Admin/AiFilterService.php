@@ -90,7 +90,7 @@ class AiFilterService
 
             $content = $response->choices[0]->message->content;
             
-            if (str_contains($content, '```')) {
+            if (strpos($content, '```') !== false) {
                 $content = preg_replace('/```(?:json)?\n?|```/', '', $content);
             }
             

@@ -5040,7 +5040,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
         return response()->json([
             'success' => true,
             'message' => 'Staff member updated successfully',
-            'data' => $existingUser->load(['addresses', 'userWorkInfo'])
+            'data' => $existingUser->load(['addresses', 'userWorkInfo', 'kycInformation'])
         ], 200);
 
     // } catch (\Exception $e) {

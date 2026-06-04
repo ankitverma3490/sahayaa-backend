@@ -528,13 +528,22 @@ class SubscriptionController extends Controller
         $isPaid    = !empty($paymentId);
         $startDate = now();
         $endDate   = now()->addDays($subscription->validity ?? 30);
+        $amount    = $isPaid
+            ? (float) ($request->input('amount') ?? $subscription->price ?? 0)
+            : (float) ($subscription->price ?? 0);
 
         $subscriptionUser = SubscriptionUser::create([
             'user_id'          => $user->id,
             'subscription_id'  => $subscription->id,
+            'role'             => $user->user_role_id,
+            'order_id'         => $paymentId ? ('SUBPAY_' . $paymentId) : ('SUBFREE_' . time() . $user->id),
+            'order_number'     => 'SUB' . time() . $user->id,
+            'amount'           => $amount,
+            'currency'         => 'INR',
             'payment_status'   => $isPaid ? 'paid'     : 'free',
             'payment_mode'     => $isPaid ? 'razorpay' : 'free',
             'payment_id'       => $paymentId ?? null,
+            'type'             => 'credit',
             'status'           => 'active',
             'start_date'       => $startDate,
             'end_date'         => $endDate,

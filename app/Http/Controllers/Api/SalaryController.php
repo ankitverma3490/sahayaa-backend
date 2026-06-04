@@ -23,6 +23,22 @@ use App\Models\Notification;
 
 class SalaryController extends Controller
 {
+    private function getEffectiveSubscriptionAmount($subscriptionUser): float
+    {
+        $storedAmount = (float) ($subscriptionUser->amount ?? 0);
+        if ($storedAmount > 0) {
+            return $storedAmount;
+        }
+
+        $paymentMode = strtolower((string) ($subscriptionUser->payment_mode ?? ''));
+        $paymentStatus = strtolower((string) ($subscriptionUser->payment_status ?? ''));
+        $isPaidSubscription = in_array($paymentMode, ['razorpay']) || in_array($paymentStatus, ['paid', 'completed']);
+
+        return $isPaidSubscription
+            ? (float) ($subscriptionUser->subscription->price ?? 0)
+            : 0.0;
+    }
+
     /**
      * Get staff salary information
      */
@@ -1505,9 +1521,14 @@ private function getWorkingDays($startDate, $endDate)
             $employerMonthCount = User::where('user_role_id', 3)->whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
             // Compile dashboard data
 
-            $subscriptionUsers = SubscriptionUser::whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
-            $subscriptionRevenue = SubscriptionUser::whereBetween('created_at', [$thirtyDaysAgo, $today])->sum('amount');
-            $totalSubscriptionRevenue = SubscriptionUser::sum('amount');
+            $recentSubscriptions = SubscriptionUser::with('subscription')
+                ->whereBetween('created_at', [$thirtyDaysAgo, $today])
+                ->get();
+            $allSubscriptions = SubscriptionUser::with('subscription')->get();
+
+            $subscriptionUsers = $recentSubscriptions->count();
+            $subscriptionRevenue = $recentSubscriptions->sum(fn($sub) => $this->getEffectiveSubscriptionAmount($sub));
+            $totalSubscriptionRevenue = $allSubscriptions->sum(fn($sub) => $this->getEffectiveSubscriptionAmount($sub));
             
             $newUserWeekCount = User::whereBetween('created_at', [$sevenDaysAgo, $today])->count();
             $newUserMonthCount = User::whereBetween('created_at', [$thirtyDaysAgo, $today])->count();
@@ -1541,17 +1562,19 @@ private function getWorkingDays($startDate, $endDate)
             // reveue growth
             $startDate = Carbon::now()->subMonths(11)->startOfMonth();
             $endDate = Carbon::now()->endOfMonth();
-            $revenueMonthGrowth = SubscriptionUser::select(
-                    DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
-                    DB::raw('SUM(amount) as total_revenue')
-                )
+            $revenueMonthGrowth = SubscriptionUser::with('subscription')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->groupBy('month')
-                ->orderBy('month', 'ASC')
                 ->get()
-                ->keyBy('month');
-            $freeUser = SubscriptionUser::where('amount',"=<",0)->count();
-            $paidUser = SubscriptionUser::where('amount',">",0)->count();
+                ->groupBy(function ($subscriptionUser) {
+                    return Carbon::parse($subscriptionUser->created_at)->format('Y-m');
+                })
+                ->map(function ($monthSubscriptions) {
+                    return [
+                        'total_revenue' => $monthSubscriptions->sum(fn($sub) => $this->getEffectiveSubscriptionAmount($sub)),
+                    ];
+                });
+            $freeUser = $allSubscriptions->filter(fn($sub) => $this->getEffectiveSubscriptionAmount($sub) <= 0)->count();
+            $paidUser = $allSubscriptions->filter(fn($sub) => $this->getEffectiveSubscriptionAmount($sub) > 0)->count();
                 
             $jobToday = Job::whereDate('created_at', Carbon::today())->count();
            

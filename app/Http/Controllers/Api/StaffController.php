@@ -673,15 +673,31 @@ class StaffController extends Controller
     public function getJobByStaffAiData(Request $request)
     {
         $request->validate([
-            'query' => 'required|string'
+            'query' => 'nullable|string',
+            'query_text' => 'nullable|string',
         ]);
+
+        $queryText = trim((string) ($request->input('query_text') ?: $request->input('query', '')));
+
+        $baseQuery = Job::where('status', 'open');
+
+        if ($queryText === '') {
+            return response()->json([
+                'success' => true,
+                'ai_filters' => null,
+                'data' => $baseQuery->get(),
+            ]);
+        }
 
         $subscription = SubscriptionUser::where('user_id', auth()->id())->first();
 
         if (!$subscription) {
             return response()->json([
-                'success' => false,
-                'message' => 'No active subscription found.'
+                'success' => true,
+                'ai_filters' => null,
+                'message' => 'No active subscription found. Showing keyword-matched jobs.',
+                'fallback' => true,
+                'data' => $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get(),
             ]);
         }
 
@@ -689,16 +705,22 @@ class StaffController extends Controller
 
         if (!$plan) {
             return response()->json([
-                'success' => false,
-                'message' => 'Subscription plan not found.'
+                'success' => true,
+                'ai_filters' => null,
+                'message' => 'Subscription plan not found. Showing keyword-matched jobs.',
+                'fallback' => true,
+                'data' => $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get(),
             ]);
         }
 
         // ✅ Check AI limit
         if ($plan->subscription_limit > 0 && $subscription->user_limit >= $plan->subscription_limit) {
             return response()->json([
-                'success' => false,
-                'message' => 'Monthly AI limit exceeded.'
+                'success' => true,
+                'ai_filters' => null,
+                'message' => 'Monthly AI limit exceeded. Showing keyword-matched jobs.',
+                'fallback' => true,
+                'data' => $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get(),
             ]);
         }
 
@@ -711,12 +733,15 @@ class StaffController extends Controller
             */
 
             $ai = new AiFilterService();
-            $filters = $ai->generateFilters($request->all(), 'job');
+            $filters = $ai->generateFilters(['query' => $queryText], 'job');
 
             if (!is_array($filters)) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'AI returned invalid format'
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'Showing keyword-matched jobs.',
+                    'fallback' => true,
+                    'data' => $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get(),
                 ]);
             }
 
@@ -749,7 +774,7 @@ class StaffController extends Controller
             */
 
             // Only show open/active jobs
-            $query = Job::where('status', 'open');
+            $query = clone $baseQuery;
 
             // Keep title for fallback if all filters return 0 results
             $titleFilter = $filters['title'] ?? null;
@@ -892,9 +917,38 @@ class StaffController extends Controller
                 $query->where('expected_compensation', '<=', $filters['expected_compensation']);
             }
 
+            if (
+                empty($filters['title']) &&
+                empty($filters['city']) &&
+                empty($filters['state']) &&
+                empty($filters['salary']) &&
+                empty($filters['compensation']) &&
+                empty($filters['commitment_type']) &&
+                empty($filters['preferred_hours']) &&
+                empty($filters['preferred_days']) &&
+                empty($filters['expected_compensation']) &&
+                !isset($filters['childcare_experience']) &&
+                !isset($filters['cooking_required']) &&
+                !isset($filters['driving_license_required']) &&
+                !isset($filters['first_aid_certified']) &&
+                !isset($filters['pet_care_required'])
+            ) {
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => $filters,
+                    'message' => 'Showing keyword-matched jobs.',
+                    'fallback' => true,
+                    'data' => $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get(),
+                ]);
+            }
+
             $data = $query->get();
 
             // If strict filters returned nothing, fall back to title-only on open jobs
+            if ($data->isEmpty() && $titleFilter) {
+                $data = $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get();
+            }
+
             if ($data->isEmpty() && $titleFilter) {
                 $data = Job::where('status', 'open')
                     ->where('title', 'like', '%' . $titleFilter . '%')
@@ -907,17 +961,112 @@ class StaffController extends Controller
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
-                'remaining_limit' => $plan->subscription_limit > 0 ? $plan->subscription_limit - ($subscription->user_limit + 1) : 'Unlimited',
+                'remaining_limit' => $plan->subscription_limit > 0 ? max($plan->subscription_limit - $subscription->user_limit, 0) : 'Unlimited',
                 'data' => $data
             ]);
 
-        } catch (\Exception $e) {
-
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage()
+        } catch (\Throwable $e) {
+            \Log::error('getJobByStaffAiData failed, falling back to basic filters: ' . $e->getMessage(), [
+                'query' => $queryText,
             ]);
+
+            try {
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'Showing keyword-matched jobs.',
+                    'fallback' => true,
+                    'data' => $this->applyBasicJobFilters(clone $baseQuery, $queryText)->get(),
+                ]);
+            } catch (\Throwable $fallbackError) {
+                \Log::error('getJobByStaffAiData fallback also failed: ' . $fallbackError->getMessage(), [
+                    'query' => $queryText,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'ai_filters' => null,
+                    'message' => 'Unable to apply AI filters. Showing open jobs.',
+                    'fallback' => true,
+                    'data' => $baseQuery->get(),
+                ]);
+            }
         }
+    }
+
+    private function applyBasicJobFilters($query, $queryText)
+    {
+        $queryLower = strtolower(trim($queryText));
+        $stopWords = ['find', 'job', 'jobs', 'near', 'me', 'nearby', 'in', 'at', 'for', 'with', 'good', 'best', 'looking', 'role', 'work'];
+        $roleMap = [
+            'driver' => ['driver', 'driving', 'chauffeur'],
+            'cook' => ['cook', 'chef', 'cooking', 'kitchen'],
+            'chef' => ['chef', 'cook', 'cooking'],
+            'housekeeper' => ['housekeeper', 'housekeeping'],
+            'maid' => ['maid', 'cleaner', 'house cleaner', 'cleaning'],
+            'babysitter' => ['babysitter', 'baby sitter', 'nanny', 'childcare'],
+            'nanny' => ['nanny', 'babysitter', 'baby sitter', 'childcare'],
+            'security' => ['security', 'guard', 'watchman'],
+            'gardener' => ['gardener', 'gardening'],
+            'nurse' => ['nurse', 'caretaker'],
+            'tutor' => ['tutor', 'teacher'],
+            'plumber' => ['plumber', 'plumbing'],
+            'electrician' => ['electrician', 'electrical'],
+            'carpenter' => ['carpenter', 'carpentry'],
+            'painter' => ['painter', 'painting'],
+        ];
+
+        $matchedRole = null;
+        foreach ($roleMap as $role => $keywords) {
+            foreach ($keywords as $kw) {
+                if (strpos($queryLower, $kw) !== false) {
+                    $matchedRole = $role;
+                    break 2;
+                }
+            }
+        }
+
+        if ($matchedRole) {
+            $query->where(function ($q) use ($matchedRole, $roleMap) {
+                foreach ($roleMap[$matchedRole] as $keyword) {
+                    $q->orWhere('title', 'like', '%' . $keyword . '%')
+                      ->orWhere('description', 'like', '%' . $keyword . '%')
+                      ->orWhere('required_skills', 'like', '%' . $keyword . '%');
+                }
+            });
+        }
+
+        $locationPhrase = null;
+        if (preg_match('/\b(?:in|at|near|from)\s+([a-z\s]+)$/i', $queryLower, $matches)) {
+            $locationPhrase = trim($matches[1]);
+        }
+
+        $words = array_filter(explode(' ', $queryLower), function ($word) use ($stopWords) {
+            return strlen($word) > 2 && !in_array($word, $stopWords);
+        });
+
+        $locationTerms = [];
+        if (!empty($locationPhrase) && !in_array($locationPhrase, ['me', 'near me', 'nearby'])) {
+            $locationTerms[] = $locationPhrase;
+        }
+        if (empty($matchedRole) && !empty($words)) {
+            $locationTerms[] = implode(' ', array_values($words));
+            $locationTerms[] = array_values($words)[0];
+        }
+        $locationTerms = array_values(array_unique(array_filter(array_map('trim', $locationTerms))));
+
+        if (!empty($locationTerms)) {
+            $query->where(function ($q) use ($locationTerms) {
+                foreach ($locationTerms as $term) {
+                    $q->orWhere('city', 'like', '%' . $term . '%')
+                      ->orWhere('state', 'like', '%' . $term . '%')
+                      ->orWhere('street_address', 'like', '%' . $term . '%')
+                      ->orWhere('title', 'like', '%' . $term . '%');
+                }
+            });
+        }
+
+        return $query;
     }
 
     /*

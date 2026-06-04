@@ -144,9 +144,23 @@ public function index(Request $request): JsonResponse
             ]);
         }
 
+        $actualPostedJobs = Job::where('created_by', auth()->id())
+            ->when($subscription->start_date, function ($query) use ($subscription) {
+                $query->where('created_at', '>=', $subscription->start_date);
+            })
+            ->when($subscription->end_date, function ($query) use ($subscription) {
+                $query->where('created_at', '<=', $subscription->end_date);
+            })
+            ->count();
+
+        if ((int) $subscription->job_user_limit !== (int) $actualPostedJobs) {
+            $subscription->job_user_limit = $actualPostedJobs;
+            $subscription->save();
+        }
+
         // Check limit including extra purchased jobs
         $allowed_limit = ($plan->job_limit ?? 3) + ($subscription->extra_jobs ?? 0);
-        if ($subscription->job_user_limit >= $allowed_limit) {
+        if ($actualPostedJobs >= $allowed_limit) {
             return response()->json([
                 'success' => false,
                 'error_code' => 'LIMIT_EXCEEDED',

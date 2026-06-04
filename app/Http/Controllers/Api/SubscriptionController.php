@@ -198,7 +198,7 @@ class SubscriptionController extends Controller
                     'type' => 'credit',
                     'start_date' => now(),
                     'end_date' => now()->addDays($subscription->validity),
-                    'job_user_limit' => $subscription->job_limit ?? 0,
+                    'job_user_limit' => 0,
                     'staff_user_limit' => $subscription->staff_limit ?? 2,
                 ]);
                 $data = $this->zeroPaymentData($subscriptionUser);
@@ -228,7 +228,7 @@ class SubscriptionController extends Controller
                     'type' => 'credit',
                     'start_date' => now(),
                     'end_date' => now()->addDays($subscription->validity),
-                    'job_user_limit' => $subscription->job_limit ?? 0,
+                    'job_user_limit' => 0,
                     'staff_user_limit' => $subscription->staff_limit ?? 2,
                 ]);
 
@@ -539,7 +539,7 @@ class SubscriptionController extends Controller
             'start_date'       => $startDate,
             'end_date'         => $endDate,
             'user_limit'       => 0,
-            'job_user_limit'   => $subscription->job_limit ?? 0,
+            'job_user_limit'   => 0,
             'staff_user_limit' => $subscription->staff_limit ?? 2,
         ]);
 

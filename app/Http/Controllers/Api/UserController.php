@@ -530,7 +530,8 @@ public function getProfile(Request $request)
     {
         
         $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
+            'phone_number' => 'required_without:user_id|string|max:20',
             'otp' => 'required|digits:6'
         ]);
         
@@ -538,7 +539,24 @@ public function getProfile(Request $request)
             return response()->json(['errors' => $validator->errors()], 422);
         }
         
-        $user = User::find($request->user_id);
+        $user = null;
+
+        if (!empty($request->user_id)) {
+            $user = User::find($request->user_id);
+        }
+
+        if (!$user && !empty($request->phone_number)) {
+            $user = User::where('phone_number', $request->phone_number)
+                ->where('is_deleted', 0)
+                ->latest('id')
+                ->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'error' => 'User not found for OTP verification.'
+            ], 404);
+        }
         
         if ($user->is_deleted == 1) {
             return response()->json([
@@ -563,7 +581,7 @@ public function getProfile(Request $request)
                     
                     
                     // Create Passport token
-                    $userData = User::find($request->user_id);
+                    $userData = User::find($user->id);
                     $token = $userData->createToken('AuthToken')->plainTextToken;
 
                     // Login user into api guard

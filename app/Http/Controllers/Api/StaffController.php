@@ -986,9 +986,9 @@ class StaffController extends Controller
                 return response()->json([
                     'success' => true,
                     'ai_filters' => null,
-                    'message' => 'Unable to apply AI filters. Showing open jobs.',
+                    'message' => 'No matching jobs found. Try a clearer search.',
                     'fallback' => true,
-                    'data' => $baseQuery->get(),
+                    'data' => [],
                 ]);
             }
         }

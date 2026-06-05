@@ -228,11 +228,14 @@ class SalaryController extends Controller
         // Calculate net salary including adjustments
         // ✅ CRITICAL FIX: Tax and advance should be SUBTRACTED, not added!
         $adjustments = $salaryData['salary_details']['adjustments'];
-        $netSalary = $baseSalary 
-                    + $adjustments['performance_bonus'] 
-                    + $adjustments['overtime_pay'] 
-                    - $adjustments['tax_deduction']      // Subtract tax
-                    - $adjustments['advance_payment'];    // Subtract advance
+        $netSalary = max(
+            0,
+            $baseSalary
+            + $adjustments['performance_bonus']
+            + $adjustments['overtime_pay']
+            - $adjustments['tax_deduction']
+            - $adjustments['advance_payment']
+        );
         
         $salaryData['salary_details']['net_salary'] = $netSalary;
 
@@ -303,7 +306,7 @@ class SalaryController extends Controller
         $paymentMode = $request->payment_method ?? $request->payment_mode ?? 'Cash';
 
         // Correct formula: Base + Bonus + Overtime - Tax - Advance
-        $netSalary = $baseSalary + $performanceBonus + $overtimePay - $taxDeduction - $advancePayment;
+        $netSalary = max(0, $baseSalary + $performanceBonus + $overtimePay - $taxDeduction - $advancePayment);
 
         $paymentId = 'PAY_' . strtoupper(uniqid());
         $orderId = 'SAL_' . strtoupper(uniqid());
@@ -620,7 +623,9 @@ public function getEarningsSummary(Request $request, $job_id = null)
             $totalOvertimePay = $filteredCurrentMonthPayments->sum('overtime_pay') + $currentMonthSalaries->sum('over_time_allowance');
             $totalTaxDeduction = $filteredCurrentMonthPayments->sum('tax_deduction') + $currentMonthSalaries->sum('tax');
             $totalAdvancePayment = $filteredCurrentMonthPayments->sum('advance_payment') + $currentMonthSalaries->sum('advance_payment');
-            $totalNetSalary = $filteredCurrentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
+            $totalNetSalary =
+                $filteredCurrentMonthPayments->sum(fn($payment) => max(0, (float) $payment->net_salary)) +
+                $currentMonthSalaries->sum(fn($salary) => max(0, (float) $salary->net_salary));
 
             // If no records for current month, use prioritized base salary
             if ($filteredCurrentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
@@ -648,7 +653,7 @@ public function getEarningsSummary(Request $request, $job_id = null)
                         'month' => Carbon::parse($s->payment_date)->format('F Y'),
                         'date' => $s->created_at->toDateTimeString(),
                         'paid_on' => Carbon::parse($s->payment_date)->format('d/m/Y'),
-                        'amount' => (float)$s->net_salary,
+                        'amount' => max(0, (float) $s->net_salary),
                         'status' => $s->status,
                         'type' => (float)($s->advance_payment ?? 0) > 0 ? 'advance' : 'salary',
                         'payment_mode' => $s->payment_mode,
@@ -672,7 +677,7 @@ public function getEarningsSummary(Request $request, $job_id = null)
                         'month' => $payment->salary_period,
                         'date' => $payment->created_at->toDateTimeString(),
                         'paid_on' => $payment->updated_at->format('d/m/Y'),
-                        'amount' => (float)$payment->net_salary,
+                        'amount' => max(0, (float) $payment->net_salary),
                         'status' => $payment->status,
                         'type' => (float)($payment->advance_payment ?? 0) > 0 ? 'advance' : 'salary',
                         'payment_mode' => $payment->payment_mode,
@@ -1246,7 +1251,9 @@ private function getWorkingDays($startDate, $endDate)
                 return true;
             });
 
-            $totalEarnings = $filteredCurrentMonthPayments->sum('net_salary') + $currentMonthSalaries->sum('net_salary');
+            $totalEarnings =
+                $filteredCurrentMonthPayments->sum(fn($payment) => max(0, (float) $payment->net_salary)) +
+                $currentMonthSalaries->sum(fn($salary) => max(0, (float) $salary->net_salary));
             
             // If no payments/salaries found, get base salary from prioritized sources
             if ($filteredCurrentMonthPayments->isEmpty() && $currentMonthSalaries->isEmpty()) {
@@ -1345,7 +1352,7 @@ private function getWorkingDays($startDate, $endDate)
                 ->map(function($payment) {
                     return [
                         'payment_id' => $payment->id,
-                        'amount' => (float) $payment->net_salary,
+                        'amount' => max(0, (float) $payment->net_salary),
                         'period' => $payment->salary_period,
                         'payment_date' => $payment->updated_at->format('M j, Y'),
                         'payment_method' => $payment->payment_mode,

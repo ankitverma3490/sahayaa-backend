@@ -125,6 +125,7 @@ public function index(Request $request): JsonResponse
         $subscription = SubscriptionUser::where('user_id', auth()->id())
             ->where('status', 'active')
             ->whereNull('deleted_at')
+            ->where('end_date', '>', now())
             ->latest()
             ->first();
         if (!$subscription) {

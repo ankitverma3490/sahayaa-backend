@@ -581,6 +581,7 @@ class SubscriptionController extends Controller
         
         $activeSubscription = SubscriptionUser::where('user_id', $user->id)
             ->where('status', 'active')
+            ->where('end_date', '>', now())
             ->latest()
             ->first();
 
@@ -669,6 +670,7 @@ class SubscriptionController extends Controller
 
             $activeSubscription = SubscriptionUser::where('user_id', $user->id)
                 ->where('status', 'active')
+                ->where('end_date', '>', now())
                 ->latest()
                 ->first();
 
@@ -679,7 +681,37 @@ class SubscriptionController extends Controller
                 ], 404);
             }
 
+            $existingTransaction = Transaction::where('transaction_id', $request->razorpay_payment_id)
+                ->where('for_entry', 'extra_job_limit')
+                ->first();
+
+            if ($existingTransaction) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Payment already verified. Extra job post limit already added.'
+                ]);
+            }
+
             $activeSubscription->increment('extra_jobs');
+
+            $plan = Subscription::find($activeSubscription->subscription_id);
+
+            Transaction::create([
+                'user_id' => $user->id,
+                'role' => $user->user_role_id,
+                'transaction_id' => $request->razorpay_payment_id,
+                'type' => 'credit',
+                'order_id' => $request->razorpay_order_id,
+                'order_number' => 'EXTJOB' . time() . $user->id,
+                'reference_id' => $activeSubscription->id,
+                'amount' => $plan->extra_job_price ?? 0,
+                'currency' => 'INR',
+                'payment_mode' => 'razorpay',
+                'payment_status' => 'completed',
+                'payment_response' => json_encode($request->all()),
+                'for_entry' => 'extra_job_limit',
+                'created_by' => $user->id,
+            ]);
 
             // Send notification to user
             Notification::create([

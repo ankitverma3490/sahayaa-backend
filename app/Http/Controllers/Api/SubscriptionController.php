@@ -54,7 +54,8 @@ class SubscriptionController extends Controller
             'subscription_limit' => 'required|numeric',
             'job_limit' => 'nullable|numeric',
             'staff_limit' => 'nullable|numeric',
-            'extra_job_price' => 'nullable|numeric'
+            'extra_job_price' => 'nullable|numeric',
+            'extra_staff_price' => 'nullable|numeric'
         ]);
 
         // Job posting limits/pricing are only applicable for House Owner plans (role_id = 3)
@@ -62,10 +63,12 @@ class SubscriptionController extends Controller
             $data['job_limit'] = 0;
             $data['staff_limit'] = 0;
             $data['extra_job_price'] = 0;
+            $data['extra_staff_price'] = 0;
         } else {
             $data['job_limit'] = (float)($data['job_limit'] ?? 0);
             $data['staff_limit'] = (float)($data['staff_limit'] ?? 0);
             $data['extra_job_price'] = (float)($data['extra_job_price'] ?? 0);
+            $data['extra_staff_price'] = (float)($data['extra_staff_price'] ?? 0);
         }
 
         $subscription = Subscription::create($data);
@@ -94,7 +97,8 @@ class SubscriptionController extends Controller
             'subscription_limit' => 'required|numeric',
             'job_limit' => 'nullable|numeric',
             'staff_limit' => 'nullable|numeric',
-            'extra_job_price' => 'nullable|numeric'
+            'extra_job_price' => 'nullable|numeric',
+            'extra_staff_price' => 'nullable|numeric'
         ]);
 
         // Job posting limits/pricing are only applicable for House Owner plans (role_id = 3)
@@ -102,6 +106,7 @@ class SubscriptionController extends Controller
             $data['job_limit'] = 0;
             $data['staff_limit'] = 0;
             $data['extra_job_price'] = 0;
+            $data['extra_staff_price'] = 0;
         } else {
             if (array_key_exists('job_limit', $data)) {
                 $data['job_limit'] = (float)($data['job_limit'] ?? 0);
@@ -111,6 +116,9 @@ class SubscriptionController extends Controller
             }
             if (array_key_exists('extra_job_price', $data)) {
                 $data['extra_job_price'] = (float)($data['extra_job_price'] ?? 0);
+            }
+            if (array_key_exists('extra_staff_price', $data)) {
+                $data['extra_staff_price'] = (float)($data['extra_staff_price'] ?? 0);
             }
         }
 

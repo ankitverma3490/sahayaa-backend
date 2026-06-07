@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,24 @@ use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
+    private function resolveAdminRoleId($admin)
+    {
+        $adminRole = Role::query()
+            ->where('slug', 'admin')
+            ->orWhere('name', 'Admin')
+            ->first();
+
+        if ($adminRole?->id) {
+            return (int) $adminRole->id;
+        }
+
+        if (!empty($admin->user_role_id)) {
+            return (int) $admin->user_role_id;
+        }
+
+        return 3;
+    }
+
     private function ensureAdmin()
     {
         $user = Auth::guard('api')->user();
@@ -99,6 +118,7 @@ class AdminUserController extends Controller
         }
 
         $subAdmin = User::create([
+            'user_role_id' => $this->resolveAdminRoleId($admin),
             'name' => trim($request->name),
             'email' => strtolower(trim($request->email)),
             'phone_number' => $request->phone_number,

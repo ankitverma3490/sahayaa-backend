@@ -88,7 +88,7 @@ class StaffController extends Controller
     public function show($id)
     {
         $role = Role::where('slug', 'staff')->first();
-        $staff = User::with(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp'])
+        $staff = User::with(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp', 'addedByUser'])
             ->where('id', $id)
             ->where('user_role_id', $role->id)
             ->first();
@@ -661,7 +661,7 @@ class StaffController extends Controller
                 $query->where('status', $request->user_type);
             }
 
-            $staff = $query->with(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp'])->latest()->paginate(50);
+            $staff = $query->with(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp', 'addedByUser'])->latest()->paginate(50);
 
             return response()->json([
                 'success' => true,

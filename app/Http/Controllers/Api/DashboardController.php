@@ -16,6 +16,24 @@ use App\Models\Salary;
 
 class DashboardController extends Controller
 {
+    private function getPaidSubscriptionEntries($startDate, $endDate)
+    {
+        return SubscriptionUser::with('subscription')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('payment_status', ['paid', 'completed'])
+            ->get();
+    }
+
+    private function resolveSubscriptionRevenue($subscriptionUser)
+    {
+        $storedAmount = (float) ($subscriptionUser->amount ?? 0);
+        if ($storedAmount > 0) {
+            return $storedAmount;
+        }
+
+        return (float) ($subscriptionUser->subscription?->price ?? 0);
+    }
+
     private function resolveRoleIds()
     {
         $staffRole = Role::where('slug', 'staff')->first();
@@ -154,9 +172,10 @@ class DashboardController extends Controller
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 
-        $memberSubscriptionRevenue = SubscriptionUser::whereBetween('created_at', [$startDate, $endDate])
-            ->whereIn('payment_status', ['paid', 'completed', 'free'])
-            ->sum('amount');
+        $paidSubscriptions = $this->getPaidSubscriptionEntries($startDate, $endDate);
+        $memberSubscriptionRevenue = $paidSubscriptions->sum(function ($subscriptionUser) {
+            return $this->resolveSubscriptionRevenue($subscriptionUser);
+        });
         $memberSalarySum = Salary::whereBetween('payment_date', [$startDate, $endDate])
             ->where('status', 'paid')
             ->sum('net_salary');
@@ -177,33 +196,49 @@ class DashboardController extends Controller
         
         $revenueOverview = [];
         if ($type == 'monthly') {
-            $revenues = SubscriptionUser::selectRaw('DATE(created_at) as date, SUM(amount) as total')
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('payment_status', 'paid')
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get();
+            $revenues = $paidSubscriptions
+                ->groupBy(function ($subscriptionUser) {
+                    return Carbon::parse($subscriptionUser->created_at)->format('Y-m-d');
+                })
+                ->map(function ($subscriptionEntries, $date) {
+                    return [
+                        'date' => $date,
+                        'total' => $subscriptionEntries->sum(function ($subscriptionUser) {
+                            return $this->resolveSubscriptionRevenue($subscriptionUser);
+                        }),
+                    ];
+                })
+                ->sortBy('date')
+                ->values();
             foreach ($revenues as $revenue) {
                 $revenueOverview[] = [
-                    'label' => Carbon::parse($revenue->date)->format('d M'),
-                    'revenue' => (float) $revenue->total,
-                    'amount' => (float) $revenue->total,
+                    'label' => Carbon::parse($revenue['date'])->format('d M'),
+                    'revenue' => (float) $revenue['total'],
+                    'amount' => (float) $revenue['total'],
                 ];
             }
         } else {
             $startDate = Carbon::now()->startOfYear();
             $endDate = Carbon::now()->endOfYear();
-            $revenues = SubscriptionUser::selectRaw('MONTH(created_at) as month, SUM(amount) as total')
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('payment_status', 'paid')
-                ->groupBy('month')
-                ->orderBy('month')
-                ->get();
+            $revenues = $this->getPaidSubscriptionEntries($startDate, $endDate)
+                ->groupBy(function ($subscriptionUser) {
+                    return Carbon::parse($subscriptionUser->created_at)->format('n');
+                })
+                ->map(function ($subscriptionEntries, $month) {
+                    return [
+                        'month' => (int) $month,
+                        'total' => $subscriptionEntries->sum(function ($subscriptionUser) {
+                            return $this->resolveSubscriptionRevenue($subscriptionUser);
+                        }),
+                    ];
+                })
+                ->sortBy('month')
+                ->values();
             foreach ($revenues as $revenue) {
                 $revenueOverview[] = [
-                    'label' => Carbon::create()->month($revenue->month)->format('M'),
-                    'revenue' => (float) $revenue->total,
-                    'amount' => (float) $revenue->total,
+                    'label' => Carbon::create()->month($revenue['month'])->format('M'),
+                    'revenue' => (float) $revenue['total'],
+                    'amount' => (float) $revenue['total'],
                 ];
             }
         }

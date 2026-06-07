@@ -5951,7 +5951,9 @@ private function updateExistingStaff(User $existingUser, Request $request)
             ], 422);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)
+            ->where('is_deleted', 0)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -5959,18 +5961,40 @@ private function updateExistingStaff(User $existingUser, Request $request)
                 'msg'    => 'Invalid email or password.'
             ], 401);
         }
+
+        if ($user->is_active === false || (int) $user->is_active === 0) {
+            return response()->json([
+                'status' => 'error',
+                'msg'    => 'This admin account is inactive.'
+            ], 403);
+        }
         
         try {
             // auth:api routes in this project expect Passport access tokens
             $token = $user->createToken('AuthToken')->plainTextToken;
+            $permissions = is_array($user->admin_permissions) ? $user->admin_permissions : [];
             return response()->json([
                 'status' => 'success',
                 'msg'    => 'Login successful.',
                 'token'  => $token,
                 'user'   => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
+                    'id' => $user->id,
+                    'name' => $user->name,
                     'email' => $user->email,
+                    'role' => $user->is_admin_panel_user ? 'Sub Admin' : 'Admin',
+                    'is_admin_panel_user' => (bool) $user->is_admin_panel_user,
+                    'permissions' => !empty($permissions) ? $permissions : [
+                        'dashboard',
+                        'house_owners',
+                        'staff',
+                        'jobs',
+                        'roles',
+                        'membership',
+                        'reports',
+                        'blacklist',
+                        'sub_admins',
+                        'settings',
+                    ],
                 ]
             ], 200);
         } catch (\Exception $e) {

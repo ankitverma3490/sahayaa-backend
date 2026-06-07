@@ -19,7 +19,17 @@ class TerminationController extends Controller
      */
     public function index()
     {
-        $terminations = Termination::with(['user','approver'])
+        $query = Termination::with(['user','approver','reporter']);
+
+        if (request()->filled('is_blacklist')) {
+            $query->where('is_blacklist', (bool) request()->boolean('is_blacklist'));
+        }
+
+        if (request()->filled('status')) {
+            $query->where('status', request('status'));
+        }
+
+        $terminations = $query
             ->latest()
             ->paginate(10);
 
@@ -44,7 +54,12 @@ class TerminationController extends Controller
             'termination_date' => 'required|date',
             'notice_period_days' => 'nullable|integer|min:0',
             'status' => 'nullable|in:pending,approved,rejected',
-            'remarks' => 'nullable|string'
+            'remarks' => 'nullable|string',
+            'is_blacklist' => 'nullable|boolean',
+            'police_station_name' => 'nullable|string|max:255',
+            'police_station_contact' => 'nullable|string|max:50',
+            'police_station_address' => 'nullable|string',
+            'fir_photo' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
         ]);
 
         if ($validator->fails()) {
@@ -55,7 +70,26 @@ class TerminationController extends Controller
             ], 422);
         }
         
-        $termination = Termination::create($request->all());
+        $payload = $request->only([
+            'user_id',
+            'reason',
+            'termination_date',
+            'notice_period_days',
+            'status',
+            'remarks',
+            'police_station_name',
+            'police_station_contact',
+            'police_station_address',
+        ]);
+
+        $payload['is_blacklist'] = $request->boolean('is_blacklist');
+        $payload['reported_by'] = Auth::guard('api')->id();
+
+        if ($request->hasFile('fir_photo')) {
+            $payload['fir_photo'] = $this->uploadCloudary($request, 'fir_photo', 'staff/blacklist');
+        }
+
+        $termination = Termination::create($payload);
 
         // Remove staff from this household's list only (not globally - staff can still work elsewhere)
         User::where('id', $request->user_id)->update([
@@ -86,7 +120,7 @@ class TerminationController extends Controller
      */
     public function show($id)
     {
-        $termination = Termination::findOrFail($id);
+        $termination = Termination::with(['user','approver','reporter'])->findOrFail($id);
         return response()->json([
             'success' => true,
             'message' => 'Termination details',
@@ -110,7 +144,12 @@ class TerminationController extends Controller
             'termination_date' => 'required|date',
             'notice_period_days' => 'nullable|integer|min:0',
             'status' => 'nullable|in:pending,approved,rejected',
-            'remarks' => 'nullable|string'
+            'remarks' => 'nullable|string',
+            'is_blacklist' => 'nullable|boolean',
+            'police_station_name' => 'nullable|string|max:255',
+            'police_station_contact' => 'nullable|string|max:50',
+            'police_station_address' => 'nullable|string',
+            'fir_photo' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:10240',
         ]);
 
         if ($validator->fails()) {
@@ -122,7 +161,24 @@ class TerminationController extends Controller
         }
 
         $termination = Termination::findOrFail($id);
-        $termination->update($request->all());
+        $payload = $request->only([
+            'user_id',
+            'reason',
+            'termination_date',
+            'notice_period_days',
+            'status',
+            'remarks',
+            'police_station_name',
+            'police_station_contact',
+            'police_station_address',
+        ]);
+        $payload['is_blacklist'] = $request->boolean('is_blacklist');
+
+        if ($request->hasFile('fir_photo')) {
+            $payload['fir_photo'] = $this->uploadCloudary($request, 'fir_photo', 'staff/blacklist');
+        }
+
+        $termination->update($payload);
 
         return response()->json([
             'success' => true,

@@ -39,6 +39,9 @@ class User extends Authenticatable
         'relation',
         'step',
         'is_deleted',
+        'is_admin_panel_user',
+        'admin_parent_id',
+        'admin_permissions',
         'dob',
         'image',
         'social_type',
@@ -142,6 +145,7 @@ class User extends Authenticatable
         'deleted_at' => 'datetime',
         'is_active' => 'boolean',
         'is_deleted' => 'boolean',
+        'is_admin_panel_user' => 'boolean',
         'is_verified' => 'boolean',
         'verified_by_admin' => 'boolean',
         'push_notification' => 'boolean',
@@ -154,6 +158,7 @@ class User extends Authenticatable
         'is_available' => 'boolean',
         'is_job_seeking' => 'boolean',
         'referral_code_expires_at' => 'datetime',
+        'admin_permissions' => 'array',
     ];
 
 

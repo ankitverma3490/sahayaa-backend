@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\AnalyticsController;
 // use App\Http\Controllers\Api\NotificationShortcutController;
@@ -88,6 +89,7 @@ use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Api\AdminSalaryController;
 use App\Http\Controllers\Api\TerminationController;
 use App\Http\Controllers\Api\AdvanceController;
+use App\Http\Controllers\Api\BlacklistController;
 use App\Http\Controllers\adminpnlx\TransactionController;
 
 /*
@@ -710,27 +712,27 @@ Route::post('admin/login', [UserController::class, 'loginAdmin']);
 
 Route::prefix('/admin')->middleware('auth:api')->group(function () {
     //Route::get('/leave-list', [JobApplicationController::class, 'leaveList']);
-    Route::get('/dashbord-data', [SalaryController::class, 'getAdminDashboard']);
+    Route::get('/dashbord-data', [SalaryController::class, 'getAdminDashboard'])->middleware('admin.permission:dashboard');
 
     
-    Route::post('/members/store', [UserController::class, 'storeNewMember']);
-    Route::get('/members/list', [UserController::class, 'memberList']);
-    Route::get('/members/{id}', [UserController::class, 'editMember']);
-    Route::post('/members/{id}', [UserController::class, 'updateMember']);
+    Route::post('/members/store', [UserController::class, 'storeNewMember'])->middleware('admin.permission:house_owners');
+    Route::get('/members/list', [UserController::class, 'memberList'])->middleware('admin.permission:house_owners');
+    Route::get('/members/{id}', [UserController::class, 'editMember'])->middleware('admin.permission:house_owners');
+    Route::post('/members/{id}', [UserController::class, 'updateMember'])->middleware('admin.permission:house_owners');
     Route::get('/banner', [BannerController::class, 'index']); // Get banner
-    Route::get('/user/list', [UserController::class, 'userList']); // Get banner
-    Route::get('/vendor/list', [UserController::class, 'vendorList']); // Get banner
+    Route::get('/user/list', [UserController::class, 'userList'])->middleware('admin.permission:house_owners'); // Get banner
+    Route::get('/vendor/list', [UserController::class, 'vendorList'])->middleware('admin.permission:staff'); // Get banner
     Route::post('/banner', [BannerController::class, 'storeOrUpdate']); // Add/Update banner
     Route::post('/banner/delete', [BannerController::class, 'delete']); // Add/Update banner
     Route::get('/auth-jobs', [JobController::class, 'authBaseList']);
-    Route::get('/jobs/list', [JobController::class, 'joblist']);
-    Route::get('/jobs/{id}', [JobController::class, 'show']);
-    Route::post('/jobs', [JobController::class, 'store']);
-    Route::post('/jobs/{id}', [JobController::class, 'update']);
-    Route::delete('/jobs/{id}', [JobController::class, 'destroy']);
-    Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus']);
-    Route::get('/jobs/{jobId}/applications', [JobApplicationController::class, 'getJobApplications']);
-    Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateApplicationStatus']);
+    Route::get('/jobs/list', [JobController::class, 'joblist'])->middleware('admin.permission:jobs');
+    Route::get('/jobs/{id}', [JobController::class, 'show'])->middleware('admin.permission:jobs');
+    Route::post('/jobs', [JobController::class, 'store'])->middleware('admin.permission:jobs');
+    Route::post('/jobs/{id}', [JobController::class, 'update'])->middleware('admin.permission:jobs');
+    Route::delete('/jobs/{id}', [JobController::class, 'destroy'])->middleware('admin.permission:jobs');
+    Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus'])->middleware('admin.permission:jobs');
+    Route::get('/jobs/{jobId}/applications', [JobApplicationController::class, 'getJobApplications'])->middleware('admin.permission:jobs');
+    Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateApplicationStatus'])->middleware('admin.permission:jobs');
     Route::get('faq-support', [FaqSupportController::class, 'customerIndex']);
     Route::get('faq-support/{id}', [FaqSupportController::class, 'customerShow']);
     Route::post('faq-support', [FaqSupportController::class, 'customerStore']);
@@ -748,28 +750,35 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     // });
 
     
-    Route::apiResource('subscriptions', SubscriptionController::class);
-    Route::get('dashboard', [DashboardController::class, 'index']);
-    Route::post('report', [DashboardController::class, 'report']);
-    Route::apiResource('houseowners', HouseOwnerController::class);
-    Route::apiResource('staff', StaffController::class);
-    Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus']);
-    Route::post('/staff/attendance', [StaffController::class, 'getAttendance']);
+    Route::apiResource('subscriptions', SubscriptionController::class)->middleware('admin.permission:membership');
+    Route::get('dashboard', [DashboardController::class, 'index'])->middleware('admin.permission:dashboard');
+    Route::post('report', [DashboardController::class, 'report'])->middleware('admin.permission:reports');
+    Route::apiResource('houseowners', HouseOwnerController::class)->middleware('admin.permission:house_owners');
+    Route::apiResource('staff', StaffController::class)->middleware('admin.permission:staff');
+    Route::put('/staff/{id}/status', [StaffController::class, 'updateStatus'])->middleware('admin.permission:staff');
+    Route::post('/staff/attendance', [StaffController::class, 'getAttendance'])->middleware('admin.permission:staff');
     Route::post('/staff/get-ai-data', [StaffController::class, 'getAiData']);
     Route::post('/staff/get-job-data', [StaffController::class, 'getJobByStaffAiData']);
     Route::get('/staff/job/list', [StaffController::class, 'getjobs']);
-    Route::get('/stafflist', [StaffController::class, 'getStaffList']);
+    Route::get('/stafflist', [StaffController::class, 'getStaffList'])->middleware('admin.permission:staff');
     
-    Route::apiResource('roles', RoleController::class);
+    Route::apiResource('roles', RoleController::class)->middleware('admin.permission:roles');
+    Route::get('/sub-admins', [AdminUserController::class, 'index'])->middleware('admin.permission:sub_admins');
+    Route::post('/sub-admins', [AdminUserController::class, 'store'])->middleware('admin.permission:sub_admins');
+    Route::post('/sub-admins/{id}', [AdminUserController::class, 'update'])->middleware('admin.permission:sub_admins');
+    Route::put('/sub-admins/{id}/status', [AdminUserController::class, 'toggleStatus'])->middleware('admin.permission:sub_admins');
+    Route::delete('/sub-admins/{id}', [AdminUserController::class, 'destroy'])->middleware('admin.permission:sub_admins');
+    Route::get('/blacklists', [BlacklistController::class, 'index'])->middleware('admin.permission:blacklist');
+    Route::get('/blacklist', [BlacklistController::class, 'index'])->middleware('admin.permission:blacklist');
 
     Route::get('/salary', [AdminSalaryController::class, 'index']);
     Route::post('/salary/store', [AdminSalaryController::class, 'store']);
     Route::put('/salary/{id}/status', [AdminSalaryController::class, 'updateStatus']);
     
-    Route::apiResource('terminations', TerminationController::class);
+    Route::apiResource('terminations', TerminationController::class)->middleware('admin.permission:blacklist');
 
     Route::prefix('subscriptionuser')->group(function () {
-        Route::get('/show/{id}', [SubscriptionController::class, 'getSubscriptionUser']);
+        Route::get('/show/{id}', [SubscriptionController::class, 'getSubscriptionUser'])->middleware('admin.permission:membership');
         Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
         Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
         Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);

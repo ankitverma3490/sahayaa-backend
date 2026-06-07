@@ -16,6 +16,17 @@ use App\Models\Salary;
 
 class DashboardController extends Controller
 {
+    private function resolveRoleIds()
+    {
+        $staffRole = Role::where('slug', 'staff')->first();
+        $houseOwnerRole = Role::where('slug', 'householder')->first();
+
+        return [
+            'staff_role_id' => $staffRole?->id,
+            'house_owner_role_id' => $houseOwnerRole?->id,
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -23,10 +34,13 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $staff = Role::where('slug', 'staff')->first();
-        $houseOwner = Role::where('slug', 'householder')->first();
-        $staffDataCount = User::where('user_role_id', $staff->id)->count();
-        $houseOwnerDataCount = User::where('user_role_id', $houseOwner->id)->count();
+        $roleIds = $this->resolveRoleIds();
+        $staffDataCount = $roleIds['staff_role_id']
+            ? User::where('user_role_id', $roleIds['staff_role_id'])->count()
+            : 0;
+        $houseOwnerDataCount = $roleIds['house_owner_role_id']
+            ? User::where('user_role_id', $roleIds['house_owner_role_id'])->count()
+            : 0;
         $openJobCount = Job::where('status', 'open')->count();
         $presentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'present')->count();
         $absentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'absent')->count();
@@ -99,7 +113,6 @@ class DashboardController extends Controller
 
     public function report(Request $request)
     {
-        
         $validator = Validator::make($request->all(), [
             'type' => 'required|in:monthly,yearly',
         ]);
@@ -123,24 +136,30 @@ class DashboardController extends Controller
             $endDate   = Carbon::now()->endOfYear();
         }
         
+        $roleIds = $this->resolveRoleIds();
 
-        $staff = Role::where('slug', 'staff')->first();
-        $houseOwner = Role::where('slug', 'householder')->first();
-
-        $staffDataCount = User::where('user_role_id', $staff->id)
+        $staffDataCount = $roleIds['staff_role_id']
+            ? User::where('user_role_id', $roleIds['staff_role_id'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+            ->count()
+            : 0;
         
-        $houseOwnerDataCount = User::where('user_role_id', $houseOwner->id)
+        $houseOwnerDataCount = $roleIds['house_owner_role_id']
+            ? User::where('user_role_id', $roleIds['house_owner_role_id'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->count();
+            ->count()
+            : 0;
 
         $openJobCount = Job::where('status', 'open')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->count();
 
-        $memberSubscriptionRevenue = SubscriptionUser::whereBetween('created_at', [$startDate, $endDate])->sum('amount');
-        $memberSalarySum = Salary::whereBetween('payment_date', [$startDate, $endDate])->where('status', 'paid')->sum('amount');
+        $memberSubscriptionRevenue = SubscriptionUser::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('payment_status', ['paid', 'completed', 'free'])
+            ->sum('amount');
+        $memberSalarySum = Salary::whereBetween('payment_date', [$startDate, $endDate])
+            ->where('status', 'paid')
+            ->sum('net_salary');
         
         $presentAttendanceCount = Attendance::whereBetween('date', [$startDate, $endDate])
             ->where('status', 'present')
@@ -167,7 +186,8 @@ class DashboardController extends Controller
             foreach ($revenues as $revenue) {
                 $revenueOverview[] = [
                     'label' => Carbon::parse($revenue->date)->format('d M'),
-                    'revenue' => (float) $revenue->total
+                    'revenue' => (float) $revenue->total,
+                    'amount' => (float) $revenue->total,
                 ];
             }
         } else {
@@ -182,7 +202,8 @@ class DashboardController extends Controller
             foreach ($revenues as $revenue) {
                 $revenueOverview[] = [
                     'label' => Carbon::create()->month($revenue->month)->format('M'),
-                    'revenue' => (float) $revenue->total
+                    'revenue' => (float) $revenue->total,
+                    'amount' => (float) $revenue->total,
                 ];
             }
         }
@@ -193,7 +214,7 @@ class DashboardController extends Controller
             'house_owner_count' => $houseOwnerDataCount,
             'present_attendance_count' => $presentAttendanceCount,
             'absent_attendance_count' => $absentAttendanceCount,
-            'leave' => 0,
+            'leave' => $leaveCount,
             'overall_attendance_rate' => $attendanceRate,
             'member_subscription_revenue' => $memberSubscriptionRevenue,
             'member_salary_paid' => $memberSalarySum,

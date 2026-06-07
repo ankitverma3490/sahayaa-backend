@@ -67,7 +67,18 @@ class HouseOwnerController extends Controller
     public function show($id)
     {
         $role = Role::where('slug', 'householder')->first();
-        $house = User::where('id', $id)->where('user_role_id', $role->id)->first();
+        $house = User::with(['addresses', 'petDetails', 'householdInformation', 'kycInformation'])
+            ->where('id', $id)
+            ->where('user_role_id', $role->id)
+            ->first();
+
+        if (empty($house)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'House owner not found'
+            ], 404);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $house

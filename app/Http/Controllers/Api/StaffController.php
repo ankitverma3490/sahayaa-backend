@@ -88,7 +88,10 @@ class StaffController extends Controller
     public function show($id)
     {
         $role = Role::where('slug', 'staff')->first();
-        $staff = User::where('id', $id)->where('user_role_id', $role->id)->first();
+        $staff = User::with(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp'])
+            ->where('id', $id)
+            ->where('user_role_id', $role->id)
+            ->first();
         if(empty($staff)) {
             return response()->json([
                 'success' => false,
@@ -643,7 +646,13 @@ class StaffController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('first_name', 'like', "%{$search}%")
                       ->orWhere('last_name', 'like', "%{$search}%")
-                      ->orWhere('name', 'like', "%{$search}%");
+                      ->orWhere('name', 'like', "%{$search}%")
+                      ->orWhere('phone_number', 'like', "%{$search}%")
+                      ->orWhere('aadhar_number', 'like', "%{$search}%")
+                      ->orWhereHas('userWorkInfo', function ($sub) use ($search) {
+                          $sub->where('primary_role', 'like', "%{$search}%")
+                              ->orWhere('skills', 'like', "%{$search}%");
+                      });
                 });
             }
 
@@ -652,7 +661,7 @@ class StaffController extends Controller
                 $query->where('status', $request->user_type);
             }
 
-            $staff = $query->with(['userWorkInfo', 'addresses'])->latest()->paginate(50);
+            $staff = $query->with(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp'])->latest()->paginate(50);
 
             return response()->json([
                 'success' => true,

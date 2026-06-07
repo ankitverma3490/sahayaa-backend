@@ -16,7 +16,13 @@ class Termination extends Model
         'notice_period_days',
         'status',
         'approved_by',
-        'remarks'
+        'remarks',
+        'is_blacklist',
+        'reported_by',
+        'police_station_name',
+        'police_station_contact',
+        'police_station_address',
+        'fir_photo',
     ];
 
     public function user()
@@ -27,6 +33,11 @@ class Termination extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function reporter()
+    {
+        return $this->belongsTo(User::class, 'reported_by');
     }
 
 }

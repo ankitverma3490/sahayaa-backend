@@ -216,7 +216,11 @@ public function index(Request $request): JsonResponse
 
     public function show($id): JsonResponse
     {
-        $job = Job::with(['creator', 'applications.user'])->find($id);
+        $job = Job::with([
+            'creator.addresses',
+            'creator.householdInformation',
+            'applications.user'
+        ])->find($id);
 
         if (!$job) {
             return response()->json([
@@ -224,6 +228,19 @@ public function index(Request $request): JsonResponse
                 'message' => 'Job not found'
             ], 404);
         }
+
+        $primaryAddress = optional($job->creator)->addresses
+            ?->firstWhere('is_primary', 1) ?? optional($job->creator)->addresses?->first();
+        $household = optional($job->creator)->householdInformation;
+
+        $job->setAttribute('owner_summary', [
+            'name' => optional($job->creator)->name ?: trim((optional($job->creator)->first_name ?? '') . ' ' . (optional($job->creator)->last_name ?? '')),
+            'residence_type' => $household?->residence_type,
+            'number_of_rooms' => $household?->number_of_rooms,
+            'city' => $primaryAddress?->city,
+            'state' => $primaryAddress?->state,
+            'locality' => $primaryAddress?->locality,
+        ]);
 
         return response()->json([
             'status' => 'success',

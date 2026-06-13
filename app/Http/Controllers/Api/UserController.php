@@ -2308,6 +2308,27 @@ public function notificationAdd(Request $request)
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $notifications->transform(function ($notification) use ($userId) {
+            if (($notification->type ?? '') === 'job_application' && empty($notification->job_id)) {
+                $message = (string) ($notification->message ?? '');
+                $parts = preg_split('/has applied for the job:\s*/i', $message);
+                $jobTitle = isset($parts[1]) ? trim($parts[1]) : '';
+
+                if ($jobTitle !== '') {
+                    $matchedJob = \App\Models\Job::where('created_by', $userId)
+                        ->where('title', $jobTitle)
+                        ->latest('id')
+                        ->first();
+
+                    if ($matchedJob) {
+                        $notification->job_id = $matchedJob->id;
+                    }
+                }
+            }
+
+            return $notification;
+        });
+
         return response()->json([
             'status' => 'success',
             'message' => 'Notifications retrieved successfully',
@@ -5207,7 +5228,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
         try {
             $staff = User::where('user_role_id', 2)
                 ->where('id', $id)
-                ->with(['addresses', 'userWorkInfo', 'addedByUser'])
+                ->with(['addresses', 'userWorkInfo', 'addedByUser', 'lastExp', 'reviewsReceived'])
                 ->first();
 
             if (!$staff) {

@@ -13,11 +13,16 @@ class Notification extends Model
         'user_id',
         'title',
         'message',
+        'type',
+        'job_id',
+        'application_id',
         'status',
         'read_at',
     ];
 
     protected $casts = [
+        'job_id' => 'integer',
+        'application_id' => 'integer',
         'read_at' => 'datetime',
     ];
 }

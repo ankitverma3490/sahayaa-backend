@@ -91,10 +91,11 @@ class TerminationController extends Controller
 
         $termination = Termination::create($payload);
 
-        // Remove staff from this household's list only (not globally - staff can still work elsewhere)
+        // Keep the household link intact so terminated staff still appear under
+        // the inactive tab with their past attendance/payment history.
         User::where('id', $request->user_id)->update([
-            'is_staff_added' => 0,
-            'added_by' => null,
+            'is_active' => 0,
+            'status' => 'inactive',
         ]);
 
         Notification::create([

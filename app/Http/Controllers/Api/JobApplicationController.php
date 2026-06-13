@@ -257,7 +257,9 @@ class JobApplicationController extends Controller
                     'title' => 'New Job Application',
                     'message' => ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for the job: ' . $job->title,
                     'type' => 'job_application',
-                    'is_read' => 0
+                    'job_id' => $job->id,
+                    'application_id' => $application->id,
+                    'status' => 'unread'
                 ]);
             }
             
@@ -267,7 +269,9 @@ class JobApplicationController extends Controller
                 'title' => 'Application Submitted',
                 'message' => 'Your application for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
                 'type' => 'job_application',
-                'is_read' => 0
+                'job_id' => $job?->id,
+                'application_id' => $application->id,
+                'status' => 'unread'
             ]);
 
             return response()->json([
@@ -485,7 +489,8 @@ class JobApplicationController extends Controller
                 'title' => 'Job Quit Request',
                 'message' => $staff->name . ' has requested to quit the job: ' . $job->title,
                 'type' => 'job_quit',
-                'is_read' => 0
+                'job_id' => $job->id,
+                'status' => 'unread'
             ]);
         }
         
@@ -495,7 +500,8 @@ class JobApplicationController extends Controller
             'title' => 'Quit Request Submitted',
             'message' => 'Your quit request for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
             'type' => 'job_quit',
-            'is_read' => 0
+            'job_id' => $job?->id,
+            'status' => 'unread'
         ]);
         
         return response()->json([

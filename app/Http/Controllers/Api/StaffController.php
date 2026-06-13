@@ -22,10 +22,30 @@ use App\Models\SubscriptionUser;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\Schema;
 use App\Models\UserWorkInfo;
+use App\Models\Termination;
 
 
 class StaffController extends Controller
 {
+    private function normalizeStaffSearchText($queryText)
+    {
+        $queryText = strtolower(trim((string) $queryText));
+
+        $replacements = [
+            '/\bhouse\s+keeper\b/' => 'housekeeper',
+            '/\bhouse\s+keeping\b/' => 'housekeeping',
+            '/\bbaby\s+sitter\b/' => 'babysitter',
+            '/\bdog\s+walking\b/' => 'dog walker',
+            '/\bpet\s+care\b/' => 'pet caretaker',
+        ];
+
+        foreach ($replacements as $pattern => $replacement) {
+            $queryText = preg_replace($pattern, $replacement, $queryText);
+        }
+
+        return preg_replace('/\s+/', ' ', $queryText);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -47,7 +67,20 @@ class StaffController extends Controller
         }
 
         $role = Role::where('slug', 'staff')->first();
-        $query = User::where('user_role_id', $role->id)->where('added_by', $request->user_id);
+        $terminatedUserIds = Termination::where('reported_by', $request->user_id)
+            ->pluck('user_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        $query = User::where('user_role_id', $role->id)
+            ->where(function ($q) use ($request, $terminatedUserIds) {
+                $q->where('added_by', $request->user_id);
+
+                if ($terminatedUserIds->isNotEmpty()) {
+                    $q->orWhereIn('id', $terminatedUserIds->all());
+                }
+            });
         // 🔍 Search
         if ($request->filled('search')) {
             $search = $request->search;
@@ -61,6 +94,15 @@ class StaffController extends Controller
             $query->where('status', $request->user_type);
         }
         $staff = $query->latest()->paginate(10);
+        $staff->getCollection()->transform(function ($item) use ($terminatedUserIds) {
+            if ($terminatedUserIds->contains($item->id)) {
+                $item->status = 'inactive';
+                $item->is_active = 0;
+            }
+
+            return $item;
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Staff retrieved successfully',
@@ -341,7 +383,7 @@ class StaffController extends Controller
                         'house cleaner' => ['House Cleaner', 'house cleaner', 'Maid', 'House Cleaner / Maid'],
                         'nanny' => ['nanny', 'Nanny', 'Baby Sitter', 'baby sitter', 'Baby Sitter / Nanny', 'Babysitter'],
                         'baby sitter' => ['Baby Sitter', 'baby sitter', 'Nanny', 'Baby Sitter / Nanny'],
-                        'housekeeper' => ['housekeeper', 'Housekeeper'],
+                        'housekeeper' => ['housekeeper', 'Housekeeper', 'house keeper', 'House Keeper'],
                         'gardener' => ['gardener', 'Gardener'],
                         'security' => ['security', 'Security', 'Security Guard', 'guard', 'Guard'],
                         'nurse' => ['nurse', 'Nurse', 'Nurse / Caretaker', 'caretaker'],
@@ -540,7 +582,7 @@ class StaffController extends Controller
                 'cook' => ['cook', 'Cook', 'chef', 'Chef', 'Cook / Chef'],
                 'maid' => ['maid', 'Maid', 'House Cleaner', 'House Cleaner / Maid'],
                 'nanny' => ['nanny', 'Nanny', 'Baby Sitter', 'Baby Sitter / Nanny'],
-                'housekeeper' => ['housekeeper', 'Housekeeper'],
+                'housekeeper' => ['housekeeper', 'Housekeeper', 'house keeper', 'House Keeper'],
                 'gardener' => ['gardener', 'Gardener'],
                 'security' => ['security', 'Security', 'Security Guard'],
                 'nurse' => ['nurse', 'Nurse', 'Nurse / Caretaker'],
@@ -1005,13 +1047,13 @@ class StaffController extends Controller
 
     private function applyBasicJobFilters($query, $queryText)
     {
-        $queryLower = strtolower(trim($queryText));
+        $queryLower = $this->normalizeStaffSearchText($queryText);
         $stopWords = ['find', 'job', 'jobs', 'near', 'me', 'nearby', 'in', 'at', 'for', 'with', 'good', 'best', 'looking', 'role', 'work'];
         $roleMap = [
             'driver' => ['driver', 'driving', 'chauffeur'],
             'cook' => ['cook', 'chef', 'cooking', 'kitchen'],
             'chef' => ['chef', 'cook', 'cooking'],
-            'housekeeper' => ['housekeeper', 'housekeeping'],
+            'housekeeper' => ['housekeeper', 'housekeeping', 'house keeper'],
             'maid' => ['maid', 'cleaner', 'house cleaner', 'cleaning'],
             'babysitter' => ['babysitter', 'baby sitter', 'nanny', 'childcare'],
             'nanny' => ['nanny', 'babysitter', 'baby sitter', 'childcare'],

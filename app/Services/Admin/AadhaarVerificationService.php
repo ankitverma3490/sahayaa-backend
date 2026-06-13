@@ -63,17 +63,21 @@ class AadhaarVerificationService
         try {
             Log::info('Aadhaar OTP Request', ['aadhaar' => $aadhaarNumber]);
 
-            $response = Http::withHeaders([
-                'jwt-token' => $this->jwtToken,
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ])->post("{$this->baseUrl}/api/v5/aadhaar/send-otp", [
-                'aadhaar_number' => $aadhaarNumber
-            ]);
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'jwt-token' => $this->jwtToken,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ])->post("{$this->baseUrl}/api/v5/aadhaar/send-otp", [
+                    'aadhaar_number' => $aadhaarNumber
+                ]);
 
             $data = $response->json();
             
-            Log::info('Aadhaar OTP Response', ['response' => $data]);
+            Log::info('Aadhaar OTP Response', [
+                'status' => $response->status(),
+                'response' => $data
+            ]);
 
             if ($response->successful() && isset($data['reference_id'])) {
                 return [
@@ -120,18 +124,22 @@ class AadhaarVerificationService
                 'reference_id' => $referenceId
             ]);
 
-            $response = Http::withHeaders([
-                'jwt-token' => $this->jwtToken,
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ])->post("{$this->baseUrl}/api/v5/aadhaar/verify-otp", [
-                'otp' => $otp,
-                'reference_id' => $referenceId
-            ]);
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'jwt-token' => $this->jwtToken,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ])->post("{$this->baseUrl}/api/v5/aadhaar/verify-otp", [
+                    'otp' => $otp,
+                    'reference_id' => $referenceId
+                ]);
 
             $data = $response->json();
             
-            Log::info('Aadhaar Verify Response', ['response' => $data]);
+            Log::info('Aadhaar Verify Response', [
+                'status' => $response->status(),
+                'response' => $data
+            ]);
 
             if ($response->successful() && isset($data['data'])) {
                 return [

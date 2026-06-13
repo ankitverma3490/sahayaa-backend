@@ -644,7 +644,15 @@ public function getProfile(Request $request)
 
         try {
             $aadhaarService = new \App\Services\Admin\AadhaarVerificationService();
-            $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
+            try {
+                $verifyResult = $aadhaarService->verifyOtp($request->otp, $user->aadhar_reference_id);
+            } catch (\Illuminate\Http\Client\ConnectionException $connEx) {
+                \Log::error('Aadhaar external API unreachable: ' . $connEx->getMessage());
+                return response()->json([
+                    'error' => 'Aadhaar verification service is temporarily unavailable. Please try again in a moment.',
+                    'message' => 'External service timeout'
+                ], 503);
+            }
             
             if (!$verifyResult['success']) {
                 return response()->json([

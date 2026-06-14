@@ -1240,7 +1240,7 @@ public function updateProfile(Request $request)
         
         $allowedKeys = [
             'first_name', 'last_name', 'name', 'email', 'phone_number',
-            'gender', 'dob', 'auto_attendence', 'user_role_id', 'upi_id'
+            'gender', 'dob', 'auto_attendence', 'user_role_id', 'upi_id', 'relation'
         ];
 
         $userUpdateFields = [];
@@ -1828,6 +1828,7 @@ public function updateProfileCustomer(Request $request)
             'lat'        => $request->lat,
             'long'       => $request->long,
             'upi_id'     => $request->upi_id,
+            'relation'   => $request->relation,
         ], fn($v) => !is_null($v));
 
         // Handle auto_attendence separately so value 0 is NOT removed by array_filter

@@ -321,11 +321,13 @@ class JobApplicationController extends Controller
         $staff = User::find($application->user_id);
         
         if ($request->application_status == "accepted") {
-            $user = User::find($application->user_id);
-            $user->update([
-                'is_staff_added' => 1,
-                'added_by' => Auth::guard('api')->user()->id
-            ]);
+            // Do NOT automatically add as staff here. The owner must go through
+            // the NewStaffFrom screen and verify via Aadhar OTP to add them.
+            // $user = User::find($application->user_id);
+            // $user->update([
+            //     'is_staff_added' => 1,
+            //     'added_by' => Auth::guard('api')->user()->id
+            // ]);
             
             // Send notification to staff
             if ($staff) {

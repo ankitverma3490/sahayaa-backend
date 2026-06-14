@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\SubscriptionUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Role;
@@ -79,6 +80,12 @@ class HouseOwnerController extends Controller
             ], 404);
         }
 
+        $house->setAttribute('current_subscription', SubscriptionUser::with('subscription')
+            ->where('user_id', $house->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first());
+
         return response()->json([
             'success' => true,
             'data' => $house
@@ -94,7 +101,52 @@ class HouseOwnerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $role = Role::where('slug', 'householder')->first();
+        $house = User::where('id', $id)
+            ->where('user_role_id', $role?->id)
+            ->first();
+
+        if (!$house) {
+            return response()->json([
+                'success' => false,
+                'message' => 'House owner not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'nullable|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:150',
+            'phone_number' => 'nullable|string|max:20',
+            'dob' => 'nullable|string|max:50',
+            'gender' => 'nullable|string|max:20',
+            'status' => 'nullable|string|max:30',
+            'exact_location' => 'nullable|string|max:255',
+            'current_city' => 'nullable|string|max:100',
+            'current_state' => 'nullable|string|max:100',
+            'current_pincode' => 'nullable|string|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $firstName = $data['first_name'] ?? $house->first_name;
+        $lastName = $data['last_name'] ?? $house->last_name;
+        $data['name'] = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+
+        $house->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'House owner updated successfully',
+            'data' => $house->fresh()
+        ]);
     }
 
     /**

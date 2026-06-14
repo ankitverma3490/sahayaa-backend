@@ -1170,6 +1170,7 @@ public function updateProfile(Request $request)
             'upi_id' => 'nullable|string|max:255',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_number' => 'nullable|string|max:255',
+            'relation' => 'nullable|string|max:255',
             'preferred_work_location' => 'nullable|string|max:255'
         ]);
         if ($validator->fails()) {
@@ -1434,6 +1435,7 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'stay_type' => 'nullable|string|max:255',
         'emergency_contact_name' => 'nullable|string|max:255',
         'emergency_contact_number' => 'nullable|string|max:255',
+            'relation' => 'nullable|string|max:255',
         'preferred_work_location' => 'nullable|string|max:255',
     ]);
 
@@ -1798,6 +1800,7 @@ public function updateProfileCustomer(Request $request)
             'upi_id'          => 'nullable|string|max:255',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_number' => 'nullable|string|max:255',
+            'relation' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -1854,6 +1857,7 @@ public function updateProfileCustomer(Request $request)
             'voice_note' => 'nullable|file|max:10240',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_number' => 'nullable|string|max:255',
+            'relation' => 'nullable|string|max:255',
         ]);
         $workInfo = UserWorkInfo::where('user_id', $user->id)->first();
 
@@ -1892,6 +1896,7 @@ public function updateProfileCustomer(Request $request)
                 if (!empty(array_filter($addr))) {
                     \App\Models\UserAddress::create([
                         'user_id' => $user->id,
+                        'name'    => $addr['title'] ?? $addr['name'] ?? '',
                         'street'  => $addr['street'] ?? '',
                         'city'    => $addr['city'] ?? '',
                         'state'   => $addr['state'] ?? '',
@@ -3435,12 +3440,13 @@ public function addressUpdate(Request $request)
         'skills' => 'nullable|array',
         'skills.*' => 'string|max:255',
         'languages_spoken' => 'nullable|array',
-        'total_experience' => 'nullable|numeric|min:0|max:10',
+        'total_experience' => 'nullable|numeric|min:0|max:100',
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file', // 10MB max
         'emergency_contact_name' => 'nullable|string|max:255',
         'emergency_contact_number' => 'nullable|string|max:255',
+            'relation' => 'nullable|string|max:255',
         'preferred_work_location' => 'nullable|string|max:255',
         'upi_id' => 'nullable|string|max:255',
     ]);
@@ -5112,7 +5118,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
             $search = $request->get('search', '');
             
             // Get all staff members hired by this user through JobApplications
-            $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+            $hiredStatuses = ['accepted', 'approved', 'active', 'hired', 'terminated', 'inactive'];
             $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
                 ->whereHas('job', function($query) use ($user) {
                     $query->where('created_by', $user->id);
@@ -5180,7 +5186,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
             }
 
             // Get all staff members hired by this user through JobApplications or added directly
-            $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+            $hiredStatuses = ['accepted', 'approved', 'active', 'hired', 'terminated', 'inactive'];
             $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
                 ->whereHas('job', function($query) use ($user) {
                     $query->where('created_by', $user->id);
@@ -5256,7 +5262,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
             $isHiredOrAdded = false;
 
             if ($user) {
-                $hiredStatuses = ['accepted', 'approved', 'active', 'hired'];
+                $hiredStatuses = ['accepted', 'approved', 'active', 'hired', 'terminated', 'inactive'];
                 $hiredStaffIds = JobApplication::whereIn('application_status', $hiredStatuses)
                     ->whereHas('job', function($query) use ($user) {
                         $query->where('created_by', $user->id);

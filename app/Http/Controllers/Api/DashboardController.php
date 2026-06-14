@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Job;
+use App\Models\JobApplication;
 use App\Models\Attendance; 
 use App\Models\SubscriptionUser; 
+use App\Models\KycVerification;
 use Carbon\Carbon; 
 use Illuminate\Support\Facades\Validator;
 use App\Models\Salary;
+use Illuminate\Support\Facades\DB;
 
 
 class DashboardController extends Controller
@@ -68,6 +71,42 @@ class DashboardController extends Controller
         $attendanceRate = $totalAttendance > 0  ? round(($presentAttendanceCount / $totalAttendance) * 100, 2) : 0;
         
         
+        $jobStatusOverview = Job::select('status', DB::raw('COUNT(*) as total'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $applicationStatusOverview = JobApplication::select('application_status', DB::raw('COUNT(*) as total'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('application_status')
+            ->pluck('total', 'application_status');
+
+        $topJobPostings = Job::withCount([
+                'applications as applications_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderByDesc('applications_count')
+            ->limit(5)
+            ->get(['id', 'title', 'city', 'status'])
+            ->map(function ($job) {
+                return [
+                    'id' => $job->id,
+                    'title' => $job->title,
+                    'city' => $job->city,
+                    'status' => $job->status,
+                    'applications_count' => (int) $job->applications_count,
+                ];
+            })
+            ->values();
+
+        $acceptedApplications = (int) ($applicationStatusOverview['accepted'] ?? 0);
+        $reviewedApplications = (int) ($applicationStatusOverview['reviewed'] ?? 0);
+        $pendingApplications = (int) ($applicationStatusOverview['pending'] ?? 0);
+        $rejectedApplications = (int) ($applicationStatusOverview['rejected'] ?? 0);
+        $totalApplications = $acceptedApplications + $reviewedApplications + $pendingApplications + $rejectedApplications;
+
         $data = [
             'staff_count' => $staffDataCount,
             'job_count' => $openJobCount,
@@ -253,6 +292,23 @@ class DashboardController extends Controller
             'overall_attendance_rate' => $attendanceRate,
             'member_subscription_revenue' => $memberSubscriptionRevenue,
             'member_salary_paid' => $memberSalarySum,
+            'job_status_overview' => [
+                'open' => (int) ($jobStatusOverview['open'] ?? 0),
+                'pending' => (int) ($jobStatusOverview['pending'] ?? 0),
+                'closed' => (int) ($jobStatusOverview['closed'] ?? 0),
+                'paused' => (int) ($jobStatusOverview['paused'] ?? 0),
+            ],
+            'hiring_report' => [
+                'total_applications' => $totalApplications,
+                'pending' => $pendingApplications,
+                'reviewed' => $reviewedApplications,
+                'accepted' => $acceptedApplications,
+                'rejected' => $rejectedApplications,
+                'conversion_rate' => $totalApplications > 0
+                    ? round(($acceptedApplications / $totalApplications) * 100, 2)
+                    : 0,
+            ],
+            'top_job_postings' => $topJobPostings,
             'chartdata' =>  [
                 'revenue_overview' => $revenueOverview
             ]

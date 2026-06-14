@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Salary;
 use App\Models\Job;
 use App\Models\Notification;
+use App\Models\KycVerification;
 
 class SalaryController extends Controller
 {
@@ -1532,6 +1533,16 @@ private function getWorkingDays($startDate, $endDate)
                 ->whereBetween('created_at', [$thirtyDaysAgo, $today])
                 ->get();
             $allSubscriptions = SubscriptionUser::with('subscription')->get();
+            $activeMemberships = SubscriptionUser::where('status', 'active')
+                ->where(function ($query) {
+                    $query->whereNull('end_date')
+                        ->orWhere('end_date', '>=', now());
+                })
+                ->count();
+            $pendingVerifications = KycVerification::where(function ($query) {
+                $query->whereNull('status')
+                    ->orWhere('status', 'pending');
+            })->count();
 
             $subscriptionUsers = $recentSubscriptions->count();
             $subscriptionRevenue = $recentSubscriptions->sum(fn($sub) => $this->getEffectiveSubscriptionAmount($sub));
@@ -1603,6 +1614,8 @@ private function getWorkingDays($startDate, $endDate)
                     'staff_this_month' => $staffMonthCount,
                     'employers_this_month' => $employerMonthCount,
                     'new_subscriptions_this_month' => $subscriptionUsers,
+                    'active_memberships' => $activeMemberships,
+                    'pending_verifications' => $pendingVerifications,
                     'subscription_revenue_this_month' => (float) $subscriptionRevenue,
                     'total_subscription_revenue' => (float) $totalSubscriptionRevenue,
                     'new_users_last_week' => $newUserWeekCount,

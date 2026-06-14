@@ -140,6 +140,13 @@ class StaffController extends Controller
                 'message' => 'Staff not found'
             ], 404);
         }
+
+        $staff->setAttribute('current_subscription', SubscriptionUser::with('subscription')
+            ->where('user_id', $staff->id)
+            ->where('status', 'active')
+            ->latest()
+            ->first());
+
         return response()->json([
             'success' => true,
             'data' => $staff
@@ -155,7 +162,81 @@ class StaffController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $role = Role::where('slug', 'staff')->first();
+        $staff = User::where('id', $id)
+            ->where('user_role_id', $role?->id)
+            ->first();
+
+        if (!$staff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Staff not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'nullable|string|max:100',
+            'last_name' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:150',
+            'phone_number' => 'nullable|string|max:20',
+            'dob' => 'nullable|string|max:50',
+            'gender' => 'nullable|string|max:20',
+            'status' => 'nullable|string|max:30',
+            'occupation' => 'nullable|string|max:100',
+            'service_category' => 'nullable|string|max:100',
+            'exact_location' => 'nullable|string|max:255',
+            'current_city' => 'nullable|string|max:100',
+            'current_state' => 'nullable|string|max:100',
+            'current_pincode' => 'nullable|string|max:20',
+            'salary' => 'nullable|numeric|min:0',
+            'pay_frequency' => 'nullable|string|max:50',
+            'primary_role' => 'nullable|string|max:100',
+            'preferred_work_location' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        $firstName = $data['first_name'] ?? $staff->first_name;
+        $lastName = $data['last_name'] ?? $staff->last_name;
+
+        $userData = collect($data)->except([
+            'salary',
+            'pay_frequency',
+            'primary_role',
+            'preferred_work_location',
+        ])->toArray();
+        $userData['name'] = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+
+        $staff->update($userData);
+
+        $workInfoData = collect($data)->only([
+            'salary',
+            'pay_frequency',
+            'primary_role',
+            'preferred_work_location',
+        ])->filter(function ($value) {
+            return $value !== null && $value !== '';
+        })->toArray();
+
+        if (!empty($workInfoData)) {
+            UserWorkInfo::updateOrCreate(
+                ['user_id' => $staff->id],
+                $workInfoData
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff updated successfully',
+            'data' => $staff->fresh(['userWorkInfo', 'addresses', 'kycInformation', 'lastExp', 'addedByUser'])
+        ]);
     }
 
     /**
@@ -1295,7 +1376,12 @@ class StaffController extends Controller
                 ->pluck('id')
                 ->toArray();
 
+            $terminatedUserIds = \App\Models\Termination::where('reported_by', $user->id)
+                ->pluck('user_id')
+                ->toArray();
+
             $allStaffIds = array_unique(array_merge($hiredStaffIds, $directlyAddedStaffIds));
+            $allStaffIds = array_diff($allStaffIds, $terminatedUserIds);
 
             if (empty($allStaffIds)) {
                 return response()->json([
@@ -1311,6 +1397,8 @@ class StaffController extends Controller
                     $query->where('date', $today);
                 }, 'userWorkInfo'])
                 ->whereIn('id', $allStaffIds)
+                ->where('is_active', 1)
+                ->where('is_deleted', 0)
                 ->get()
                 ->map(function($staff) use ($user, $today) {
                     $attendance = $staff->attendance_details->first();

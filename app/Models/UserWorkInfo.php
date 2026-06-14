@@ -24,6 +24,7 @@ class UserWorkInfo extends Model
         'emergency_contact_number',
         'emergency_contact_name',
         'working_days',
+        'stay_type',
         'pay_frequency',
         'salary',
         'joining_date',

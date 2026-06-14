@@ -20,6 +20,7 @@ class Job extends Model
         'state',
         'zip_code',
         'commitment_type',
+        'stay_type',
         'preferred_hours',
         'preferred_days',
         'status',

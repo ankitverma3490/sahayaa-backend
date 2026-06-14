@@ -1431,12 +1431,17 @@ private function saveWorkAndExperience($user, $request, $isEdit)
         'education' => 'nullable|string|max:255',
         'additional_info' => 'nullable',
         'voice_note' => 'nullable|file|max:10240',
+        'stay_type' => 'nullable|string|max:255',
         'emergency_contact_name' => 'nullable|string|max:255',
         'emergency_contact_number' => 'nullable|string|max:255',
         'preferred_work_location' => 'nullable|string|max:255',
     ]);
 
     $data = [];
+
+    if ($request->has('stay_type')) {
+        $data['stay_type'] = $workValidated['stay_type'];
+    }
 
     if ($request->has('primary_role')) {
         $data['primary_role'] = $workValidated['primary_role'];

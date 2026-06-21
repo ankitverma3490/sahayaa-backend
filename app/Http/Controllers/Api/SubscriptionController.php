@@ -262,42 +262,13 @@ class SubscriptionController extends Controller
                     'end_date' => now()->addDays($subscription->validity),
                     'job_user_limit' => 0,
                     'staff_user_limit' => $subscription->staff_limit ?? 2,
-                $data = $this->zeroPaymentData($subscriptionUser);
-                return $data;
-            } else {
-                $api_key = config('services.razorpay.key');
-                $api_secret = config('services.razorpay.secret');
-                
-                $razorpayData = [
-                    "amount" => (int) $subscription->price * 100, // in paise
-                    "currency" => "INR",
-                    "receipt" => "sub_" . uniqid(),
-                    "payment_capture" => 1
-                ];
-                $api = new Api($api_key, $api_secret);
-                $order = $api->order->create($razorpayData);
-                // Create subscription user record
-                $subscriptionUser = SubscriptionUser::create([
-                    'user_id' => $user->id,
-                    'subscription_id' => $subscription->id,
-                    'order_id' => $order['id'],
-                    'order_number' => 'SUB' . time() . $user->id,
-                    'amount' => $subscription->price,
-                    'currency' => 'INR',
-                    'payment_status' => 'pending',
-                    'role' => $user->user_role_id,
-                    'type' => 'credit',
-                    'start_date' => now(),
-                    'end_date' => now()->addDays($subscription->validity),
-                    'job_user_limit' => 0,
-                    'staff_user_limit' => $subscription->staff_limit ?? 2,
                 ]);
 
                 return response()->json([
                     'status' => true,
                     'message' => 'Order created successfully',
                     'order_id' => $order['id'],
-                    'amount' => $subscription->price,
+                    'amount' => $payable_amount,
                     'currency' => 'INR',
                     'subscription_user_id' => $subscriptionUser->id,
                     'razorpay_key' => $api_key,

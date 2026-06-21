@@ -192,6 +192,8 @@ class StaffController extends Controller
             'pay_frequency' => 'nullable|string|max:50',
             'primary_role' => 'nullable|string|max:100',
             'preferred_work_location' => 'nullable|string|max:255',
+            'stay_type' => 'nullable|string|max:255',
+            'relation' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -211,6 +213,7 @@ class StaffController extends Controller
             'pay_frequency',
             'primary_role',
             'preferred_work_location',
+            'stay_type',
         ])->toArray();
         $userData['name'] = trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
 
@@ -221,6 +224,7 @@ class StaffController extends Controller
             'pay_frequency',
             'primary_role',
             'preferred_work_location',
+            'stay_type',
         ])->filter(function ($value) {
             return $value !== null && $value !== '';
         })->toArray();

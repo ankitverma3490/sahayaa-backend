@@ -22,6 +22,7 @@ class SubscriptionUser extends Model
         'order_number',
         'reference_id',
         'amount',
+        'wallet_used',
         'currency',
         'payment_mode',
         'payment_status',

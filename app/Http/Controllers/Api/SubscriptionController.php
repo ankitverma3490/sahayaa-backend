@@ -22,7 +22,7 @@ class SubscriptionController extends Controller
 {
     
 
-    public function index(Request $request)
+        public function index(Request $request)
     {
         $query = Subscription::query();
         if ($request->has('type') && !is_null($request->type)) {
@@ -33,6 +33,17 @@ class SubscriptionController extends Controller
             $query->where('validity', $request->validity);
         }
         $subscriptions = $query->get();
+
+        $user = Auth::guard('api')->user();
+        $walletBalance = $user ? (float) ($user->wallet_balance ?? 0) : 0;
+
+        foreach ($subscriptions as $sub) {
+            $sub->original_price = $sub->price;
+            if ($walletBalance > 0) {
+                $sub->price = max(0, $sub->price - $walletBalance);
+            }
+        }
+
         return response()->json([
             'status' => true,
             'message' => 'Subscriptions fetched successfully',
@@ -168,7 +179,7 @@ class SubscriptionController extends Controller
     }
 
 
-    public function createSubscriptionOrder(Request $request)
+        public function createSubscriptionOrder(Request $request)
     {
         $request->validate([
             'subscription_id' => 'required|exists:subscriptions,id',
@@ -194,13 +205,18 @@ class SubscriptionController extends Controller
         }
 
         try {
-            if($subscription->price == 0){
+            $walletBalance = (float) ($user->wallet_balance ?? 0);
+            $payable_amount = max(0, $subscription->price - $walletBalance);
+            $wallet_used = min($walletBalance, $subscription->price);
+
+            if($payable_amount == 0){
                 $subscriptionUser = SubscriptionUser::create([
                     'user_id' => $user->id,
                     'subscription_id' => $subscription->id,
                     'order_id' => 'SUB' . time() . $user->id,
                     'order_number' => 'SUB' . time() . $user->id,
-                    'amount' => $subscription->price,
+                    'amount' => 0,
+                    'wallet_used' => $wallet_used,
                     'currency' => 'INR',
                     'payment_status' => 'completed',
                     'role' => $user->user_role_id,
@@ -210,6 +226,42 @@ class SubscriptionController extends Controller
                     'job_user_limit' => 0,
                     'staff_user_limit' => $subscription->staff_limit ?? 2,
                 ]);
+                
+                if ($wallet_used > 0) {
+                    $user->wallet_balance -= $wallet_used;
+                    $user->save();
+                }
+
+                $data = $this->zeroPaymentData($subscriptionUser);
+                return $data;
+            } else {
+                $api_key = config('services.razorpay.key');
+                $api_secret = config('services.razorpay.secret');
+                
+                $razorpayData = [
+                    "amount" => (int) ($payable_amount * 100), // in paise
+                    "currency" => "INR",
+                    "receipt" => "sub_" . uniqid(),
+                    "payment_capture" => 1
+                ];
+                $api = new \Razorpay\Api\Api($api_key, $api_secret);
+                $order = $api->order->create($razorpayData);
+                // Create subscription user record
+                $subscriptionUser = SubscriptionUser::create([
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                    'order_id' => $order['id'],
+                    'order_number' => 'SUB' . time() . $user->id,
+                    'amount' => $payable_amount,
+                    'wallet_used' => $wallet_used,
+                    'currency' => 'INR',
+                    'payment_status' => 'pending',
+                    'role' => $user->user_role_id,
+                    'type' => 'credit',
+                    'start_date' => now(),
+                    'end_date' => now()->addDays($subscription->validity),
+                    'job_user_limit' => 0,
+                    'staff_user_limit' => $subscription->staff_limit ?? 2,
                 $data = $this->zeroPaymentData($subscriptionUser);
                 return $data;
             } else {
@@ -274,8 +326,18 @@ class SubscriptionController extends Controller
         $user = Auth::guard('api')->user();
         $subscriptionUser = SubscriptionUser::find($request->subscription_user_id);
         
-        try {
+                try {
             DB::beginTransaction();
+
+            if ($subscriptionUser->payment_status === 'completed') {
+                DB::rollBack();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Payment already verified',
+                    'data' => $subscriptionUser
+                ]);
+            }
+
             // Verify signature
             $generated_signature = hash_hmac(
                 'sha256',
@@ -298,7 +360,7 @@ class SubscriptionController extends Controller
             $startDate = now();
             $endDate = now()->addDays($subscription->validity);
 
-            // Update subscription user record
+                        // Update subscription user record
             $subscriptionUser->update([
                 'transaction_id' => $request->razorpay_payment_id,
                 'payment_id' => $request->razorpay_payment_id,
@@ -309,6 +371,12 @@ class SubscriptionController extends Controller
                 'start_date' => $startDate,
                 'end_date' => $endDate,
             ]);
+
+            // Deduct wallet balance if used
+            if ($subscriptionUser->wallet_used > 0) {
+                $user->wallet_balance = max(0, $user->wallet_balance - $subscriptionUser->wallet_used);
+                $user->save();
+            }
 
             // Update user role if needed
             if ($subscriptionUser->role !== 'user') {
@@ -351,18 +419,24 @@ class SubscriptionController extends Controller
             $startDate = now();
             $endDate = now()->addDays($subscription->validity);
 
-            // Update subscription user record
+                        // Update subscription user record
             $subscriptionUser->update([
-                'transaction_id' => '',
-                'payment_id' => '',
+                'transaction_id' => $request->razorpay_payment_id,
+                'payment_id' => $request->razorpay_payment_id,
                 'payment_status' => 'completed',
-                'payment_mode' => 'cash',
+                'payment_mode' => 'razorpay',
                 'payment_response' => $request->all(),
                 'status' => 'active',
                 'start_date' => $startDate,
                 'end_date' => $endDate,
             ]);
-            
+
+            // Deduct wallet balance if used
+            if ($subscriptionUser->wallet_used > 0) {
+                $user->wallet_balance = max(0, $user->wallet_balance - $subscriptionUser->wallet_used);
+                $user->save();
+            }
+
             // Update user role if needed
             if ($subscriptionUser->role !== 'user') {
                 $user->update(['role' => $subscriptionUser->role]);
@@ -888,4 +962,54 @@ class SubscriptionController extends Controller
         }
     }
 
+    public function refundSubscription($id)
+    {
+        try {
+            $subscriptionUser = \App\Models\SubscriptionUser::find($id);
+
+            if (!$subscriptionUser) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Subscription record not found.'
+                ], 404);
+            }
+
+            if ($subscriptionUser->payment_status === 'refunded') {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Subscription is already refunded.'
+                ], 400);
+            }
+
+                        // Refund wallet balance if it was used
+            if ($subscriptionUser->wallet_used > 0) {
+                $user = \App\Models\User::find($subscriptionUser->user_id);
+                if ($user) {
+                    $user->wallet_balance += $subscriptionUser->wallet_used;
+                    $user->save();
+                }
+            }
+
+            // Mark as refunded
+            $subscriptionUser->payment_status = 'refunded';
+            $subscriptionUser->status = 'inactive';
+            $subscriptionUser->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Subscription refunded successfully.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to process refund: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+
+
+
+
+

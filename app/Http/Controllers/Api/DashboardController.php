@@ -65,48 +65,14 @@ class DashboardController extends Controller
         $openJobCount = Job::where('status', 'open')->count();
         $presentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'present')->count();
         $absentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'absent')->count();
+        $openJobCount = Job::where('status', 'open')->count();
+        $presentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'present')->count();
+        $absentAttendanceCount = Attendance::where('date', Carbon::today())->where('status', 'absent')->count();
         
         $leaveCount = Attendance::where('date', Carbon::today())->where('status', 'leave')->count();
         $totalAttendance = $presentAttendanceCount + $absentAttendanceCount + $leaveCount;
         $attendanceRate = $totalAttendance > 0  ? round(($presentAttendanceCount / $totalAttendance) * 100, 2) : 0;
         
-        
-        $jobStatusOverview = Job::select('status', DB::raw('COUNT(*) as total'))
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $applicationStatusOverview = JobApplication::select('application_status', DB::raw('COUNT(*) as total'))
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('application_status')
-            ->pluck('total', 'application_status');
-
-        $topJobPostings = Job::withCount([
-                'applications as applications_count' => function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                }
-            ])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderByDesc('applications_count')
-            ->limit(5)
-            ->get(['id', 'title', 'city', 'status'])
-            ->map(function ($job) {
-                return [
-                    'id' => $job->id,
-                    'title' => $job->title,
-                    'city' => $job->city,
-                    'status' => $job->status,
-                    'applications_count' => (int) $job->applications_count,
-                ];
-            })
-            ->values();
-
-        $acceptedApplications = (int) ($applicationStatusOverview['accepted'] ?? 0);
-        $reviewedApplications = (int) ($applicationStatusOverview['reviewed'] ?? 0);
-        $pendingApplications = (int) ($applicationStatusOverview['pending'] ?? 0);
-        $rejectedApplications = (int) ($applicationStatusOverview['rejected'] ?? 0);
-        $totalApplications = $acceptedApplications + $reviewedApplications + $pendingApplications + $rejectedApplications;
-
         $data = [
             'staff_count' => $staffDataCount,
             'job_count' => $openJobCount,
@@ -232,6 +198,43 @@ class DashboardController extends Controller
             ->count();
         $totalAttendance = $presentAttendanceCount + $absentAttendanceCount + $leaveCount;
         $attendanceRate = $totalAttendance > 0  ? round(($presentAttendanceCount / $totalAttendance) * 100, 2) : 0;
+        
+        $jobStatusOverview = Job::select('status', DB::raw('COUNT(*) as total'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $applicationStatusOverview = JobApplication::select('status', DB::raw('COUNT(*) as total'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $topJobPostings = Job::withCount([
+                'applications as applications_count' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                }
+            ])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderByDesc('applications_count')
+            ->limit(5)
+            ->get(['id', 'title', 'city', 'status'])
+            ->map(function ($job) {
+                return [
+                    'id' => $job->id,
+                    'title' => $job->title,
+                    'city' => $job->city,
+                    'status' => $job->status,
+                    'applications_count' => (int) $job->applications_count,
+                ];
+            })
+            ->values();
+
+        $acceptedApplications = (int) ($applicationStatusOverview['accepted'] ?? $applicationStatusOverview['hired'] ?? 0);
+        $reviewedApplications = (int) ($applicationStatusOverview['reviewed'] ?? 0);
+        $pendingApplications = (int) ($applicationStatusOverview['pending'] ?? 0);
+        $rejectedApplications = (int) ($applicationStatusOverview['rejected'] ?? 0);
+        $totalApplications = $acceptedApplications + $reviewedApplications + $pendingApplications + $rejectedApplications;
+
         
         $revenueOverview = [];
         if ($type == 'monthly') {

@@ -108,6 +108,7 @@ class User extends Authenticatable
         'referral_code',
         'referred_by',
         'referral_earnings',
+        'wallet_balance',
         'referral_code_expires_at',
         'employer_aadhar_front',
         'employer_aadhar_back',
@@ -562,3 +563,4 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class, 'staff_id');
     }
 }
+

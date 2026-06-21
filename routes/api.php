@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\AnalyticsController;
 // use App\Http\Controllers\Api\NotificationShortcutController;
 use App\Http\Controllers\Api\MailShortcutController;
 use App\Http\Controllers\Api\KycVerificationController;
+use App\Http\Controllers\Api\NotificationShortcutController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\JobApplicationController;
 use App\Http\Controllers\Api\SettingController;
@@ -764,6 +765,14 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     
     Route::apiResource('roles', RoleController::class)->middleware('admin.permission:roles');
     Route::get('/sub-admins', [AdminUserController::class, 'index'])->middleware('admin.permission:sub_admins');
+
+    // KYC Admin Routes
+    Route::get('/kyc/list', [KycVerificationController::class, 'getAdminKycList']);
+    Route::post('/kyc/{id}/status', [KycVerificationController::class, 'updateKycStatus']);
+
+    // Notifications Admin Routes
+    Route::get('/notifications', [NotificationShortcutController::class, 'getNotifications']);
+    Route::post('/notifications/send', [NotificationShortcutController::class, 'sendNotification']);
     Route::post('/sub-admins', [AdminUserController::class, 'store'])->middleware('admin.permission:sub_admins');
     Route::post('/sub-admins/{id}', [AdminUserController::class, 'update'])->middleware('admin.permission:sub_admins');
     Route::put('/sub-admins/{id}/status', [AdminUserController::class, 'toggleStatus'])->middleware('admin.permission:sub_admins');
@@ -783,6 +792,7 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
         Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
         Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
         Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+                Route::post('/{id}/refund', [\App\Http\Controllers\Api\SubscriptionController::class, 'refundSubscription']);
     });
 
 
@@ -803,7 +813,8 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::get('/referral/history', [UserController::class, 'getReferralHistory']);
 
 
-    Route::post('/settings/store', [SettingController::class, 'store']);
+        Route::post('/settings/store', [SettingController::class, 'store']);
+    Route::get('/settings', [SettingController::class, 'getAllSettings']);
 
 });
 
@@ -817,6 +828,7 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::prefix('subscription')->group(function () {
         Route::get('/current', [SubscriptionController::class, 'getCurrentSubscription']);
         Route::get('/history', [SubscriptionController::class, 'getSubscriptionHistory']);
+                Route::post('/{id}/refund', [\App\Http\Controllers\Api\SubscriptionController::class, 'refundSubscription']);
         Route::post('/create-order', [SubscriptionController::class, 'createSubscriptionOrder']);
         Route::post('/verify-payment', [SubscriptionController::class, 'verifySubscriptionPayment']);
         Route::post('/subscribe', [SubscriptionController::class, 'subscribeFree']);
@@ -1007,5 +1019,7 @@ Route::get('/debug-db', function () {
         'users' => \App\Models\User::orderBy('id', 'desc')->take(10)->get()
     ]);
 });
+
+
 
 

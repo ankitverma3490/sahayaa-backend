@@ -160,5 +160,82 @@ class KycVerificationController extends Controller
                 'message' => 'Failed to retrieve KYC status: ' . $e->getMessage()
             ], 500);
         }
+    // Admin: Get all KYC list
+    public function getAdminKycList(Request $request)
+    {
+        try {
+            $query = KycVerification::with('user:id,name,first_name,last_name,email,phone_number,role_id');
+
+            if ($request->has('status') && $request->status !== 'all') {
+                $query->where('status', $request->status);
+            }
+
+            $kycs = $query->orderBy('created_at', 'desc')->paginate($request->input('per_page', 15));
+
+            return response()->json([
+                'success' => true,
+                'data' => $kycs
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch KYC list',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Admin: Approve or Reject KYC
+    public function updateKycStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:approved,rejected',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $kyc = KycVerification::find($id);
+
+            if (!$kyc) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'KYC record not found',
+                ], 404);
+            }
+
+            $kyc->status = $request->status;
+            $kyc->save();
+
+            // Update user aadhar verify status
+            if ($request->status === 'approved') {
+                $user = User::find($kyc->user_id);
+                if ($user) {
+                    $user->aadhar__verify = 1;
+                    $user->save();
+                }
+            } else {
+                 $user = User::find($kyc->user_id);
+                if ($user) {
+                    $user->aadhar__verify = 0;
+                    $user->save();
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'KYC status updated to ' . $request->status,
+                'data' => $kyc
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update KYC status: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

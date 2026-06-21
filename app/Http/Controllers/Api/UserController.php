@@ -6282,7 +6282,7 @@ private function updateExistingStaff(User $existingUser, Request $request)
      * Apply refer credit to job_user_limit in subscription_users
      * Credit amount = sum of (reward_amount / 10) for all uncredited rewards
      */
-    public function applyReferCredit()
+        public function applyReferCredit()
     {
         try {
             $user = Auth::guard('api')->user();
@@ -6293,61 +6293,37 @@ private function updateExistingStaff(User $existingUser, Request $request)
             if ($availableEarnings <= 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No referral earnings available to redeem.',
+                    'message' => 'No referral points available to withdraw.',
                 ], 400);
             }
 
-            // Find the user's active subscription
-            $subscription = SubscriptionUser::where('user_id', $user->id)
-                ->where('status', 'active')->first();
+            // Convert points to INR using admin setting
+            $ratioSetting = setting('point_to_inr_ratio');
+            $ratio = isset($ratioSetting['value']) ? (float)$ratioSetting['value'] : 1.0;
+            
+            $discountAmount = $availableEarnings * $ratio;
 
-            if (empty($subscription)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Please subscribe to redeem rewards points.',
-                ], 400);
-            }
-
-            // Each X points = 1 AI search credit
-            $points = setting('points_per_action');
-            $rate = $points['value'] ?? 10;
-            $creditsToAdd = (int) ($availableEarnings / $rate);
-
-            if ($creditsToAdd <= 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Not enough points to redeem.',
-                ], 400);
-            }
-
-            // Deduct earnings and give back AI searches by reducing used count
+            // Give them discount balance in their wallet
+            $user->wallet_balance = ($user->wallet_balance ?? 0) + $discountAmount;
+            
+            // Deduct points
             $user->referral_earnings = 0;
             $user->save();
 
-            // AI search uses 'user_limit' as usage counter and 'subscription_limit' as max cap
-            // Decrease the used count to give back searches (but don't go below 0)
-            $newUsedCount = max(0, $subscription->user_limit - $creditsToAdd);
-            $subscription->user_limit = $newUsedCount;
-            $subscription->save();
-
-            // Get plan limit to show remaining searches
-            $plan = Subscription::find($subscription->subscription_id);
-            $remainingSearches = $plan ? ($plan->subscription_limit - $newUsedCount) : 0;
-
             return response()->json([
                 'success' => true,
-                'message' => 'Referral credit redeemed successfully! You have received ' . $creditsToAdd . ' AI search credits.',
+                'message' => 'Points successfully converted to ?' . $discountAmount . ' discount. This will be applied to your next plan purchase.',
                 'data' => [
-                    'points_redeemed' => $availableEarnings,
-                    'credits_added' => $creditsToAdd,
-                    'searches_used' => $newUsedCount,
-                    'searches_remaining' => $remainingSearches,
+                    'wallet_balance' => $user->wallet_balance,
+                    'referral_earnings' => $user->referral_earnings
                 ]
             ]);
+
         } catch (\Exception $e) {
+            \Log::error('Apply Refer Credit Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to apply referral credit',
+                'message' => 'Failed to apply points',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -6388,3 +6364,4 @@ private function updateExistingStaff(User $existingUser, Request $request)
     }
 
 }
+

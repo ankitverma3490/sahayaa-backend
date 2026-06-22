@@ -204,10 +204,10 @@ class DashboardController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        $applicationStatusOverview = JobApplication::select('status', DB::raw('COUNT(*) as total'))
+        $applicationStatusOverview = JobApplication::select('application_status', DB::raw('COUNT(*) as total'))
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('status')
-            ->pluck('total', 'status');
+            ->groupBy('application_status')
+            ->pluck('total', 'application_status');
 
         $topJobPostings = Job::withCount([
                 'applications as applications_count' => function ($query) use ($startDate, $endDate) {

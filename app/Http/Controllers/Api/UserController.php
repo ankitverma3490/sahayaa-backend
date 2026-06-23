@@ -4426,6 +4426,8 @@ public function addStaff(Request $request)
                 'is_verified' => 1,
                 'relation' => $request->emergency_contact_name,
                 'upi_id' => $request->upi_id ?? null,
+                'is_deleted' => 0,
+                'status' => 'active',
             ]);
             
             \Log::info('Staff user record created successfully', [
@@ -4845,6 +4847,8 @@ private function updateExistingStaff(User $existingUser, Request $request)
         'step' => 6, // ← FIXED: Use 'step' not 'steps'
         'relation' => $request->emergency_contact_name,
         'upi_id' => $request->upi_id, // ← ADDED: Persist UPI ID
+        'is_deleted' => 0, // ← RESTORE: Ensure not deleted
+        'status' => 'active', // ← RESTORE: Ensure active status
     ];
     
     \Log::info('Update Data Prepared', ['data' => $updateData]);

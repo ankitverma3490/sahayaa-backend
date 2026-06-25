@@ -207,20 +207,29 @@ class NotificationService extends Controller
     }
 
     /**
+     * Leave Rejected - WhatsApp + Push to staff
+     */
+    public static function leaveRejected($staffId, $ownerName)
+    {
+        $message = "Your leave request has been rejected by {$ownerName}.";
+        self::send($staffId, 'Leave Rejected', $message, 'leave_rejected');
+    }
+
+    /**
      * Job Applied - WhatsApp + Push to owner
      */
-    public static function jobApplied($ownerId, $staffName, $jobTitle)
+    public static function jobApplied($ownerId, $staffName, $jobTitle, $extra = [])
     {
         $message = "A new job application has been received from {$staffName} for \"{$jobTitle}\".";
-        self::send($ownerId, 'New Job Application', $message, 'job_application');
+        self::send($ownerId, 'New Job Application', $message, 'job_application', $extra);
     }
 
     /**
      * Leave Applied - WhatsApp + Push to owner
      */
-    public static function leaveApplied($ownerId, $staffName, $dates)
+    public static function leaveApplied($ownerId, $staffName, $dates, $extra = [])
     {
         $message = "{$staffName} has applied for leave on {$dates}.";
-        self::send($ownerId, 'Leave Application', $message, 'leave_application');
+        self::send($ownerId, 'Leave Application', $message, 'leave_application', $extra);
     }
 }

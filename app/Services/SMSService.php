@@ -56,7 +56,7 @@ class SMSService
                 'Content-Type: application/json',
             ],
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => !env('APP_DEBUG', true),
             CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_TIMEOUT => 30,
         ]);
@@ -92,6 +92,11 @@ class SMSService
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
         if (strlen($phone) < 10) return null;
+
+        // Remove leading zero (e.g., 01234567890 -> 1234567890)
+        if (strlen($phone) === 11 && $phone[0] === '0') {
+            $phone = substr($phone, 1);
+        }
 
         if (strlen($phone) === 10) {
             $phone = '91' . $phone;

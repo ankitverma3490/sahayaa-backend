@@ -66,7 +66,7 @@ class KycVerificationController extends Controller
                     'New KYC Submission',
                     ($userData->first_name ?? $userData->name ?? 'A staff member') . ' has submitted KYC documents for verification.',
                     'kyc_submitted',
-                    ['skip_push' => true]
+                    ['skip_push' => true, 'skip_whatsapp' => true, 'skip_sms' => true]
                 );
             } catch (\Exception $e) {
                 \Log::warning('KYC admin notification failed: ' . $e->getMessage());

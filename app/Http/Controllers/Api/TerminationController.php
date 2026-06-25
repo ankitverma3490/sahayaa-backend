@@ -100,7 +100,7 @@ class TerminationController extends Controller
 
         \App\Services\NotificationService::staffTerminated(
             $termination->user_id,
-            User::find($payload['reported_by'])->name ?? 'Admin'
+            optional(User::find($payload['reported_by']))->name ?? 'Admin'
         );
 
         return response()->json([

@@ -283,17 +283,18 @@ class JobApplicationController extends Controller
                 \App\Services\NotificationService::jobApplied(
                     $job->created_by,
                     $staffName,
-                    $job->title
+                    $job->title,
+                    ['job_id' => $job->id, 'application_id' => $application->id]
                 );
             }
             
-            // Send notification to staff
+            // Send notification to staff (self, skip WhatsApp/SMS)
             \App\Services\NotificationService::send(
                 $user->id,
                 'Application Submitted',
                 'Your application for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
                 'job_application',
-                ['job_id' => $job?->id, 'application_id' => $application->id]
+                ['job_id' => $job?->id, 'application_id' => $application->id, 'skip_whatsapp' => true, 'skip_sms' => true]
             );
 
             return response()->json([
@@ -482,13 +483,13 @@ class JobApplicationController extends Controller
             );
         }
         
-        // Send notification to staff
+        // Send notification to staff (self, skip WhatsApp/SMS)
         \App\Services\NotificationService::send(
             $userId,
             'Quit Request Submitted',
-            'Your quit request for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
+            'Your quit request for ' . ($job ? $job->title : 'the job') . ' has been submitted',
             'job_quit',
-            ['job_id' => $job?->id]
+            ['job_id' => $job?->id, 'skip_whatsapp' => true, 'skip_sms' => true]
         );
         
         return response()->json([
@@ -536,12 +537,13 @@ class JobApplicationController extends Controller
             "created_by" => $user->id
         ]);
 
-        // Notify staff
+        // Notify staff (self, skip WhatsApp/SMS)
         \App\Services\NotificationService::send(
             $user->id,
             'Leave Applied',
             'Your leave request has been submitted successfully.',
-            'leave_application'
+            'leave_application',
+            ['skip_whatsapp' => true, 'skip_sms' => true]
         );
 
         // Notify house owner (WhatsApp + Push)
@@ -632,11 +634,10 @@ class JobApplicationController extends Controller
         $leave->status = 'rejected';
         $leave->save();
 
-        \App\Services\NotificationService::send(
+        $owner = User::find($leave->houseowner_id);
+        \App\Services\NotificationService::leaveRejected(
             $leave->user_id,
-            'Leave Rejected',
-            'Your leave request has been rejected.',
-            'leave_rejected'
+            $owner ? $owner->name : 'Admin'
         );
 
         return response()->json([

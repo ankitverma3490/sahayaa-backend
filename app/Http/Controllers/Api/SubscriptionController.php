@@ -506,21 +506,22 @@ class SubscriptionController extends Controller
      */
     private function sendSubscriptionNotifications($user, $subscriptionUser)
     {
-        // Send notification to user (in-app + FCM push)
+        // Send notification to user (in-app + FCM push only, no WhatsApp/SMS)
         \App\Services\NotificationService::send(
             $user->id,
             'Subscription Activated',
             'Your subscription #' . $subscriptionUser->order_number . ' has been activated successfully. Valid until ' . $subscriptionUser->end_date->format('d M, Y'),
-            'subscription_activated'
+            'subscription_activated',
+            ['skip_whatsapp' => true, 'skip_sms' => true]
         );
 
-        // Send notification to admin (in-app only, skip push)
+        // Send notification to admin (in-app only, skip push/WhatsApp/SMS)
         \App\Services\NotificationService::send(
             1,
             'New Subscription',
             'User ' . $user->name . ' has purchased subscription #' . $subscriptionUser->order_number,
             'subscription_new',
-            ['skip_push' => true]
+            ['skip_push' => true, 'skip_whatsapp' => true, 'skip_sms' => true]
         );
     }
 
@@ -759,12 +760,13 @@ class SubscriptionController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Send notification to user (in-app + FCM push)
+            // Send notification to user (in-app + FCM push, no WhatsApp/SMS)
             \App\Services\NotificationService::send(
                 $user->id,
                 'Extra Job Posting Purchased',
                 'You have successfully purchased 1 extra job posting limit.',
-                'extra_job_purchased'
+                'extra_job_purchased',
+                ['skip_whatsapp' => true, 'skip_sms' => true]
             );
 
             return response()->json([
@@ -918,7 +920,8 @@ class SubscriptionController extends Controller
                 $user->id,
                 'Extra Staff Limit Purchased',
                 'You have successfully purchased 1 extra staff limit.',
-                'extra_staff_purchased'
+                'extra_staff_purchased',
+                ['skip_whatsapp' => true, 'skip_sms' => true]
             );
 
             return response()->json([

@@ -96,12 +96,13 @@ class AttendanceController extends Controller
 
             DB::commit();
 
-            // Notify staff (in-app + FCM push)
+            // Notify staff (in-app + FCM push only, no WhatsApp/SMS)
             \App\Services\NotificationService::send(
                 $staffId,
                 'Attendance Update',
                 'Your attendance for ' . $date . ' has been marked as ' . ucfirst($status),
-                'attendance'
+                'attendance',
+                ['skip_whatsapp' => true, 'skip_sms' => true]
             );
 
             return response()->json([

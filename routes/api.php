@@ -736,6 +736,13 @@ Route::prefix('/admin')->middleware('auth:api')->group(function () {
     Route::post('/jobs/{id}/status', [JobController::class, 'updateStatus'])->middleware('admin.permission:jobs');
     Route::get('/jobs/{jobId}/applications', [JobApplicationController::class, 'getJobApplications'])->middleware('admin.permission:jobs');
     Route::post('/applications/{id}/status', [JobApplicationController::class, 'updateApplicationStatus'])->middleware('admin.permission:jobs');
+
+    // Admin Job Apply Limit Routes
+    Route::get('/job-limit/settings', [JobApplyLimitController::class, 'adminGetSettings'])->middleware('admin.permission:settings');
+    Route::post('/job-limit/settings', [JobApplyLimitController::class, 'adminUpdateSettings'])->middleware('admin.permission:settings');
+    Route::get('/job-limit/stats', [JobApplyLimitController::class, 'adminStats'])->middleware('admin.permission:settings');
+    Route::get('/job-limit/staff', [JobApplyLimitController::class, 'adminStaffLimits'])->middleware('admin.permission:settings');
+
     Route::get('faq-support', [FaqSupportController::class, 'customerIndex']);
     Route::get('faq-support/{id}', [FaqSupportController::class, 'customerShow']);
     Route::post('faq-support', [FaqSupportController::class, 'customerStore']);
@@ -861,11 +868,6 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::post('/job-limit/create-order', [JobApplyLimitController::class, 'createOrder']);
     Route::post('/job-limit/verify-payment', [JobApplyLimitController::class, 'verifyPayment']);
     
-    // Admin Job Apply Limit Routes
-    Route::get('/admin/job-limit/settings', [JobApplyLimitController::class, 'adminGetSettings']);
-    Route::post('/admin/job-limit/settings', [JobApplyLimitController::class, 'adminUpdateSettings']);
-    Route::get('/admin/job-limit/stats', [JobApplyLimitController::class, 'adminStats']);
-    Route::get('/admin/job-limit/staff', [JobApplyLimitController::class, 'adminStaffLimits']);
     Route::get('/jobs', [JobController::class, 'index']);
     Route::prefix('staff')->group(function () {
         Route::post('/add', [UserController::class, 'addStaff']);

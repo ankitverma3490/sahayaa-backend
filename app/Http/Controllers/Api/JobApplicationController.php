@@ -207,12 +207,14 @@ class JobApplicationController extends Controller
             }
 
             // -----------------------------------------------
-            // JOB APPLY LIMIT CHECK
+            // JOB APPLY LIMIT CHECK (atomic: count actual applications)
             // -----------------------------------------------
             $freeLimit  = (int) (\App\Models\Setting::where('key', 'job_apply_free_limit')->value('value') ?? 3);
-            $applyCount = (int) ($user->job_apply_count ?? 0);
             $extraLimit = (int) ($user->job_apply_extra_limit ?? 0);
             $totalAllowed = $freeLimit + $extraLimit;
+
+            // Count actual applications (not a separate counter — prevents race conditions + delete waste)
+            $applyCount = JobApplication::where('user_id', $user->id)->count();
 
             if ($applyCount >= $totalAllowed) {
                 $price = (float) (\App\Models\Setting::where('key', 'job_apply_limit_price')->value('value') ?? 49);
@@ -270,9 +272,6 @@ class JobApplicationController extends Controller
                 'is_advance' => $request->boolean('is_advance'),
                 'application_status' => 'pending',
             ]);
-
-            // Increment apply count
-            $user->increment('job_apply_count');
             
             // Get job details
             $job = Job::find($jobId);

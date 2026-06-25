@@ -114,7 +114,9 @@ class User extends Authenticatable
         'employer_aadhar_back',
         'employer_police_verification',
         'employer_other_doc',
-        'fir_document'
+        'fir_document',
+        'job_apply_count',
+        'job_apply_extra_limit'
     ];
 
     /**

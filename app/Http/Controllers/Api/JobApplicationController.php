@@ -359,12 +359,12 @@ class JobApplicationController extends Controller
         }
 
         if ($request->application_status == "rejected") {
-            $user = User::find($application->user_id);
-
-            $user->update([
-                'is_staff_added' => 0,
-                'added_by' => null
-            ]);
+            if ($staff) {
+                $staff->update([
+                    'is_staff_added' => 0,
+                    'added_by' => null
+                ]);
+            }
             
             // Send notification to staff (in-app + FCM push)
             if ($staff) {

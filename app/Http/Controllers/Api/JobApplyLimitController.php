@@ -292,7 +292,7 @@ class JobApplyLimitController extends Controller
         $freeLimit = (int) (Setting::where('key', 'job_apply_free_limit')->value('value') ?? 3);
 
         $query = User::where('user_role_id', 2) // staff role
-            ->select('id', 'first_name', 'last_name', 'phone_number', 'job_apply_count', 'job_apply_extra_limit')
+            ->select('id', 'first_name', 'last_name', 'phone_number', 'job_apply_extra_limit')
             ->orderBy('id', 'desc');
 
         if ($request->search) {

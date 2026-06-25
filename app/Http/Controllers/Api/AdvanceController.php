@@ -82,13 +82,14 @@ class AdvanceController extends Controller
                 'given_date'         => $request->given_date ?? now()->toDateString(),
             ]);
 
-            // Notify staff (in-app + FCM push)
+            // Notify staff (in-app + FCM push only)
             \App\Services\NotificationService::send(
                 $request->staff_id,
                 'Advance Received',
                 'You have received an advance of ₹' . number_format($request->amount, 2) .
                  '. Deduction type: ' . ucfirst($request->deduction_type) . '.',
-                'advance_received'
+                'advance_received',
+                ['skip_whatsapp' => true, 'skip_sms' => true]
             );
 
             DB::commit();
@@ -171,12 +172,13 @@ class AdvanceController extends Controller
             }
             $advance->save();
 
-            // Notify staff (in-app + FCM push)
+            // Notify staff (in-app + FCM push only)
             \App\Services\NotificationService::send(
                 $advance->staff_id,
                 'Advance Deduction',
                 '₹' . number_format($deductAmount, 2) . ' deducted from your advance. Remaining: ₹' . number_format($balanceAfter, 2),
-                'advance_deducted'
+                'advance_deducted',
+                ['skip_whatsapp' => true, 'skip_sms' => true]
             );
 
             DB::commit();

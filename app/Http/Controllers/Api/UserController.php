@@ -242,9 +242,7 @@ public function loginCustomer(Request $request)
     ];
 
     $songName = $request->all();
-$filename = fopen('logs.txt', "a+");
-fwrite($filename, json_encode($songName, JSON_PRETTY_PRINT) . PHP_EOL);
-fclose($filename);
+\Log::info('Login request', ['data' => $songName]);
     // Find user by phone number
     $user = User::where('phone_number', $request->phone_number)
                 ->where('is_deleted', 0)

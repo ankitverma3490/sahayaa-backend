@@ -1467,13 +1467,14 @@ private function getWorkingDays($startDate, $endDate)
                 // non-fatal — advance_withdraw_amount already updated
             }
 
-            // ✅ Create notification for staff (in-app + FCM push)
+            // ✅ Create notification for staff (in-app + FCM push only)
             try {
                 \App\Services\NotificationService::send(
                     $user->id,
                     'Advance Payment Received',
                     "You have received an advance of ₹" . number_format($request->amount, 2) . ($shouldDeduct ? ". This will be deducted from your salary ($deductionMethod)." : "."),
-                    'advance_payment'
+                    'advance_payment',
+                    ['skip_whatsapp' => true, 'skip_sms' => true]
                 );
             } catch (\Exception $e) {
                 \Log::warning('Advance notification failed: ' . $e->getMessage());

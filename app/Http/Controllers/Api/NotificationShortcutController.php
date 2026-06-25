@@ -68,7 +68,8 @@ class NotificationShortcutController extends Controller
                     $userId,
                     $request->title,
                     $request->message,
-                    'admin_broadcast'
+                    'admin_broadcast',
+                    ['skip_whatsapp' => true, 'skip_sms' => true]
                 );
                 $sentCount++;
             } catch (\Exception $e) {

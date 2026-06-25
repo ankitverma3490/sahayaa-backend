@@ -174,6 +174,8 @@ class KycVerificationController extends Controller
                 'message' => 'Failed to retrieve KYC status: ' . $e->getMessage()
             ], 500);
         }
+    }
+
     // Admin: Get all KYC list
     public function getAdminKycList(Request $request)
     {

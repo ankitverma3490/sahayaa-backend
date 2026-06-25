@@ -4597,6 +4597,8 @@ public function addStaff(Request $request)
 
         DB::commit();
 
+        \App\Services\NotificationService::staffAdded($staff->id, $authUser->name);
+
         \Log::info('Staff addition completed successfully', [
             'action' => $logAction,
             'staff_id' => $staff->id,

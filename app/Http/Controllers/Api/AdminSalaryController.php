@@ -77,12 +77,12 @@ class AdminSalaryController extends Controller
         // Send notification to staff when salary is marked as paid
         if ($request->status === 'paid' && $oldStatus !== 'paid') {
             $staff = User::find($salary->staff_id);
+            $owner = User::find($salary->houseowner_id);
             if ($staff) {
-                \App\Services\NotificationService::send(
+                \App\Services\NotificationService::salaryPaid(
                     $staff->id,
-                    'Salary Paid',
-                    'Your salary of ₹' . number_format($salary->net_salary, 2) . ' has been paid',
-                    'salary_paid'
+                    number_format($salary->net_salary, 2),
+                    $owner ? $owner->name : 'Admin'
                 );
             }
         }
@@ -152,12 +152,12 @@ class AdminSalaryController extends Controller
         // Send notification to staff if salary is marked as paid
         if ($request->status === 'paid') {
             $staff = User::find($request->staff_id);
+            $owner = User::find($request->houseowner_id);
             if ($staff) {
-                \App\Services\NotificationService::send(
+                \App\Services\NotificationService::salaryPaid(
                     $staff->id,
-                    'Salary Paid',
-                    'Your salary of ₹' . number_format($netSalary, 2) . ' has been paid',
-                    'salary_paid'
+                    number_format($netSalary, 2),
+                    $owner ? $owner->name : 'Admin'
                 );
             }
         }

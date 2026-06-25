@@ -277,14 +277,13 @@ class JobApplicationController extends Controller
             // Get job details
             $job = Job::find($jobId);
             
-            // Send notification to house owner
+            // Send notification to house owner (WhatsApp + Push)
             if ($job && $job->created_by) {
-                \App\Services\NotificationService::send(
+                $staffName = $user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member');
+                \App\Services\NotificationService::jobApplied(
                     $job->created_by,
-                    'New Job Application',
-                    ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for the job: ' . $job->title,
-                    'job_application',
-                    ['job_id' => $job->id, 'application_id' => $application->id]
+                    $staffName,
+                    $job->title
                 );
             }
             
@@ -545,13 +544,14 @@ class JobApplicationController extends Controller
             'leave_application'
         );
 
-        // Notify house owner
+        // Notify house owner (WhatsApp + Push)
         if ($request->houseowner_id) {
-            \App\Services\NotificationService::send(
+            $staffName = $user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member');
+            $dates = $request->start_date . ' to ' . $request->end_date;
+            \App\Services\NotificationService::leaveApplied(
                 $request->houseowner_id,
-                'New Leave Request',
-                ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for leave from ' . $request->start_date . ' to ' . $request->end_date,
-                'leave_application'
+                $staffName,
+                $dates
             );
         }
 
@@ -604,11 +604,10 @@ class JobApplicationController extends Controller
         $leave->status = 'approved';
         $leave->save();
 
-        \App\Services\NotificationService::send(
+        $owner = User::find($leave->houseowner_id);
+        \App\Services\NotificationService::leaveApproved(
             $leave->user_id,
-            'Leave Approved',
-            'Your leave request has been approved.',
-            'leave_approved'
+            $owner ? $owner->name : 'Admin'
         );
 
         return response()->json([

@@ -98,11 +98,9 @@ class TerminationController extends Controller
             'status' => 'inactive',
         ]);
 
-        \App\Services\NotificationService::send(
+        \App\Services\NotificationService::staffTerminated(
             $termination->user_id,
-            'Termination Request',
-            'Your termination request has been submitted.',
-            'termination'
+            User::find($payload['reported_by'])->name ?? 'Admin'
         );
 
         return response()->json([

@@ -387,11 +387,10 @@ class SalaryController extends Controller
             // 🚀 Notify staff member about salary payment only if successful
             if ($status === 'paid' || $status === 'completed') {
                 try {
-                    \App\Services\NotificationService::send(
+                    \App\Services\NotificationService::salaryPaid(
                         $user_id,
-                        'Salary Received',
-                        'Your salary of ₹' . number_format($netSalary, 2) . ' for ' . $currentPeriod . ' has been paid by ' . Auth::guard('api')->user()->name . '.',
-                        'salary_paid'
+                        number_format($netSalary, 2),
+                        Auth::guard('api')->user()->name
                     );
                 } catch (\Exception $e) {
                     \Log::error('Salary notification failed: ' . $e->getMessage());

@@ -96,14 +96,13 @@ class AttendanceController extends Controller
 
             DB::commit();
 
-            // Notify staff
-            Notification::create([
-                'user_id' => $staffId,
-                'title' => 'Attendance Update',
-                'message' => 'Your attendance for ' . $date . ' has been marked as ' . ucfirst($status),
-                'status' => 'unread',
-                'type' => 'attendance'
-            ]);
+            // Notify staff (in-app + FCM push)
+            \App\Services\NotificationService::send(
+                $staffId,
+                'Attendance Update',
+                'Your attendance for ' . $date . ' has been marked as ' . ucfirst($status),
+                'attendance'
+            );
 
             return response()->json([
                 'status' => true,

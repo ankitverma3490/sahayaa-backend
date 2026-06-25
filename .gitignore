@@ -17,3 +17,6 @@ yarn-error.log
 /.vscode
 *.sqlite
 **/*.DS_Store
+nul
+pushnotifications.txt
+public/sahayya-firebase.json

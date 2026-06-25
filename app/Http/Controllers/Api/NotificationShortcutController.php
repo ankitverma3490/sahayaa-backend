@@ -5,18 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Notification;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 
 class NotificationShortcutController extends Controller
 {
     public function getNotifications(Request $request)
     {
-        // Mock notifications for now, or fetch from DB if there's a notifications table
-        $notifications = [
-            ['id' => 1, 'message' => "System updated to v1.1", 'type' => "System", 'date' => now()->subHours(2)->format('Y-m-d H:i A'), 'priority' => "Low"],
-            ['id' => 2, 'message' => "5 new KYC verifications pending", 'type' => "Verification", 'date' => now()->subHours(5)->format('Y-m-d H:i A'), 'priority' => "High"],
-            ['id' => 3, 'message' => "Subscription revenue crossed ,110,000", 'type' => "Billing", 'date' => now()->subDay()->format('Y-m-d H:i A'), 'priority' => "Medium"],
-        ];
+        $perPage = $request->input('per_page', 20);
+
+        $notifications = Notification::with('user:id,name,first_name,last_name')
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
         return response()->json([
             'success' => true,
@@ -30,16 +31,57 @@ class NotificationShortcutController extends Controller
             'title' => 'required|string|max:255',
             'message' => 'required|string',
             'type' => 'required|in:push,whatsapp,promotional',
-            'audience' => 'required|string'
+            'audience' => 'required|string|in:all,home_owners,staff,paid_members'
         ]);
 
-        // Logic to dispatch notifications based on audience
-        // For now, we just mock the success response since third party APIs are not provided
-        Log::info("Admin sending " . $request->type . " notification: " . $request->title . " to " . $request->audience);
+        // Map audience to user_role_id
+        $roleIdMap = [
+            'all' => null,
+            'home_owners' => 3,
+            'staff' => 2,
+            'paid_members' => null,
+        ];
+
+        $roleId = $roleIdMap[$request->audience] ?? null;
+
+        // Build user query
+        $query = User::select('id');
+
+        if ($roleId) {
+            $query->where('user_role_id', $roleId);
+        }
+
+        if ($request->audience === 'paid_members') {
+            $query->whereHas('subscriptionUsers', function ($q) {
+                $q->where('status', 'active')
+                  ->where('end_date', '>', now());
+            });
+        }
+
+        $userIds = $query->pluck('id')->toArray();
+
+        // Send notifications
+        $sentCount = 0;
+        foreach ($userIds as $userId) {
+            try {
+                NotificationService::send(
+                    $userId,
+                    $request->title,
+                    $request->message,
+                    'admin_broadcast'
+                );
+                $sentCount++;
+            } catch (\Exception $e) {
+                Log::warning("Admin broadcast notification failed for user $userId: " . $e->getMessage());
+            }
+        }
+
+        Log::info("Admin sent {$request->type} notification to $sentCount users: " . $request->title);
 
         return response()->json([
             'success' => true,
-            'message' => ucfirst($request->type) . ' notification sent successfully to ' . $request->audience
+            'message' => ucfirst($request->type) . ' notification sent successfully to ' . $sentCount . ' users',
+            'sent_count' => $sentCount
         ]);
     }
 }

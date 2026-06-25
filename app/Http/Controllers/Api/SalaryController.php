@@ -387,13 +387,12 @@ class SalaryController extends Controller
             // 🚀 Notify staff member about salary payment only if successful
             if ($status === 'paid' || $status === 'completed') {
                 try {
-                    Notification::create([
-                        'user_id' => $user_id,
-                        'title' => 'Salary Received',
-                        'message' => 'Your salary of ₹' . number_format($netSalary, 2) . ' for ' . $currentPeriod . ' has been paid by ' . Auth::guard('api')->user()->name . '.',
-                        'type' => 'salary_payment',
-                        'is_read' => 0
-                    ]);
+                    \App\Services\NotificationService::send(
+                        $user_id,
+                        'Salary Received',
+                        'Your salary of ₹' . number_format($netSalary, 2) . ' for ' . $currentPeriod . ' has been paid by ' . Auth::guard('api')->user()->name . '.',
+                        'salary_paid'
+                    );
                 } catch (\Exception $e) {
                     \Log::error('Salary notification failed: ' . $e->getMessage());
                 }
@@ -1469,15 +1468,14 @@ private function getWorkingDays($startDate, $endDate)
                 // non-fatal — advance_withdraw_amount already updated
             }
 
-            // ✅ Create notification for staff
+            // ✅ Create notification for staff (in-app + FCM push)
             try {
-                \App\Models\Notification::create([
-                    'user_id' => $user->id,
-                    'title'   => 'Advance Payment Received',
-                    'message' => "You have received an advance of ₹" . number_format($request->amount, 2) . ($shouldDeduct ? ". This will be deducted from your salary ($deductionMethod)." : "."),
-                    'type'    => 'advance_payment',
-                    'is_read' => 0,
-                ]);
+                \App\Services\NotificationService::send(
+                    $user->id,
+                    'Advance Payment Received',
+                    "You have received an advance of ₹" . number_format($request->amount, 2) . ($shouldDeduct ? ". This will be deducted from your salary ($deductionMethod)." : "."),
+                    'advance_payment'
+                );
             } catch (\Exception $e) {
                 \Log::warning('Advance notification failed: ' . $e->getMessage());
             }

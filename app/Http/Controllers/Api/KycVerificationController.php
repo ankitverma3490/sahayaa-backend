@@ -58,6 +58,20 @@ class KycVerificationController extends Controller
 
             DB::commit();
             $userData->update(['step' => 3]);
+
+            // Notify admin about new KYC submission
+            try {
+                \App\Services\NotificationService::send(
+                    1,
+                    'New KYC Submission',
+                    ($userData->first_name ?? $userData->name ?? 'A staff member') . ' has submitted KYC documents for verification.',
+                    'kyc_submitted',
+                    ['skip_push' => true]
+                );
+            } catch (\Exception $e) {
+                \Log::warning('KYC admin notification failed: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'status' => true,
                 'userData' => $userData,
@@ -207,19 +221,31 @@ class KycVerificationController extends Controller
             $kyc->status = $request->status;
             $kyc->save();
 
-            // Update user aadhar verify status
+            // Update user aadhar verify status and notify staff
             if ($request->status === 'approved') {
                 $user = User::find($kyc->user_id);
                 if ($user) {
                     $user->aadhar__verify = 1;
                     $user->save();
                 }
+                \App\Services\NotificationService::send(
+                    $kyc->user_id,
+                    'KYC Approved',
+                    'Your KYC verification has been approved.',
+                    'kyc_approved'
+                );
             } else {
-                 $user = User::find($kyc->user_id);
+                $user = User::find($kyc->user_id);
                 if ($user) {
                     $user->aadhar__verify = 0;
                     $user->save();
                 }
+                \App\Services\NotificationService::send(
+                    $kyc->user_id,
+                    'KYC Rejected',
+                    'Your KYC verification has been rejected. Please re-upload your documents.',
+                    'kyc_rejected'
+                );
             }
 
             DB::commit();

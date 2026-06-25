@@ -206,6 +206,30 @@ class JobApplicationController extends Controller
                 ], 401);
             }
 
+            // -----------------------------------------------
+            // JOB APPLY LIMIT CHECK
+            // -----------------------------------------------
+            $freeLimit  = (int) (\App\Models\Setting::where('key', 'job_apply_free_limit')->value('value') ?? 3);
+            $applyCount = (int) ($user->job_apply_count ?? 0);
+            $extraLimit = (int) ($user->job_apply_extra_limit ?? 0);
+            $totalAllowed = $freeLimit + $extraLimit;
+
+            if ($applyCount >= $totalAllowed) {
+                $price = (float) (\App\Models\Setting::where('key', 'job_apply_limit_price')->value('value') ?? 49);
+                return response()->json([
+                    'status'          => 'limit_exceeded',
+                    'message'         => 'You have reached your job application limit. Please purchase an extra slot to continue.',
+                    'data'            => [
+                        'apply_count'    => $applyCount,
+                        'total_allowed'  => $totalAllowed,
+                        'free_limit'     => $freeLimit,
+                        'extra_limit'    => $extraLimit,
+                        'price_per_slot' => $price,
+                    ],
+                ], 403);
+            }
+            // -----------------------------------------------
+
             $jobId = $request->job_id;
 
             // Check if job exists and is open
@@ -246,33 +270,32 @@ class JobApplicationController extends Controller
                 'is_advance' => $request->boolean('is_advance'),
                 'application_status' => 'pending',
             ]);
+
+            // Increment apply count
+            $user->increment('job_apply_count');
             
             // Get job details
             $job = Job::find($jobId);
             
             // Send notification to house owner
             if ($job && $job->created_by) {
-                Notification::create([
-                    'user_id' => $job->created_by,
-                    'title' => 'New Job Application',
-                    'message' => ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for the job: ' . $job->title,
-                    'type' => 'job_application',
-                    'job_id' => $job->id,
-                    'application_id' => $application->id,
-                    'status' => 'unread'
-                ]);
+                \App\Services\NotificationService::send(
+                    $job->created_by,
+                    'New Job Application',
+                    ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for the job: ' . $job->title,
+                    'job_application',
+                    ['job_id' => $job->id, 'application_id' => $application->id]
+                );
             }
             
             // Send notification to staff
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => 'Application Submitted',
-                'message' => 'Your application for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
-                'type' => 'job_application',
-                'job_id' => $job?->id,
-                'application_id' => $application->id,
-                'status' => 'unread'
-            ]);
+            \App\Services\NotificationService::send(
+                $user->id,
+                'Application Submitted',
+                'Your application for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
+                'job_application',
+                ['job_id' => $job?->id, 'application_id' => $application->id]
+            );
 
             return response()->json([
                 'status' => 'success',
@@ -323,35 +346,15 @@ class JobApplicationController extends Controller
         if ($request->application_status == "accepted") {
             // Do NOT automatically add as staff here. The owner must go through
             // the NewStaffFrom screen and verify via Aadhar OTP to add them.
-            // $user = User::find($application->user_id);
-            // $user->update([
-            //     'is_staff_added' => 1,
-            //     'added_by' => Auth::guard('api')->user()->id
-            // ]);
             
-            // Send notification to staff
+            // Send notification to staff (in-app + FCM push)
             if ($staff) {
-                Notification::create([
-                    'user_id' => $staff->id,
-                    'title' => 'Application Accepted',
-                    'message' => 'Congratulations! Your application for ' . ($job ? $job->title : 'the job') . ' has been accepted',
-                    'type' => 'job_application_accepted',
-                    'is_read' => 0
-                ]);
-                // FCM push notification
-                try {
-                    $deviceToken = \App\Models\UserDeviceToken::where('user_id', $staff->id)->value('device_token');
-                    if ($deviceToken) {
-                        $this->send_push_notification(
-                            $deviceToken, 'android',
-                            'Congratulations! Your application for ' . ($job ? $job->title : 'the job') . ' has been accepted',
-                            'Application Accepted 🎉', 'job_application_accepted',
-                            ['user_id' => (string)$staff->id]
-                        );
-                    }
-                } catch (\Exception $e) {
-                    \Log::warning('FCM job accepted notification failed: ' . $e->getMessage());
-                }
+                \App\Services\NotificationService::send(
+                    $staff->id,
+                    'Application Accepted',
+                    'Congratulations! Your application for ' . ($job ? $job->title : 'the job') . ' has been accepted',
+                    'job_application_accepted'
+                );
             }
         }
 
@@ -363,29 +366,14 @@ class JobApplicationController extends Controller
                 'added_by' => null
             ]);
             
-            // Send notification to staff
+            // Send notification to staff (in-app + FCM push)
             if ($staff) {
-                Notification::create([
-                    'user_id' => $staff->id,
-                    'title' => 'Application Rejected',
-                    'message' => 'Your application for ' . ($job ? $job->title : 'the job') . ' has been rejected',
-                    'type' => 'job_application_rejected',
-                    'is_read' => 0
-                ]);
-                // FCM push notification
-                try {
-                    $deviceToken = \App\Models\UserDeviceToken::where('user_id', $staff->id)->value('device_token');
-                    if ($deviceToken) {
-                        $this->send_push_notification(
-                            $deviceToken, 'android',
-                            'Your application for ' . ($job ? $job->title : 'the job') . ' has been rejected',
-                            'Application Update', 'job_application_rejected',
-                            ['user_id' => (string)$staff->id]
-                        );
-                    }
-                } catch (\Exception $e) {
-                    \Log::warning('FCM job rejected notification failed: ' . $e->getMessage());
-                }
+                \App\Services\NotificationService::send(
+                    $staff->id,
+                    'Application Rejected',
+                    'Your application for ' . ($job ? $job->title : 'the job') . ' has been rejected',
+                    'job_application_rejected'
+                );
             }
         }
 
@@ -486,25 +474,23 @@ class JobApplicationController extends Controller
         
         // Send notification to house owner
         if ($job && $job->created_by) {
-            Notification::create([
-                'user_id' => $job->created_by,
-                'title' => 'Job Quit Request',
-                'message' => $staff->name . ' has requested to quit the job: ' . $job->title,
-                'type' => 'job_quit',
-                'job_id' => $job->id,
-                'status' => 'unread'
-            ]);
+            \App\Services\NotificationService::send(
+                $job->created_by,
+                'Job Quit Request',
+                $staff->name . ' has requested to quit the job: ' . $job->title,
+                'job_quit',
+                ['job_id' => $job->id]
+            );
         }
         
         // Send notification to staff
-        Notification::create([
-            'user_id' => $userId,
-            'title' => 'Quit Request Submitted',
-            'message' => 'Your quit request for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
-            'type' => 'job_quit',
-            'job_id' => $job?->id,
-            'status' => 'unread'
-        ]);
+        \App\Services\NotificationService::send(
+            $userId,
+            'Quit Request Submitted',
+            'Your quit request for ' . ($job ? $job->title : 'the job') . ' has been submitted successfully',
+            'job_quit',
+            ['job_id' => $job?->id]
+        );
         
         return response()->json([
             "message" => "Quit request submitted successfully",
@@ -552,23 +538,21 @@ class JobApplicationController extends Controller
         ]);
 
         // Notify staff
-        Notification::create([
-            'user_id' => $user->id,
-            'title' => 'Leave Applied',
-            'message' => 'Your leave request has been submitted successfully.',
-            'status' => 'unread',
-            'type' => 'leave_application'
-        ]);
+        \App\Services\NotificationService::send(
+            $user->id,
+            'Leave Applied',
+            'Your leave request has been submitted successfully.',
+            'leave_application'
+        );
 
         // Notify house owner
         if ($request->houseowner_id) {
-            Notification::create([
-                'user_id' => $request->houseowner_id,
-                'title' => 'New Leave Request',
-                'message' => ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for leave from ' . $request->start_date . ' to ' . $request->end_date,
-                'status' => 'unread',
-                'type' => 'leave_application'
-            ]);
+            \App\Services\NotificationService::send(
+                $request->houseowner_id,
+                'New Leave Request',
+                ($user->first_name ? $user->first_name . ' ' . ($user->last_name ?? '') : ($user->name ?? 'A staff member')) . ' has applied for leave from ' . $request->start_date . ' to ' . $request->end_date,
+                'leave_application'
+            );
         }
 
         return response()->json([
@@ -620,12 +604,12 @@ class JobApplicationController extends Controller
         $leave->status = 'approved';
         $leave->save();
 
-        Notification::create([
-            'user_id' => $leave->user_id,
-            'title' => 'Leave Approved',
-            'message' => 'Your leave request has been approved.',
-            'status' => 'unread',
-        ]);
+        \App\Services\NotificationService::send(
+            $leave->user_id,
+            'Leave Approved',
+            'Your leave request has been approved.',
+            'leave_approved'
+        );
 
         return response()->json([
             'status' => true,
@@ -649,12 +633,12 @@ class JobApplicationController extends Controller
         $leave->status = 'rejected';
         $leave->save();
 
-        Notification::create([
-            'user_id' => $leave->user_id,
-            'title' => 'Leave Rejected',
-            'message' => 'Your leave request has been rejected.',
-            'status' => 'unread',
-        ]);
+        \App\Services\NotificationService::send(
+            $leave->user_id,
+            'Leave Rejected',
+            'Your leave request has been rejected.',
+            'leave_rejected'
+        );
 
         return response()->json([
             'status' => true,

@@ -394,12 +394,27 @@ class Controller
     }
 
     function getFirebaseAccessToken() {
-        $keyFilePath = public_path('ayva-fc350-843f81cb49c5.json');
-        if (!file_exists($keyFilePath)) {
-            throw new Exception('Service account file not found');
+        // Priority 1: Read from env var (base64 encoded) — for Railway deployment
+        $serviceAccountJson = env('FIREBASE_SERVICE_ACCOUNT', '');
+        if (!empty($serviceAccountJson)) {
+            $decoded = base64_decode($serviceAccountJson, true);
+            if ($decoded !== false) {
+                $key = json_decode($decoded, true);
+            } else {
+                $key = json_decode($serviceAccountJson, true);
+            }
+        } else {
+            // Priority 2: Read from file — for local development
+            $keyFilePath = public_path('sahayya-firebase.json');
+            if (!file_exists($keyFilePath)) {
+                throw new Exception('Service account file not found. Set FIREBASE_SERVICE_ACCOUNT env var or place sahayya-firebase.json in public/');
+            }
+            $key = json_decode(file_get_contents($keyFilePath), true);
         }
 
-        $key = json_decode(file_get_contents($keyFilePath), true);
+        if (!$key || !isset($key['client_email'])) {
+            throw new Exception('Invalid service account credentials');
+        }
 
         $header = [
             'alg' => 'RS256',
@@ -479,7 +494,8 @@ class Controller
     ];
 
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/v1/projects/ayva-fc350/messages:send');
+    $fcmProjectId = env('FCM_PROJECT_ID', 'neon-cooler-417914');
+    curl_setopt($ch, CURLOPT_URL, "https://fcm.googleapis.com/v1/projects/{$fcmProjectId}/messages:send");
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -488,9 +504,7 @@ class Controller
     $result = curl_exec($ch);
     curl_close($ch);
 
-    $file = fopen("pushnotifications.txt", "a+");
-    fwrite($file, "\n\nRequest:\n" . $body . "\n\nResponse:\n" . $result . "\n\n");
-    fclose($file);
+    \Log::info("FCM Push [{$notification_type}]: " . substr($body, 0, 200));
 
     return ["response" => $result, "request" => $body];
 }

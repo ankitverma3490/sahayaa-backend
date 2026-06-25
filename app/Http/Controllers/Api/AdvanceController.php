@@ -82,14 +82,14 @@ class AdvanceController extends Controller
                 'given_date'         => $request->given_date ?? now()->toDateString(),
             ]);
 
-            // Notify staff
-            Notification::create([
-                'user_id' => $request->staff_id,
-                'title'   => 'Advance Received',
-                'message' => 'You have received an advance of ₹' . number_format($request->amount, 2) .
-                             '. Deduction type: ' . ucfirst($request->deduction_type) . '.',
-                'status'  => 'unread',
-            ]);
+            // Notify staff (in-app + FCM push)
+            \App\Services\NotificationService::send(
+                $request->staff_id,
+                'Advance Received',
+                'You have received an advance of ₹' . number_format($request->amount, 2) .
+                 '. Deduction type: ' . ucfirst($request->deduction_type) . '.',
+                'advance_received'
+            );
 
             DB::commit();
 
@@ -171,13 +171,13 @@ class AdvanceController extends Controller
             }
             $advance->save();
 
-            // Notify staff
-            Notification::create([
-                'user_id' => $advance->staff_id,
-                'title'   => 'Advance Deduction',
-                'message' => '₹' . number_format($deductAmount, 2) . ' deducted from your advance. Remaining: ₹' . number_format($balanceAfter, 2),
-                'status'  => 'unread',
-            ]);
+            // Notify staff (in-app + FCM push)
+            \App\Services\NotificationService::send(
+                $advance->staff_id,
+                'Advance Deduction',
+                '₹' . number_format($deductAmount, 2) . ' deducted from your advance. Remaining: ₹' . number_format($balanceAfter, 2),
+                'advance_deducted'
+            );
 
             DB::commit();
 

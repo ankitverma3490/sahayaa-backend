@@ -30,6 +30,8 @@ use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\HouseOwnerController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\JobApplyLimitController;
+
 
 Route::get('/debug-logs', function() {
     $laravelLog = storage_path('logs/laravel.log');
@@ -853,6 +855,17 @@ Route::group(['middleware' => 'auth:api'], function() {
     Route::get('/applications', [JobApplicationController::class, 'index']);
     Route::post('/applications', [JobApplicationController::class, 'store']);
     Route::post('/applications/{id}/delete', [JobApplicationController::class, 'destroy']);
+    
+    // Job Apply Limit Routes
+    Route::get('/job-limit/status', [JobApplyLimitController::class, 'status']);
+    Route::post('/job-limit/create-order', [JobApplyLimitController::class, 'createOrder']);
+    Route::post('/job-limit/verify-payment', [JobApplyLimitController::class, 'verifyPayment']);
+    
+    // Admin Job Apply Limit Routes
+    Route::get('/admin/job-limit/settings', [JobApplyLimitController::class, 'adminGetSettings']);
+    Route::post('/admin/job-limit/settings', [JobApplyLimitController::class, 'adminUpdateSettings']);
+    Route::get('/admin/job-limit/stats', [JobApplyLimitController::class, 'adminStats']);
+    Route::get('/admin/job-limit/staff', [JobApplyLimitController::class, 'adminStaffLimits']);
     Route::get('/jobs', [JobController::class, 'index']);
     Route::prefix('staff')->group(function () {
         Route::post('/add', [UserController::class, 'addStaff']);
@@ -902,6 +915,8 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::get('/unread-count', [UserController::class, 'notificationUnreadCount']);
         Route::post('/read', [UserController::class, 'notificationMarkAsReadPost']);
     });
+
+    Route::post('/device-token', [UserController::class, 'updateDeviceToken']);
 
 
     Route::prefix('reviews')->group(function () {

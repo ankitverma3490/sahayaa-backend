@@ -2047,7 +2047,8 @@ public function updateProfileCustomer(Request $request)
 
 public function categoryList(Request $request){
     try {
-        $category = Category::where('is_deleted', 0)->get();
+        // Only return top-level roles (parent_id = null); skills are fetched via listSubcategories
+        $category = Category::where('is_deleted', 0)->whereNull('parent_id')->get();
         return response()->json([
             'success' => true,
             'message' => 'Category Fetch successfully',
@@ -2403,6 +2404,31 @@ public function notificationAdd(Request $request)
             'status' => 'success',
             'message' => 'Notification marked as read',
             'data' => $notification
+        ]);
+    }
+
+    public function updateDeviceToken(Request $request)
+    {
+        $request->validate([
+            'device_token' => 'required|string',
+            'device_type' => 'nullable|string|in:android,ios,web',
+        ]);
+
+        $userId = Auth::guard('api')->user()->id;
+
+        \App\Models\UserDeviceToken::updateOrCreate(
+            ['user_id' => $userId],
+            [
+                'user_id'      => $userId,
+                'device_token' => $request->device_token,
+                'device_type'  => $request->device_type ?? 'android',
+                'device_id'    => $request->device_id ?? '',
+            ]
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Device token updated successfully',
         ]);
     }
 
@@ -3521,15 +3547,21 @@ public function listSubcategories(Request $request)
     $user = Auth::user();
 
     $validated = $request->validate([
-        'id' => 'nullable|exists:categories,id',
-        'name' => 'required|string|max:255',
-        'image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+        'id'        => 'nullable|exists:categories,id',
+        'name'      => 'required|string|max:255',
+        'image'     => 'nullable|file|mimes:jpg,jpeg,png,webp|max:5120',
+        'parent_id' => 'nullable|exists:categories,id', // for skills (subcategories)
     ]);
 
     $data = [
-        'name' => $validated['name'],
+        'name'      => $validated['name'],
         'is_active' => $request->input('is_active', 1),
     ];
+
+    // Set parent_id if provided (makes this entry a skill/subcategory)
+    if (!empty($validated['parent_id'])) {
+        $data['parent_id'] = $validated['parent_id'];
+    }
 
     // If updating, get existing category
     $category = null;

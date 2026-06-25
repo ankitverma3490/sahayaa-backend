@@ -98,12 +98,12 @@ class TerminationController extends Controller
             'status' => 'inactive',
         ]);
 
-        Notification::create([
-            'user_id' => $termination->user_id,
-            'title' => 'Termination Request',
-            'message' => 'Your termination request has been submitted.',
-            'status' => 'unread',
-        ]);
+        \App\Services\NotificationService::send(
+            $termination->user_id,
+            'Termination Request',
+            'Your termination request has been submitted.',
+            'termination'
+        );
 
         return response()->json([
             'success' => true,

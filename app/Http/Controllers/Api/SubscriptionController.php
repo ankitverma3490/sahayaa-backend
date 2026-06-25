@@ -506,21 +506,22 @@ class SubscriptionController extends Controller
      */
     private function sendSubscriptionNotifications($user, $subscriptionUser)
     {
-        // Send notification to user
-        Notification::create([
-            'user_id' => $user->id,
-            'title' => 'Subscription Activated',
-            'message' => 'Your subscription #' . $subscriptionUser->order_number . ' has been activated successfully. Valid until ' . $subscriptionUser->end_date->format('d M, Y'),
-            'status' => 'unread',
-        ]);
+        // Send notification to user (in-app + FCM push)
+        \App\Services\NotificationService::send(
+            $user->id,
+            'Subscription Activated',
+            'Your subscription #' . $subscriptionUser->order_number . ' has been activated successfully. Valid until ' . $subscriptionUser->end_date->format('d M, Y'),
+            'subscription_activated'
+        );
 
-        // Send notification to admin (user_id = 1 or your admin user ID)
-        Notification::create([
-            'user_id' => 1, // Admin user ID
-            'title' => 'New Subscription',
-            'message' => 'User ' . $user->name . ' has purchased subscription #' . $subscriptionUser->order_number,
-            'status' => 'unread',
-        ]);
+        // Send notification to admin (in-app only, skip push)
+        \App\Services\NotificationService::send(
+            1,
+            'New Subscription',
+            'User ' . $user->name . ' has purchased subscription #' . $subscriptionUser->order_number,
+            'subscription_new',
+            ['skip_push' => true]
+        );
     }
 
     public function subscriptionByRole(Request $request)
@@ -758,13 +759,13 @@ class SubscriptionController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            // Send notification to user
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => 'Extra Job Posting Purchased',
-                'message' => 'You have successfully purchased 1 extra job posting limit.',
-                'status' => 'unread',
-            ]);
+            // Send notification to user (in-app + FCM push)
+            \App\Services\NotificationService::send(
+                $user->id,
+                'Extra Job Posting Purchased',
+                'You have successfully purchased 1 extra job posting limit.',
+                'extra_job_purchased'
+            );
 
             return response()->json([
                 'status' => true,
@@ -913,12 +914,12 @@ class SubscriptionController extends Controller
                 'created_by' => $user->id,
             ]);
 
-            Notification::create([
-                'user_id' => $user->id,
-                'title' => 'Extra Staff Limit Purchased',
-                'message' => 'You have successfully purchased 1 extra staff limit.',
-                'status' => 'unread',
-            ]);
+            \App\Services\NotificationService::send(
+                $user->id,
+                'Extra Staff Limit Purchased',
+                'You have successfully purchased 1 extra staff limit.',
+                'extra_staff_purchased'
+            );
 
             return response()->json([
                 'status' => true,

@@ -351,7 +351,7 @@ class SubscriptionController extends Controller
 
             // Update user role if needed
             if ($subscriptionUser->role !== 'user') {
-                $user->update(['role' => $subscriptionUser->role]);
+                $user->update(['user_role_id' => $subscriptionUser->role]);
             }
 
             // Send notifications
@@ -410,7 +410,7 @@ class SubscriptionController extends Controller
 
             // Update user role if needed
             if ($subscriptionUser->role !== 'user') {
-                $user->update(['role' => $subscriptionUser->role]);
+                $user->update(['user_role_id' => $subscriptionUser->role]);
             }
             
             // Send notifications
@@ -444,7 +444,7 @@ class SubscriptionController extends Controller
         $subscription = SubscriptionUser::with('subscription')
             ->where('user_id', $user->id)
             ->where('status', 'active')
-            // ->where('end_date', '>', now())
+            ->where('end_date', '>', now())
             ->latest()
             ->first();
 
@@ -578,8 +578,15 @@ class SubscriptionController extends Controller
             return response()->json(['status' => false, 'message' => 'Subscription not found'], 404);
         }
 
-        // Cancel any existing active subscription
-        SubscriptionUser::where('user_id', $user->id)->where('status', 'active')->update(['status' => 'cancelled']);
+        // Cancel any existing active subscription (carry over extra_jobs)
+        $oldSubscription = SubscriptionUser::where('user_id', $user->id)->where('status', 'active')->first();
+        $carriedOverExtraJobs = 0;
+        $carriedOverExtraStaff = 0;
+        if ($oldSubscription) {
+            $carriedOverExtraJobs = (int) ($oldSubscription->extra_jobs ?? 0);
+            $carriedOverExtraStaff = (int) ($oldSubscription->extra_staff ?? 0);
+            $oldSubscription->update(['status' => 'cancelled']);
+        }
 
         $isPaid    = !empty($paymentId);
         $startDate = now();
@@ -605,7 +612,9 @@ class SubscriptionController extends Controller
             'end_date'         => $endDate,
             'user_limit'       => 0,
             'job_user_limit'   => 0,
+            'extra_jobs'       => $carriedOverExtraJobs,
             'staff_user_limit' => $subscription->staff_limit ?? 2,
+            'extra_staff'      => $carriedOverExtraStaff,
         ]);
 
         $message = $isPaid
@@ -647,14 +656,12 @@ class SubscriptionController extends Controller
             ], 404);
         }
 
-        $price = $plan->extra_job_price ?? 500;
+        $price = (float) ($plan->extra_job_price ?? 0);
         if ($price <= 0) {
-            $activeSubscription->increment('extra_jobs');
             return response()->json([
-                'status' => true,
-                'free' => true,
-                'message' => 'Extra job post added for free.',
-            ]);
+                'status' => false,
+                'message' => 'Extra job pricing is not configured. Please contact support.'
+            ], 400);
         }
 
         try {
@@ -669,6 +676,23 @@ class SubscriptionController extends Controller
             ];
             $api = new Api($api_key, $api_secret);
             $order = $api->order->create($razorpayData);
+
+            // Save pending transaction record for audit trail
+            Transaction::create([
+                'user_id'         => $user->id,
+                'role'            => $user->user_role_id,
+                'transaction_id'  => $order['id'],
+                'type'            => 'debit',
+                'order_id'        => $order['id'],
+                'order_number'    => 'EXTJOB' . time() . $user->id,
+                'reference_id'    => $activeSubscription->id,
+                'amount'          => $price,
+                'currency'        => 'INR',
+                'payment_mode'    => 'razorpay',
+                'payment_status'  => 'pending',
+                'for_entry'       => 'extra_job_limit',
+                'created_by'      => $user->id,
+            ]);
 
             return response()->json([
                 'status' => true,
@@ -700,6 +724,7 @@ class SubscriptionController extends Controller
 
         $user = Auth::user();
 
+        DB::beginTransaction();
         try {
             // Verify signature
             $generated_signature = hash_hmac(
@@ -709,6 +734,7 @@ class SubscriptionController extends Controller
             );
 
             if ($generated_signature !== $request->razorpay_signature) {
+                DB::rollBack();
                 return response()->json([
                     'status' => false,
                     'message' => 'Invalid payment signature'
@@ -719,9 +745,11 @@ class SubscriptionController extends Controller
                 ->where('status', 'active')
                 ->where('end_date', '>', now())
                 ->latest()
+                ->lockForUpdate()
                 ->first();
 
             if (!$activeSubscription) {
+                DB::rollBack();
                 return response()->json([
                     'status' => false,
                     'message' => 'Active subscription not found'
@@ -733,6 +761,7 @@ class SubscriptionController extends Controller
                 ->first();
 
             if ($existingTransaction) {
+                DB::rollBack();
                 return response()->json([
                     'status' => true,
                     'message' => 'Payment already verified. Extra job post limit already added.'
@@ -760,6 +789,8 @@ class SubscriptionController extends Controller
                 'created_by' => $user->id,
             ]);
 
+            DB::commit();
+
             // Send notification to user (in-app + FCM push, no WhatsApp/SMS)
             \App\Services\NotificationService::send(
                 $user->id,
@@ -775,6 +806,7 @@ class SubscriptionController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'status' => false,
                 'message' => 'Payment verification failed: ' . $e->getMessage()

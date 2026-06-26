@@ -40,6 +40,11 @@ class Kernel extends ConsoleKernel
             ->timezone('Asia/Kolkata') // Adjust to your timezone
             ->appendOutputTo(storage_path('logs/auto-subscriptions.log'));
 
+        $schedule->command('subscriptions:expire')
+            ->daily()
+            ->timezone('Asia/Kolkata')
+            ->appendOutputTo(storage_path('logs/auto-subscriptions.log'));
+
     }
 
     /**

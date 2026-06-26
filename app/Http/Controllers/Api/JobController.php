@@ -16,6 +16,7 @@ use App\Models\Salary;
 use App\Models\User;
 use App\Models\SubscriptionUser;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\DB;
 
 
 class JobController extends Controller
@@ -122,97 +123,106 @@ public function index(Request $request): JsonResponse
 
     public function store(Request $request): JsonResponse
     {   
-        $subscription = SubscriptionUser::where('user_id', auth()->id())
-            ->where('status', 'active')
-            ->whereNull('deleted_at')
-            ->where('end_date', '>', now())
-            ->latest()
-            ->first();
-        if (!$subscription) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'UPGRADE_REQUIRED',
-                'message' => 'Please upgrade to Premium Plan to post jobs.'
+        DB::beginTransaction();
+        try {
+            $subscription = SubscriptionUser::where('user_id', auth()->id())
+                ->where('status', 'active')
+                ->whereNull('deleted_at')
+                ->where('end_date', '>', now())
+                ->latest()
+                ->lockForUpdate()
+                ->first();
+            if (!$subscription) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'UPGRADE_REQUIRED',
+                    'message' => 'Please upgrade to Premium Plan to post jobs.'
+                ]);
+            }
+
+            $plan = Subscription::find($subscription->subscription_id);
+            if (!$plan) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'UPGRADE_REQUIRED',
+                    'message' => 'Please upgrade to Premium Plan to post jobs.'
+                ]);
+            }
+
+            $actualPostedJobs = Job::where('created_by', auth()->id())
+                ->when($subscription->start_date, function ($query) use ($subscription) {
+                    $query->where('created_at', '>=', $subscription->start_date);
+                })
+                ->when($subscription->end_date, function ($query) use ($subscription) {
+                    $query->where('created_at', '<=', $subscription->end_date);
+                })
+                ->count();
+
+            $allowed_limit = ($plan->job_limit ?? 3) + ($subscription->extra_jobs ?? 0);
+            if ($actualPostedJobs >= $allowed_limit) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'error_code' => 'LIMIT_EXCEEDED',
+                    'extra_job_price' => $plan->extra_job_price ?? 500,
+                    'message' => 'Monthly Job limit exceeded.'
+                ]);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'compensation' => 'nullable|numeric',
+                'expected_compensation' => 'nullable|numeric',
+                'compensation_type' => 'required|in:monthly,hourly,yearly',
+                'street_address' => 'required|string',
+                'city' => 'required|string',
+                'state' => 'required|string',
+                'zip_code' => 'required|string',
+                'commitment_type' => 'required|in:full-time,part-time,flexible',
+                'stay_type' => 'nullable|string|max:255',
+                'preferred_hours' => 'nullable|string',
+                'preferred_days' => 'nullable|string',
+                'childcare_experience' => 'boolean',
+                'cooking_required' => 'boolean',
+                'driving_license_required' => 'boolean',
+                'first_aid_certified' => 'boolean',
+                'pet_care_required' => 'boolean',
+                'additional_requirements' => 'nullable|string',
+                'required_skills' => 'nullable|string',
+                'status' => 'nullable|in:pending,open,closed'
             ]);
-        }
 
-        $plan = Subscription::find($subscription->subscription_id);
-        if (!$plan) {
+            if ($validator->fails()) {
+                DB::rollBack();
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            $job = Job::create(array_merge($validator->validated(), [
+                'created_by' => Auth::guard('api')->user()->id,
+                'status' => $request->input('status', 'pending')
+            ]));
+
+            DB::commit();
+
             return response()->json([
-                'success' => false,
-                'error_code' => 'UPGRADE_REQUIRED',
-                'message' => 'Please upgrade to Premium Plan to post jobs.'
-            ]);
-        }
-
-        $actualPostedJobs = Job::where('created_by', auth()->id())
-            ->when($subscription->start_date, function ($query) use ($subscription) {
-                $query->where('created_at', '>=', $subscription->start_date);
-            })
-            ->when($subscription->end_date, function ($query) use ($subscription) {
-                $query->where('created_at', '<=', $subscription->end_date);
-            })
-            ->count();
-
-        if ((int) $subscription->job_user_limit !== (int) $actualPostedJobs) {
-            $subscription->job_user_limit = $actualPostedJobs;
-            $subscription->save();
-        }
-
-        // Check limit including extra purchased jobs
-        $allowed_limit = ($plan->job_limit ?? 3) + ($subscription->extra_jobs ?? 0);
-        if ($actualPostedJobs >= $allowed_limit) {
-            return response()->json([
-                'success' => false,
-                'error_code' => 'LIMIT_EXCEEDED',
-                'extra_job_price' => $plan->extra_job_price ?? 500,
-                'message' => 'Monthly Job limit exceeded.'
-            ]);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'compensation' => 'nullable|numeric',
-            'expected_compensation' => 'nullable|numeric',
-            'compensation_type' => 'required|in:monthly,hourly,yearly',
-            'street_address' => 'required|string',
-            'city' => 'required|string',
-            'state' => 'required|string',
-            'zip_code' => 'required|string',
-            'commitment_type' => 'required|in:full-time,part-time,flexible',
-            'stay_type' => 'nullable|string|max:255',
-            'preferred_hours' => 'nullable|string',
-            'preferred_days' => 'nullable|string',
-            'childcare_experience' => 'boolean',
-            'cooking_required' => 'boolean',
-            'driving_license_required' => 'boolean',
-            'first_aid_certified' => 'boolean',
-            'pet_care_required' => 'boolean',
-            'additional_requirements' => 'nullable|string',
-            'required_skills' => 'nullable|string',
-            'status' => 'nullable|in:pending,open,closed'
-        ]);
-
-        if ($validator->fails()) {
+                'status' => 'success',
+                'data' => $job,
+                'message' => 'Job created successfully'
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Job store failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Failed to create job. Please try again.'
+            ], 500);
         }
-        $job = Job::create(array_merge($validator->validated(), [
-            'created_by' => Auth::guard('api')->user()->id,
-            'status' => $request->input('status', 'pending')
-        ]));
-
-        $subscription->increment('job_user_limit');
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $job,
-            'message' => 'Job created successfully'
-        ], 201);
     }
 
     public function show($id): JsonResponse
@@ -253,7 +263,7 @@ public function index(Request $request): JsonResponse
     public function update(Request $request, $id): JsonResponse
     {
 
-        $job = Job::find($id);
+        $job = Job::where('id', $id)->where('created_by', auth()->id())->first();
 
         if (!$job) {
             return response()->json([
@@ -311,8 +321,8 @@ public function index(Request $request): JsonResponse
      */
     public function destroy($id): JsonResponse
     {
-        // Check if the job exists
-        $job = Job::find($id);
+        // Check if the job exists and belongs to the authenticated user
+        $job = Job::where('id', $id)->where('created_by', auth()->id())->first();
         if (!$job) {
             return response()->json([
                 'status' => 'error',
@@ -353,8 +363,8 @@ public function index(Request $request): JsonResponse
             ], 422);
         }
 
-        // Find the job by ID
-        $job = Job::find($id);
+        // Find the job by ID and verify ownership
+        $job = Job::where('id', $id)->where('created_by', auth()->id())->first();
 
         // If the job is not found, return a 404 response
         if (!$job) {

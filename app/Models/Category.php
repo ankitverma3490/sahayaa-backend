@@ -16,6 +16,7 @@ class Category extends Model
         'image',
         'is_active',
         'is_deleted',
+        'parent_id',
     ];
 
     /**

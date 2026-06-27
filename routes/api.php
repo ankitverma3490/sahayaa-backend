@@ -917,6 +917,7 @@ Route::group(['middleware' => 'auth:api'], function() {
         Route::put('/{id}/read', [UserController::class, 'notificationMarkAsRead']);
         Route::get('/unread-count', [UserController::class, 'notificationUnreadCount']);
         Route::post('/read', [UserController::class, 'notificationMarkAsReadPost']);
+        Route::post('/read-all', [UserController::class, 'readAll']);
     });
 
     Route::post('/device-token', [UserController::class, 'updateDeviceToken']);

@@ -490,7 +490,37 @@ class Controller
 
     $notification = [
         "token" => $deviceToken,
+        "notification" => [
+            "title" => $notification_title ?: 'Sahayya',
+            "body"  => $message,
+        ],
         "data" => $notificationData,
+        "android" => [
+            "priority" => "HIGH",
+            "notification" => [
+                "channel_id" => "sahayya-notifications",
+                "sound" => "default",
+                "default_sound" => true,
+                "default_vibrate_timings" => true,
+                "notification_priority" => "PRIORITY_HIGH",
+            ],
+        ],
+        "apns" => [
+            "headers" => [
+                "apns-priority" => "10",
+            ],
+            "payload" => [
+                "aps" => [
+                    "alert" => [
+                        "title" => $notification_title ?: 'Sahayya',
+                        "body" => $message,
+                    ],
+                    "sound" => "default",
+                    "badge" => 1,
+                    "content-available" => 1,
+                ],
+            ],
+        ],
     ];
 
     $body = json_encode(["message" => $notification]);

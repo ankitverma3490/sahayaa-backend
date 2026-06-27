@@ -697,12 +697,25 @@ class StaffController extends Controller
             $locationPhrase = trim($matches[1]);
         }
 
-        // Location keywords - words that are not role/stop words
+        // Location keywords - words that are not role/stop/skill words
         $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'from', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female', 'city', 'staff', 'worker', 'helper', 'need', 'looking'];
+        $skillWords = [
+            'south', 'north', 'east', 'west', 'central',
+            'indian', 'chinese', 'continental', 'mughlai', 'bengali', 'punjabi', 'gujarati', 'rajasthani', 'kerala', 'tamil', 'telugu', 'kannada', 'malayalam', 'marathi', 'goan', 'hyderabadi',
+            'veg', 'non-veg', 'vegetarian', 'non-vegetarian', 'vegan',
+            'thai', 'italian', 'mexican', 'japanese', 'korean', 'french',
+            'cuisine', 'food', 'biryani', 'tandoori', 'curry',
+            'senior', 'junior', 'professional', 'certified',
+            'cleaning', 'deep', 'washing', 'ironing',
+            'newborn', 'infant', 'toddler', 'pet',
+            'license', 'licensed', 'first', 'aid',
+            'hindi', 'english', 'telugu', 'tamil', 'kannada', 'malayalam', 'marathi', 'bengali', 'gujarati', 'urdu',
+            'polite', 'reliable', 'trusted', 'verified', 'urgent',
+        ];
         $allRoleKeywords = array_merge(...array_values($roleMap));
         
-        $words = array_filter(explode(' ', $queryLower), function($w) use ($stopWords, $allRoleKeywords) {
-            return strlen($w) > 2 && !in_array($w, $stopWords) && !in_array($w, $allRoleKeywords);
+        $words = array_filter(explode(' ', $queryLower), function($w) use ($stopWords, $allRoleKeywords, $skillWords) {
+            return strlen($w) > 2 && !in_array($w, $stopWords) && !in_array($w, $allRoleKeywords) && !in_array($w, $skillWords);
         });
 
         $locationTerms = [];
@@ -729,8 +742,8 @@ class StaffController extends Controller
                 }
             });
         } elseif (!$matchedRole) {
-            // If no role and no location found in basic filter, force empty results
-            $query->where('id', 0); 
+            // If no role and no location found, return all job-seeking staff (don't force empty)
+            // This handles queries the basic filter can't parse — let frontend handle display
         }
 
         return $query;

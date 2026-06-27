@@ -494,7 +494,7 @@ class Controller
     ];
 
     $ch = curl_init();
-    $fcmProjectId = env('FCM_PROJECT_ID', 'neon-cooler-417914');
+    $fcmProjectId = env('FCM_PROJECT_ID', 'sahayya-a6422');
     curl_setopt($ch, CURLOPT_URL, "https://fcm.googleapis.com/v1/projects/{$fcmProjectId}/messages:send");
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -502,9 +502,14 @@ class Controller
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
     $result = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    \Log::info("FCM Push [{$notification_type}]: " . substr($body, 0, 200));
+    if ($httpCode >= 200 && $httpCode < 300) {
+        \Log::info("FCM Push OK [{$notification_type}] HTTP {$httpCode}");
+    } else {
+        \Log::error("FCM Push FAILED [{$notification_type}] HTTP {$httpCode}: " . substr($result, 0, 500));
+    }
 
     return ["response" => $result, "request" => $body];
 }

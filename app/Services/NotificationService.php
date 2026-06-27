@@ -145,12 +145,12 @@ class NotificationService extends Controller
     protected static function sendFCM($userId, $message, $title, $type, $extra = [])
     {
         try {
-            $deviceToken = UserDeviceToken::where('user_id', $userId)->value('device_token');
-            if ($deviceToken) {
+            $tokenRecord = UserDeviceToken::where('user_id', $userId)->first();
+            if ($tokenRecord) {
                 $controller = new static();
                 $controller->send_push_notification(
-                    $deviceToken,
-                    'android',
+                    $tokenRecord->device_token,
+                    $tokenRecord->device_type ?? 'android',
                     $message,
                     $title,
                     $type,

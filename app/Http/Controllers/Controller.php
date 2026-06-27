@@ -394,6 +394,12 @@ class Controller
     }
 
     function getFirebaseAccessToken() {
+        $cacheKey = 'firebase_access_token';
+        $cached = cache()->get($cacheKey);
+        if ($cached) {
+            return $cached;
+        }
+
         // Priority 1: Read from env var (base64 encoded) — for Railway deployment
         $serviceAccountJson = env('FIREBASE_SERVICE_ACCOUNT', '');
         if (!empty($serviceAccountJson)) {
@@ -465,23 +471,27 @@ class Controller
             throw new Exception('Error fetching access token: ' . $jsonResponse['error']);
         }
 
-        return $jsonResponse['access_token'];
+        $token = $jsonResponse['access_token'];
+        cache()->put($cacheKey, $token, now()->addMinutes(55));
+        return $token;
     }
 
     public function send_push_notification($deviceToken = "", $device_type = "", $message = "", $notification_title = "", $notification_type = "", $data = [])
 {
-    $notification = [
-        "notification" => [
-            "title" => $notification_title,
-            "body" => $message,
-        ],
-        "token" => $deviceToken,
-    ];
+    $notificationData = array_merge(
+        $data ?: [],
+        [
+            'type' => $notification_type,
+            'title' => $notification_title,
+            'body' => $message,
+        ]
+    );
+    $notificationData = array_map('strval', $notificationData);
 
-    if (!empty($data)) {
-        $notification["data"] = array_map('strval', $data); 
-        $notification["data"]["type"] = $notification_type; 
-    }
+    $notification = [
+        "token" => $deviceToken,
+        "data" => $notificationData,
+    ];
 
     $body = json_encode(["message" => $notification]);
 

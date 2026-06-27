@@ -446,7 +446,11 @@ class StaffController extends Controller
                     'message' => !$subscription
                         ? 'No active subscription - showing filtered staff.'
                         : 'AI search limit reached - showing filtered staff.',
-                    'data' => $data,
+                    'data' => $data->map(function ($item) {
+                        $arr = $item->toArray();
+                        $arr['_similarity'] = $item->_similarity ?? 0;
+                        return $arr;
+                    }),
                 ]);
             }
 
@@ -641,11 +645,18 @@ class StaffController extends Controller
 
             $subscription->increment('user_limit');
 
+            // Map to arrays including _similarity (dynamic property not included by toArray())
+            $dataOut = $data->map(function ($item) {
+                $arr = $item->toArray();
+                $arr['_similarity'] = $item->_similarity ?? 0;
+                return $arr;
+            });
+
             return response()->json([
                 'success' => true,
                 'ai_filters' => $filters,
                 'remaining_limit' => $plan->subscription_limit > 0 ? $plan->subscription_limit - $subscription->user_limit : 'Unlimited',
-                'data' => $data
+                'data' => $dataOut
             ]);
 
         } catch (\Throwable $e) {
@@ -692,7 +703,11 @@ class StaffController extends Controller
                     'ai_filters' => null,
                     'message' => 'Showing filtered staff results.',
                     'fallback' => true,
-                    'data' => $data
+                    'data' => $data->map(function ($item) {
+                        $arr = $item->toArray();
+                        $arr['_similarity'] = $item->_similarity ?? 0;
+                        return $arr;
+                    }),
                 ]);
             } catch (\Throwable $fallbackError) {
                 \Log::error('getAiData fallback also failed: ' . $fallbackError->getMessage(), [
@@ -782,24 +797,25 @@ class StaffController extends Controller
             });
         }
 
+        // Extract explicit location phrase: "in Mumbai", "near Delhi", "from Bangalore"
         $locationPhrase = null;
-        if (preg_match('/\b(?:in|at|near|from)\s+([a-z\s]+)$/i', $queryLower, $matches)) {
+        if (preg_match('/\b(?:in|at|near|from)\s+([a-z][a-z\s]+?)$/i', $queryLower, $matches)) {
             $locationPhrase = trim($matches[1]);
         }
 
         // Location keywords - words that are not role/stop/skill words
         $stopWords = ['find', 'me', 'a', 'an', 'the', 'in', 'at', 'near', 'from', 'for', 'with', 'show', 'good', 'best', 'experienced', 'professional', 'male', 'female', 'city', 'staff', 'worker', 'helper', 'need', 'looking'];
         $skillWords = [
-            'south', 'north', 'east', 'west', 'central',
-            'indian', 'chinese', 'continental', 'mughlai', 'bengali', 'punjabi', 'gujarati', 'rajasthani', 'kerala', 'tamil', 'telugu', 'kannada', 'malayalam', 'marathi', 'goan', 'hyderabadi',
+            'central',
+            'indian', 'chinese', 'continental', 'mughlai', 'bengali', 'punjabi', 'gujarati', 'rajasthani', 'kerala', 'tamil', 'telugu', 'kannada', 'malayalam', 'marathi', 'goan', 'hyderabadi', 'awadhi', 'kashmiri', 'odia', 'assamese', 'sindhi',
             'veg', 'non-veg', 'vegetarian', 'non-vegetarian', 'vegan',
-            'thai', 'italian', 'mexican', 'japanese', 'korean', 'french',
-            'cuisine', 'food', 'biryani', 'tandoori', 'curry',
-            'senior', 'junior', 'professional', 'certified',
-            'cleaning', 'deep', 'washing', 'ironing',
+            'thai', 'italian', 'mexican', 'japanese', 'korean', 'french', 'american', 'mediterranean',
+            'cuisine', 'food', 'biryani', 'tandoori', 'curry', 'dal', 'roti',
+            'senior', 'junior', 'professional', 'certified', 'experienced',
+            'cleaning', 'deep', 'washing', 'ironing', 'pressing',
             'newborn', 'infant', 'toddler', 'pet',
-            'license', 'licensed', 'first', 'aid',
-            'hindi', 'english', 'telugu', 'tamil', 'kannada', 'malayalam', 'marathi', 'bengali', 'gujarati', 'urdu',
+            'license', 'licensed', 'first', 'aid', 'cpr',
+            'hindi', 'english', 'telugu', 'tamil', 'kannada', 'malayalam', 'marathi', 'bengali', 'gujarati', 'urdu', 'spanish',
             'polite', 'reliable', 'trusted', 'verified', 'urgent',
         ];
         $allRoleKeywords = array_merge(...array_values($roleMap));

@@ -195,28 +195,4 @@ class EmbeddingService
 
         return $dotProduct / $denominator;
     }
-
-    /**
-     * Rank a list of staff (with embeddings) by similarity to a query embedding.
-     * Adds '_similarity' key to each item.
-     * Returns sorted by similarity descending.
-     */
-    public static function rankBySimilarity(array $staffList, array $queryEmbedding): array
-    {
-        foreach ($staffList as &$staff) {
-            $embedding = $staff['embedding'] ?? null;
-            if ($embedding && is_array($embedding)) {
-                $staff['_similarity'] = self::cosineSimilarity($queryEmbedding, $embedding);
-            } else {
-                $staff['_similarity'] = 0.0;
-            }
-        }
-        unset($staff);
-
-        usort($staffList, function ($a, $b) {
-            return ($b['_similarity'] ?? 0) <=> ($a['_similarity'] ?? 0);
-        });
-
-        return $staffList;
-    }
 }

@@ -70,7 +70,7 @@ class GenerateStaffEmbeddings extends Command
 
             // Process batch when it reaches batch size
             if (count($batch) >= $batchSize) {
-                $this->processBatch($batch, $embeddingService);
+                $failed += $this->processBatch($batch, $embeddingService);
                 $processed += count($batch);
                 $batch = [];
             }
@@ -80,7 +80,7 @@ class GenerateStaffEmbeddings extends Command
 
         // Process remaining batch
         if (!empty($batch)) {
-            $this->processBatch($batch, $embeddingService);
+            $failed += $this->processBatch($batch, $embeddingService);
             $processed += count($batch);
         }
 
@@ -96,10 +96,11 @@ class GenerateStaffEmbeddings extends Command
         return Command::SUCCESS;
     }
 
-    private function processBatch(array $batch, EmbeddingService $embeddingService): void
+    private function processBatch(array $batch, EmbeddingService $embeddingService): int
     {
         $texts = array_column($batch, 'text');
         $userIds = array_column($batch, 'user_id');
+        $failedCount = 0;
 
         $embeddings = $embeddingService->generateBatchEmbeddings($texts);
 
@@ -111,7 +112,10 @@ class GenerateStaffEmbeddings extends Command
                     ->update(['embedding' => json_encode($embedding)]);
             } else {
                 $this->warn("Failed to generate embedding for user ID: {$item['user_id']}");
+                $failedCount++;
             }
         }
+
+        return $failedCount;
     }
 }

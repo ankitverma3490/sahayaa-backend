@@ -39,6 +39,9 @@ class UserWorkInfo extends Model
         'primary_role' => 'array',
     ];
 
+    // Hide embedding from JSON responses (1536 floats — too large for API output)
+    protected $hidden = ['embedding'];
+
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\HouseOwnerController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\JobApplyLimitController;
+use App\Http\Controllers\Api\ChatController;
 
 
 Route::get('/debug-logs', function() {
@@ -1026,6 +1027,8 @@ Route::group(['middleware' => 'auth:api'], function() {
     // Staff routes
     Route::get('/my-advances', [AdvanceController::class, 'staffAdvances']);            // staff sees their advances
 
+    // AI Chatbot (2-way communication)
+    Route::post('/chat', [\App\Http\Controllers\Api\ChatController::class, 'index']);
 });
 
 

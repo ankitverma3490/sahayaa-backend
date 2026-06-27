@@ -29,7 +29,7 @@ class UserWorkInfo extends Model
         'salary',
         'joining_date',
         'preferred_work_location',
-
+        'embedding',
     ];
 
     protected $casts = [

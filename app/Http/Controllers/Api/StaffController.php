@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use OpenAI\Laravel\Facades\OpenAI;
 use App\Services\Admin\AiFilterService;
+use App\Services\EmbeddingService;
 use App\Models\JobApplication;
 use App\Models\Job;
 use App\Models\Salary;
@@ -411,6 +412,34 @@ class StaffController extends Controller
             if (!$canUseAi) {
                 // Even without AI, apply basic role/location filter from query text
                 $data = $this->applyBasicFilters($baseQuery, $queryText)->get();
+
+                // Semantic ranking even without subscription (free feature)
+                if ($data->isNotEmpty()) {
+                    try {
+                        $embeddingService = new EmbeddingService();
+                        $queryEmbedding = $embeddingService->generateEmbedding($queryText);
+                        if ($queryEmbedding) {
+                            $ranked = [];
+                            foreach ($data as $staffMember) {
+                                $embedding = null;
+                                if ($staffMember->userWorkInfo && !empty($staffMember->userWorkInfo->embedding)) {
+                                    $raw = $staffMember->userWorkInfo->embedding;
+                                    $embedding = is_string($raw) ? json_decode($raw, true) : $raw;
+                                }
+                                $similarity = ($embedding && is_array($embedding))
+                                    ? EmbeddingService::cosineSimilarity($queryEmbedding, $embedding)
+                                    : 0.0;
+                                $staffMember->_similarity = round($similarity, 4);
+                                $ranked[] = $staffMember;
+                            }
+                            usort($ranked, fn($a, $b) => ($b->_similarity ?? 0) <=> ($a->_similarity ?? 0));
+                            $data = collect($ranked);
+                        }
+                    } catch (\Throwable $e) {
+                        // Ranking failed, keep filter-based order
+                    }
+                }
+
                 return response()->json([
                     'success' => true,
                     'ai_filters' => null,
@@ -576,6 +605,40 @@ class StaffController extends Controller
                 $filters['_relaxed'] = true; // Inform frontend that strict filters were dropped
             }
 
+            // ✅ Semantic ranking: Use embedding similarity to sort results by relevance
+            if ($data->isNotEmpty()) {
+                try {
+                    $embeddingService = new EmbeddingService();
+                    $queryEmbedding = $embeddingService->generateEmbedding($queryText);
+
+                    if ($queryEmbedding) {
+                        $ranked = [];
+                        foreach ($data as $staffMember) {
+                            $embedding = null;
+                            if ($staffMember->userWorkInfo && !empty($staffMember->userWorkInfo->embedding)) {
+                                $raw = $staffMember->userWorkInfo->embedding;
+                                $embedding = is_string($raw) ? json_decode($raw, true) : $raw;
+                            }
+
+                            $similarity = ($embedding && is_array($embedding))
+                                ? EmbeddingService::cosineSimilarity($queryEmbedding, $embedding)
+                                : 0.0;
+
+                            $staffMember->_similarity = round($similarity, 4);
+                            $ranked[] = $staffMember;
+                        }
+
+                        usort($ranked, fn($a, $b) => ($b->_similarity ?? 0) <=> ($a->_similarity ?? 0));
+                        $data = collect($ranked);
+                        $filters['_semantic_ranked'] = true;
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Embedding ranking failed, using filter-based order', [
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
             $subscription->increment('user_limit');
 
             return response()->json([
@@ -596,6 +659,33 @@ class StaffController extends Controller
                     ->where('is_job_seeking', 1);
 
                 $data = $this->applyBasicFilters($fallbackQuery, $queryText)->get();
+
+                // Semantic ranking in fallback too
+                if ($data->isNotEmpty()) {
+                    try {
+                        $embeddingService = new EmbeddingService();
+                        $queryEmbedding = $embeddingService->generateEmbedding($queryText);
+                        if ($queryEmbedding) {
+                            $ranked = [];
+                            foreach ($data as $staffMember) {
+                                $embedding = null;
+                                if ($staffMember->userWorkInfo && !empty($staffMember->userWorkInfo->embedding)) {
+                                    $raw = $staffMember->userWorkInfo->embedding;
+                                    $embedding = is_string($raw) ? json_decode($raw, true) : $raw;
+                                }
+                                $similarity = ($embedding && is_array($embedding))
+                                    ? EmbeddingService::cosineSimilarity($queryEmbedding, $embedding)
+                                    : 0.0;
+                                $staffMember->_similarity = round($similarity, 4);
+                                $ranked[] = $staffMember;
+                            }
+                            usort($ranked, fn($a, $b) => ($b->_similarity ?? 0) <=> ($a->_similarity ?? 0));
+                            $data = collect($ranked);
+                        }
+                    } catch (\Throwable $e) {
+                        // Ranking failed in fallback, keep filter-based order
+                    }
+                }
 
                 return response()->json([
                     'success' => true,

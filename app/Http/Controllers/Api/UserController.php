@@ -1300,28 +1300,27 @@ public function updateProfile(Request $request)
         // ✅ Update addresses, pets, and household
         if ($request->has('addresses')) {
             try {
-                $user->addresses()->delete();
-                foreach ($request->addresses as $address) {
-                    if (!is_array($address)) continue;
-                    // Skip completely empty addresses
-                    $hasData = !empty(array_filter([
-                        $address['street'] ?? '',
-                        $address['city'] ?? '',
-                        $address['state'] ?? '',
-                        $address['pincode'] ?? '',
-                    ]));
-                    if ($hasData) {
-                        // Only pass safe/fillable keys
-                        $safe = array_intersect_key($address, array_flip([
-                            'street', 'city', 'state', 'pincode', 'is_primary'
+                \DB::transaction(function () use ($user, $request) {
+                    $user->addresses()->delete();
+                    foreach ($request->addresses as $address) {
+                        if (!is_array($address)) continue;
+                        $hasData = !empty(array_filter([
+                            $address['street'] ?? '',
+                            $address['city'] ?? '',
+                            $address['state'] ?? '',
+                            $address['pincode'] ?? '',
                         ]));
-                        $user->addresses()->create($safe);
+                        if ($hasData) {
+                            $safe = array_intersect_key($address, array_flip([
+                                'street', 'city', 'state', 'pincode', 'is_primary'
+                            ]));
+                            $safe['name'] = $address['title'] ?? $address['name'] ?? '';
+                            $user->addresses()->create($safe);
+                        }
                     }
-                }
-                // Step will be set at the end of the method
+                });
             } catch (\Throwable $th) {
                 \Log::error('updateProfile addresses save failed: ' . $th->getMessage());
-                // non-fatal - don't fail the whole request
             }
         }
 

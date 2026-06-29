@@ -13,6 +13,7 @@ class UserPetDetail extends Model
 
     protected $fillable = [
         'user_id',
+        'address_id',
         'pet_type',
         'pet_count'
     ];
@@ -20,5 +21,10 @@ class UserPetDetail extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(UserAddress::class);
     }
 }

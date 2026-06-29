@@ -358,7 +358,7 @@ public function getProfile(Request $request)
 {
     try {
         $user = Auth::guard('api')->user();
-        $userDetails = User::with(['addresses','petDetails','lastExp','householdInformation','kycInformation','userWorkInfo','addedByUser', 'addedByUser.addresses',
+        $userDetails = User::with(['addresses.householdInformation','addresses.petDetails','petDetails','lastExp','householdInformation','kycInformation','userWorkInfo','addedByUser', 'addedByUser.addresses',
             'addedByUser.petDetails',
             'addedByUser.lastExp',
             'addedByUser.householdInformation',
@@ -1297,7 +1297,7 @@ public function updateProfile(Request $request)
                 // non-fatal
             }
         }
-        // ✅ Update addresses, pets, and household
+        // ✅ Update addresses, pets, and household (per-address)
         if ($request->has('addresses')) {
             try {
                 \DB::transaction(function () use ($user, $request) {
@@ -1315,7 +1315,46 @@ public function updateProfile(Request $request)
                                 'street', 'city', 'state', 'pincode', 'is_primary'
                             ]));
                             $safe['name'] = $address['title'] ?? $address['name'] ?? '';
-                            $user->addresses()->create($safe);
+                            $savedAddress = $user->addresses()->create($safe);
+                            $addressId = $savedAddress->id;
+
+                            $householdRaw = $address['household'] ?? null;
+                            if (is_string($householdRaw)) $householdRaw = json_decode($householdRaw, true);
+                            if (is_array($householdRaw) && !empty(array_filter($householdRaw))) {
+                                $hData = [
+                                    'user_id' => $user->id,
+                                    'address_id' => $addressId,
+                                    'residence_type' => $householdRaw['residence_type'] ?? null,
+                                    'number_of_rooms' => isset($householdRaw['number_of_rooms']) ? (int) $householdRaw['number_of_rooms'] : null,
+                                    'languages_spoken' => $householdRaw['languages_spoken'] ?? [],
+                                    'adults_count' => isset($householdRaw['adults_count']) ? (int) $householdRaw['adults_count'] : null,
+                                    'children_count' => isset($householdRaw['children_count']) ? (int) $householdRaw['children_count'] : null,
+                                    'elderly_count' => isset($householdRaw['elderly_count']) ? (int) $householdRaw['elderly_count'] : null,
+                                    'special_requirements' => $householdRaw['special_requirements'] ?? null,
+                                ];
+                                \App\Models\UserHouseholdInformation::updateOrCreate(
+                                    ['user_id' => $user->id, 'address_id' => $addressId],
+                                    $hData
+                                );
+                            }
+
+                            $petsRaw = $address['pets'] ?? null;
+                            if (is_string($petsRaw)) $petsRaw = json_decode($petsRaw, true);
+                            if (is_array($petsRaw)) {
+                                \App\Models\UserPetDetail::where('user_id', $user->id)->where('address_id', $addressId)->delete();
+                                foreach ($petsRaw as $pet) {
+                                    if (!is_array($pet)) continue;
+                                    $type = trim((string)($pet['pet_type'] ?? ''));
+                                    $count = $pet['pet_count'] ?? '';
+                                    if ($type === '' || $count === '') continue;
+                                    \App\Models\UserPetDetail::create([
+                                        'user_id' => $user->id,
+                                        'address_id' => $addressId,
+                                        'pet_type' => $type,
+                                        'pet_count' => (int) $count,
+                                    ]);
+                                }
+                            }
                         }
                     }
                 });
@@ -1324,10 +1363,10 @@ public function updateProfile(Request $request)
             }
         }
 
-        if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements', 'languages_spoken'])) {
+        // Backward compat: global household fields (no address_id) for staff step flow
+        if ($request->hasAny(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements', 'languages_spoken']) && !$request->has('addresses')) {
             try {
                 $householdData = $request->only(['residence_type', 'number_of_rooms', 'adults_count', 'children_count', 'elderly_count', 'special_requirements','languages_spoken']);
-                // Cast counts to int so empty strings don't break integer columns
                 foreach (['number_of_rooms', 'adults_count', 'children_count', 'elderly_count'] as $k) {
                     if (array_key_exists($k, $householdData)) {
                         $householdData[$k] = $householdData[$k] === '' || $householdData[$k] === null
@@ -1335,18 +1374,18 @@ public function updateProfile(Request $request)
                             : (int) $householdData[$k];
                     }
                 }
-                if ($user->householdInformation) $user->householdInformation()->update($householdData);
-                else $user->householdInformation()->create($householdData);
-                // Step will be set at the end of the method
+                $existingGlobal = \App\Models\UserHouseholdInformation::where('user_id', $user->id)->whereNull('address_id')->first();
+                if ($existingGlobal) $existingGlobal->update($householdData);
+                else \App\Models\UserHouseholdInformation::create(array_merge($householdData, ['user_id' => $user->id]));
             } catch (\Throwable $th) {
                 \Log::error('updateProfile household info save failed: ' . $th->getMessage());
-                // non-fatal
             }
         }
 
-        if ($request->has('pet_details')) {
+        // Backward compat: global pet details for staff step flow
+        if ($request->has('pet_details') && !$request->has('addresses')) {
             try {
-                $user->petDetails()->delete();
+                $user->petDetails()->whereNull('address_id')->delete();
                 foreach ($request->pet_details as $petDetail) {
                     if (!is_array($petDetail)) continue;
                     $type = trim((string)($petDetail['pet_type'] ?? ''));
@@ -1357,10 +1396,8 @@ public function updateProfile(Request $request)
                         'pet_count' => (int) $count,
                     ]);
                 }
-                // Step will be set at the end of the method
             } catch (\Throwable $th) {
                 \Log::error('updateProfile pet_details save failed: ' . $th->getMessage());
-                // non-fatal
             }
         }
         if ($request->has('user_role_id')) {
@@ -3747,29 +3784,36 @@ public function storeNewMember(Request $request)
         $addedByUserId = Auth::guard('api')->user()->id;
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
-            'mobile_number' => 'required|string|max:15|unique:users,phone_number',
+            'mobile_number' => 'required|string|max:15',
         ]);
-        // Optional: parse or validate mobile number
         $phoneData = [
             'number' => $request->mobile_number ?? null,
-            'prefix' => '+91', // default, or extract dynamically
+            'prefix' => '+91',
         ];
+
+        $dob = null;
+        if (!empty($request->dob)) {
+            try {
+                $dob = \Carbon\Carbon::parse($request->dob)->format('Y-m-d');
+            } catch (\Exception $e) {
+                $dob = $request->dob;
+            }
+        }
 
         $userData = [
             'name' => trim($request->full_name),
             'phone_number' => $phoneData['number'],
             'phone_number_prefix' => $phoneData['prefix'],
             'gender' => $request->gender !== 'Select Gender' ? $request->gender : null,
-            'dob' => !empty($request->dob) ? $request->dob : null,
+            'dob' => $dob,
             'relation' => $request->relation !== 'Select Relation' ? $request->relation : null,
             'added_by' => $addedByUserId,
-            'user_role_id' => 1, 
+            'user_role_id' => 1,
             'is_active' => true,
             'is_deleted' => false,
             'step' => 6,
         ];
 
-        // Create the user
         $user = User::create($userData);
 
         return response()->json([
@@ -3778,7 +3822,14 @@ public function storeNewMember(Request $request)
             'data' => $user
         ], 201);
 
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Validation failed.',
+            'errors' => $e->errors()
+        ], 422);
     } catch (\Exception $e) {
+        \Log::error('storeNewMember failed: ' . $e->getMessage());
         return response()->json([
             'status' => false,
             'message' => 'Failed to add member.',
@@ -3801,26 +3852,29 @@ public function updateMember(Request $request, $id)
             ], 404);
         }
         $validated = $request->validate([
-            'mobile_number' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:15',
-                Rule::unique('users', 'phone_number')->ignore($user->id),
-            ],
-            
+            'full_name' => 'sometimes|string|max:255',
+            'mobile_number' => 'sometimes|string|max:15',
         ]);
         $phoneData = [
             'number' => $request->mobile_number ?? $user->phone_number,
             'prefix' => '+91', 
         ];
 
+        $dob = $user->dob;
+        if (!empty($request->dob)) {
+            try {
+                $dob = \Carbon\Carbon::parse($request->dob)->format('Y-m-d');
+            } catch (\Exception $e) {
+                $dob = $request->dob;
+            }
+        }
+
         $userData = [
             'name' => trim($request->full_name) ?? $user->name,
             'phone_number' => $phoneData['number'],
             'phone_number_prefix' => $phoneData['prefix'],
             'gender' => $request->gender !== 'Select Gender' ? $request->gender : $user->gender,
-            'dob' => !empty($request->dob) ? $request->dob : $user->dob,
+            'dob' => $dob,
             'relation' => $request->relation !== 'Select Relation' ? $request->relation : $user->relation,
         ];
         $userData = array_filter($userData, function($value) {
@@ -3834,7 +3888,14 @@ public function updateMember(Request $request, $id)
             'data' => $user
         ], 200);
 
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Validation failed.',
+            'errors' => $e->errors()
+        ], 422);
     } catch (\Exception $e) {
+        \Log::error('updateMember failed: ' . $e->getMessage());
         return response()->json([
             'status' => false,
             'message' => 'Failed to update member.',

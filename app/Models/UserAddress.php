@@ -29,4 +29,14 @@ class UserAddress extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function householdInformation()
+    {
+        return $this->hasOne(UserHouseholdInformation::class);
+    }
+
+    public function petDetails()
+    {
+        return $this->hasMany(UserPetDetail::class);
+    }
 }

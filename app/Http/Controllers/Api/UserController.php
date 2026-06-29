@@ -1280,6 +1280,29 @@ public function updateProfile(Request $request)
         }
 
         // saveWorkAndExperience is only for staff (role 2), not household employers
+
+        // ✅ Sync uploaded documents to kyc_verifications table too
+        try {
+            $kycData = ['user_id' => $user->id];
+            if (isset($data['aadhar_front'])) {
+                $kycData['aadhaar_front_path'] = $data['aadhar_front'];
+            }
+            if (isset($data['aadhar_back'])) {
+                $kycData['aadhaar_back_path'] = $data['aadhar_back'];
+            }
+            if (isset($data['verification_certificate'])) {
+                $kycData['police_verification_path'] = $data['verification_certificate'];
+            }
+            if (count($kycData) > 1) {
+                \App\Models\KycVerification::updateOrCreate(
+                    ['user_id' => $user->id],
+                    $kycData
+                );
+            }
+        } catch (\Throwable $th) {
+            \Log::warning('updateProfile KYC sync failed (non-fatal): ' . $th->getMessage());
+        }
+
         $workFields = ['emergency_contact_name', 'emergency_contact_number', 'preferred_work_location', 'primary_role', 'skills', 'languages_spoken', 'total_experience', 'education', 'additional_info', 'voice_note'];
         if (($isEdit == 1 || $request->hasAny($workFields)) && $user->user_role_id == 2) {
             try {

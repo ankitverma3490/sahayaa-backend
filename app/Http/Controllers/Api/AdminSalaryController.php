@@ -178,7 +178,11 @@ class AdminSalaryController extends Controller
                 if ($remainingToDeduct <= 0) break;
 
                 // How much to deduct from this advance
-                $deductFromThis = min($remainingToDeduct, (float)$advance->remaining_balance);
+                if ($advance->deduction_type === 'installment' && $advance->installment_amount > 0) {
+                    $deductFromThis = min($remainingToDeduct, (float)$advance->installment_amount, (float)$advance->remaining_balance);
+                } else {
+                    $deductFromThis = min($remainingToDeduct, (float)$advance->remaining_balance);
+                }
                 $balanceAfter   = $advance->remaining_balance - $deductFromThis;
 
                 // Record transaction

@@ -206,7 +206,15 @@ class SalaryController extends Controller
                         ->where('staff_id', $user_id)
                         ->where('employer_id', Auth::guard('api')->id())
                         ->where('status', 'active')
-                        ->sum('remaining_balance')
+                        ->get()
+                        ->reduce(function ($carry, $advance) {
+                            if ($advance->deduction_type === 'full') {
+                                return $carry + (float) $advance->remaining_balance;
+                            } elseif ($advance->deduction_type === 'installment') {
+                                return $carry + min((float) $advance->installment_amount, (float) $advance->remaining_balance);
+                            }
+                            return $carry;
+                        }, 0)
                 ],
                 'last_month_salary' => $lastMonthPayment ? [
                     'payment_id' => $lastMonthPayment->payment_id,
@@ -351,7 +359,12 @@ class SalaryController extends Controller
                 foreach ($activeAdvances as $advance) {
                     if ($remainingToDeduct <= 0) break;
 
-                    $deductFromThis = min($remainingToDeduct, $advance->remaining_balance);
+                    // For installment advances, only deduct the per-month installment_amount
+                    if ($advance->deduction_type === 'installment' && $advance->installment_amount > 0) {
+                        $deductFromThis = min($remainingToDeduct, (float) $advance->installment_amount, (float) $advance->remaining_balance);
+                    } else {
+                        $deductFromThis = min($remainingToDeduct, $advance->remaining_balance);
+                    }
                     $newBalance = $advance->remaining_balance - $deductFromThis;
 
                     DB::table('staff_advances')->where('id', $advance->id)->update([
@@ -1408,6 +1421,8 @@ private function getWorkingDays($startDate, $endDate)
                 'amount' => 'required|numeric|min:0',
                 'should_deduct' => 'nullable|boolean',
                 'deduction_method' => 'nullable|string|in:monthly,one_time,installments',
+                'num_installments' => 'nullable|integer|min:1|max:24',
+                'monthly_deduction' => 'nullable|numeric|min:0',
                 'payment_mode' => 'nullable|string|in:cash,upi,bank_transfer'
             ]);
 
@@ -1451,13 +1466,24 @@ private function getWorkingDays($startDate, $endDate)
 
             // ✅ Also create StaffAdvance record so staff can see it in My Advances
             try {
+                $numInstallments = $request->input('num_installments');
+                $monthlyDeduction = $request->input('monthly_deduction');
+
+                // Calculate installment_amount: monthly deduction amount if installments, else full amount
+                if ($deductionMethod === 'installments' && $numInstallments && $numInstallments > 0) {
+                    $installmentAmount = $monthlyDeduction ?: ceil($request->amount / $numInstallments);
+                } else {
+                    $installmentAmount = $request->amount;
+                }
+
                 \App\Models\StaffAdvance::create([
                     'staff_id'           => $user->id,
                     'employer_id'        => $employerId,
                     'amount'             => $request->amount,
                     'remaining_balance'  => $shouldDeduct ? $request->amount : 0,
                     'deduction_type'     => $mappedDeductionType,
-                    'installment_amount' => $request->amount, // Default to full amount for installment_amount if installments
+                    'installment_amount' => $installmentAmount,
+                    'num_installments'   => ($deductionMethod === 'installments' && $numInstallments) ? $numInstallments : null,
                     'given_date'         => now()->toDateString(),
                     'status'             => $status === 'paid' ? ($shouldDeduct ? 'active' : 'closed') : 'pending',
                     'remarks'            => 'Paid via ' . strtoupper($paymentMode),
@@ -1490,6 +1516,8 @@ private function getWorkingDays($startDate, $endDate)
                     'advance_withdraw_amount' => $user->advance_withdraw_amount,
                     'should_deduct' => $shouldDeduct,
                     'deduction_method' => $deductionMethod,
+                    'num_installments' => ($deductionMethod === 'installments' && $numInstallments) ? $numInstallments : null,
+                    'installment_amount' => ($deductionMethod === 'installments' && $numInstallments) ? ($monthlyDeduction ?: ceil($request->amount / $numInstallments)) : null,
                     'payment_mode' => $paymentMode
                 ]
             ]);

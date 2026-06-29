@@ -18,6 +18,7 @@ class StaffAdvance extends Model
         'remaining_balance',
         'deduction_type',
         'installment_amount',
+        'num_installments',
         'status',
         'remarks',
         'given_date',
@@ -27,6 +28,7 @@ class StaffAdvance extends Model
         'amount'             => 'decimal:2',
         'remaining_balance'  => 'decimal:2',
         'installment_amount' => 'decimal:2',
+        'num_installments'   => 'integer',
         'given_date'         => 'date',
     ];
 
